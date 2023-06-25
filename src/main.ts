@@ -13,13 +13,23 @@ const interpret = (source: string): InterpretResult => {
         return InterpretResult.INTERPRET_COMPILE_ERROR;
     }
 
-    const vm = new VM({debug: true});
+    const vm = new VM({debug: false});
     const res = vm.interpret(chunk);
 
     return res;
 }
 
+const program = `
+    let x = "hello"; 
+    if(false) {
+        print "lol";
+    }
+    else  {
+        print x; print "world";
+    }
+    x= 1+2; 
+    let y = 4+x;
+    print y;
+`;
 
-const program = "!(5 - 4 > 3 * 2 == !nil)";
-
-console.log(interpret(program));
+interpret(program);

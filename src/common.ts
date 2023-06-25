@@ -1,3 +1,5 @@
+import {Value}  from "./value.js";
+
 export enum Opcode {
     OP_CONSTANT,
     OP_NIL,
@@ -13,15 +15,23 @@ export enum Opcode {
     OP_EQUAL,
     OP_GREATER,
     OP_LESS,
+    OP_PRINT,
+    OP_POP,
+    OP_DEFINE_GLOBAL,
+    OP_GET_GLOBAL,
+    OP_SET_GLOBAL,
+    OP_GET_LOCAL,
+    OP_SET_LOCAL,
+    OP_JUMP_IF_FALSE,
+    OP_JUMP,
 };
 
 export class Chunk {
-    private view: Uint8Array;
+    public view: Uint8Array;
     private buffer: ArrayBuffer;
     private count: number;
     private capacity: number;
     private constants: ValueArray;
-
 
     // Related with source code of higher level language
     private lineBuffer: ArrayBuffer;
@@ -78,7 +88,7 @@ export class Chunk {
         return this.lineView[index];
     }
 
-    makeConstant(value: number): number {
+    makeConstant(value: Value): number {
         const constant = this.addConstant(value);
         if (constant > 255) {
             throw new Error("Too many constants in one chunk.");
@@ -87,12 +97,12 @@ export class Chunk {
         return constant;
     }
 
-    addConstant(value: number): number {
+    addConstant(value: Value): number {
         this.constants.write(value);
         return this.constants.size - 1;
     }
 
-    getConstant(index: number): number {
+    getConstant(index: number): Value {
         return this.constants.get(index);
     }
 }
@@ -142,10 +152,41 @@ export class Disassembler {
                 return this.simpleInstruction("OP_GREATER", offset);
             case Opcode.OP_LESS:
                 return this.simpleInstruction("OP_LESS", offset);
+            case Opcode.OP_PRINT:
+                return this.simpleInstruction("OP_PRINT", offset);
+            case Opcode.OP_POP:
+                return this.simpleInstruction("OP_POP", offset);
+            case Opcode.OP_DEFINE_GLOBAL:
+                return this.constantInstruction("OP_DEFINE_GLOBAL", offset);
+            case Opcode.OP_GET_GLOBAL:
+                return this.constantInstruction("OP_GET_GLOBAL", offset);
+            case Opcode.OP_SET_GLOBAL:
+                return this.constantInstruction("OP_SET_GLOBAL", offset);
+            case Opcode.OP_GET_LOCAL:
+                return this.byteInstruction("OP_GET_LOCAL", offset);
+            case Opcode.OP_SET_LOCAL:
+                return this.byteInstruction("OP_SET_LOCAL", offset);
+            case Opcode.OP_JUMP_IF_FALSE:
+                return this.jumpInstruction("OP_JUMP_IF_FALSE", offset);
+            case Opcode.OP_JUMP:
+                return this.jumpInstruction("OP_JUMP", offset);
             default:
                 console.log(`Unknown opcode ${instruction}`);
                 return offset + 1;
         }
+    }
+    
+    private jumpInstruction(name: string, offset: number): number {
+        const jump = this.chunk.get(offset + 1);
+        const line = this.chunk.getLine(offset + 1);
+        this.logWithOffset(offset, name + "\t" + jump + "\t\t(line " + line + ")");
+        return offset + 2;
+    }
+
+    private byteInstruction(name: string, offset: number): number {
+        const slot = this.chunk.get(offset + 1);
+        this.logWithOffset(offset, name + "\t" + slot);
+        return offset + 2;
     }
 
     private logWithOffset(offset, rest) {
@@ -178,36 +219,21 @@ export class Disassembler {
 }
 
 class ValueArray {
-    private count: number;
-    private capacity: number;
-    private buffer: ArrayBuffer;
-    private view: Float64Array;
+    private arr : Value[];
 
-    constructor(capacity = 16) {
-        this.count = 0;
-        this.capacity = capacity;
-        this.buffer = new ArrayBuffer(capacity * Float64Array.BYTES_PER_ELEMENT);
-        this.view = new Float64Array(this.buffer);
+    constructor() {
+        this.arr = [];
     }
 
-    write(value: number): void {
-        if (this.count >= this.capacity) {
-            this.capacity *= 2;
-            const newBuffer = new ArrayBuffer(this.capacity * Float64Array.BYTES_PER_ELEMENT);
-            const newView = new Float64Array(newBuffer);
-            newView.set(this.view);
-            this.buffer = newBuffer;
-            this.view = newView;
-        }
-        this.view[this.count] = value;
-        this.count++;
+    write(value: Value): void {
+        this.arr.push(value);
     }
 
-    get(index: number): number {
-        return this.view[index];
+    get(index: number): Value {
+        return this.arr[index];
     }
 
     get size(): number {
-        return this.count;
+        return this.arr.length;
     }
 }

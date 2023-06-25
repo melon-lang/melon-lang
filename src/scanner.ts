@@ -84,12 +84,12 @@ class Scanner {
             case '/': return this.makeToken(TokenType.TOKEN_SLASH);
             case '*': return this.makeToken(TokenType.TOKEN_STAR);
             case '!': return this.makeToken(this.match('=') ? TokenType.TOKEN_BANG_EQUAL : TokenType.TOKEN_BANG);
-            case '=': return this.makeToken(this.match('=') ? TokenType.TOKEN_EQUAL : TokenType.TOKEN_EQUAL_EQUAL);
+            case '=': return this.makeToken(this.match('=') ? TokenType.TOKEN_EQUAL_EQUAL : TokenType.TOKEN_EQUAL);
             case '<': return this.makeToken(this.match('=') ? TokenType.TOKEN_LESS_EQUAL : TokenType.TOKEN_LESS);
             case '>': return this.makeToken(this.match('=') ? TokenType.TOKEN_GREATER_EQUAL : TokenType.TOKEN_GREATER);
             case '"': return this.string();
         }
-
+        
         return this.errorToken('Unexpected character.');
     }
 
@@ -139,7 +139,7 @@ class Scanner {
                     }
                 }
                 break;
-            case 'v': return this.checkKeyword(1, 2, 'ar', TokenType.TOKEN_VAR);
+            case 'l': return this.checkKeyword(1, 2, 'et', TokenType.TOKEN_VAR);
             case 'w': return this.checkKeyword(1, 4, 'hile', TokenType.TOKEN_WHILE);
         }
 
