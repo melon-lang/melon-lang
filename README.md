@@ -9,7 +9,7 @@
 
 ## What is it? 
 
-**esc-lang** is a language designed for creating automations for Apple devices that runs blazingly fast ⚡. Uses Siri Shortcuts as a backend, but allows for more complex and performant automations to be created compared to Siri Shortcuts application itself.
+**esc-lang** is a language designed for creating **automations** for **Apple** devices that run **blazingly fast ⚡**. It uses **Siri Shortcuts** as a backend, but allows for more complex and performant automations to be created compared to **Shortcuts** application itself.
 
 ### Misc
 
