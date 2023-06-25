@@ -1,23 +1,15 @@
-![Logo](./docs/logo-white.png#gh-dark-mode-only)
-![Logo](./docs/logo-gray.png#gh-light-mode-only)
+<div>
+    <img align="left" width="90" height="90" src="/docs/logo-white.png#gh-dark-mode-only" />
+    <img align="left" width="90" height="90"  src="/docs/logo-gray.png#gh-light-mode-only" />
+    <h1>esc-lang</h1>
+    <i>is short for: <b>E</b>xpress <b>S</b>hort<b>c</b>uts <b>Lang</b>uage</i>
+</div>
 
-<style>
-img[alt=Logo] {
-    float: left;
-    width: 50px;
-    height: 50px;
-    position: relative;
-    bottom: 10px;
-}
-</style>
 
-# esc-lang
 
-<i>is short for: **E**xpress **S**hort**c**uts **Lang**uage</i>
+## What is it? 
 
-## What is it?
-
-**esc** is a language designed for creating automations for Apple devices that runs blazingly fast ⚡. Uses Siri Shortcuts as a backend, but allows for more complex and performant automations to be created compared to Siri Shortcuts application itself.
+**esc-lang** is a language designed for creating automations for Apple devices that runs blazingly fast ⚡. Uses Siri Shortcuts as a backend, but allows for more complex and performant automations to be created compared to Siri Shortcuts application itself.
 
 ### Misc
 
