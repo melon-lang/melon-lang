@@ -1,19 +1,19 @@
-import {Chunk} from "./common.js";
-import VM, {InterpretResult} from './vm.js';
+import { Chunk } from "./chunk.js";
+import VM, { InterpretResult } from './vm.js';
 import Compiler from "./compiler.js";
 
 const interpret = (source: string): InterpretResult => {
-    const compiler = new Compiler();    
+    const compiler = new Compiler();
 
     let chunk: Chunk;
-    try{
+    try {
         chunk = compiler.compile(source);
-    }catch(e){
+    } catch (e) {
         console.log(e);
         return InterpretResult.INTERPRET_COMPILE_ERROR;
     }
 
-    const vm = new VM({debug: false});
+    const vm = new VM({ debug: false });
     const res = vm.interpret(chunk);
 
     return res;

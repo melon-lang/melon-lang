@@ -1,114 +1,7 @@
-import {Value}  from "./value.js";
+import { Chunk } from "./chunk.js";
+import { Opcode } from "./vm.js";
 
-export enum Opcode {
-    OP_CONSTANT,
-    OP_NIL,
-    OP_TRUE,
-    OP_FALSE,
-    OP_ADD,
-    OP_SUBTRACT,
-    OP_MULTIPLY,
-    OP_DIVIDE,
-    OP_NEGATE,
-    OP_RETURN,
-    OP_NOT,
-    OP_EQUAL,
-    OP_GREATER,
-    OP_LESS,
-    OP_PRINT,
-    OP_POP,
-    OP_DEFINE_GLOBAL,
-    OP_GET_GLOBAL,
-    OP_SET_GLOBAL,
-    OP_GET_LOCAL,
-    OP_SET_LOCAL,
-    OP_JUMP_IF_FALSE,
-    OP_JUMP,
-    OP_LOOP,
-};
-
-export class Chunk {
-    public view: Uint8Array;
-    private buffer: ArrayBuffer;
-    private count: number;
-    private capacity: number;
-    private constants: ValueArray;
-
-    // Related with source code of higher level language
-    private lineBuffer: ArrayBuffer;
-    private lineView: Uint8Array;
-
-    constructor(capacity = 16) {
-        this.count = 0;
-        this.capacity = capacity;
-
-        this.buffer = new ArrayBuffer(capacity * Uint8Array.BYTES_PER_ELEMENT);
-        this.view = new Uint8Array(this.buffer);
-        this.constants = new ValueArray();
-
-        this.lineBuffer = new ArrayBuffer(capacity * Uint8Array.BYTES_PER_ELEMENT);
-        this.lineView = new Uint8Array(this.lineBuffer);
-    }
-
-    write(byte: number, line: number): void {
-        if (this.count >= this.capacity) {
-            this.capacity *= 2;
-            const newBuffer = new ArrayBuffer(this.capacity * Uint8Array.BYTES_PER_ELEMENT);
-            const newView = new Uint8Array(newBuffer);
-            newView.set(this.view);
-            this.buffer = newBuffer;
-            this.view = newView;
-
-            const newLineBuffer = new ArrayBuffer(this.capacity * Uint8Array.BYTES_PER_ELEMENT);
-            const newLineView = new Uint8Array(newLineBuffer);
-            newLineView.set(this.lineView);
-            this.lineBuffer = newLineBuffer;
-            this.lineView = newLineView;
-        }
-
-        this.view[this.count] = byte;
-        this.lineView[this.count] = line;
-
-        this.count++;
-    }
-
-    read(): Uint8Array {
-        const slice = this.buffer.slice(0, this.count * Uint8Array.BYTES_PER_ELEMENT);
-        return new Uint8Array(slice);
-    }
-
-    get size(): number {
-        return this.count;
-    }
-
-    get(index): number {
-        return this.view[index];
-    }
-
-    getLine(index): number {
-        return this.lineView[index];
-    }
-
-    makeConstant(value: Value): number {
-        const constant = this.addConstant(value);
-        if (constant > 255) {
-            throw new Error("Too many constants in one chunk.");
-        }
-
-        return constant;
-    }
-
-    addConstant(value: Value): number {
-        this.constants.write(value);
-        return this.constants.size - 1;
-    }
-
-    getConstant(index: number): Value {
-        return this.constants.get(index);
-    }
-}
-
-export class Disassembler {
+export default class Disassembler {
     private chunk: Chunk;
 
     constructor(chunk: Chunk) {
@@ -171,12 +64,14 @@ export class Disassembler {
                 return this.jumpInstruction("OP_JUMP_IF_FALSE", offset);
             case Opcode.OP_JUMP:
                 return this.jumpInstruction("OP_JUMP", offset);
+            case Opcode.OP_LOOP:
+                return this.jumpInstruction("OP_LOOP", offset);
             default:
                 console.log(`Unknown opcode ${instruction}`);
                 return offset + 1;
         }
     }
-    
+
     private jumpInstruction(name: string, offset: number): number {
         const jump = this.chunk.get(offset + 1);
         const line = this.chunk.getLine(offset + 1);
@@ -216,25 +111,5 @@ export class Disassembler {
         this.logWithOffset(offset, name);
 
         return offset + 1;
-    }
-}
-
-class ValueArray {
-    private arr : Value[];
-
-    constructor() {
-        this.arr = [];
-    }
-
-    write(value: Value): void {
-        this.arr.push(value);
-    }
-
-    get(index: number): Value {
-        return this.arr[index];
-    }
-
-    get size(): number {
-        return this.arr.length;
     }
 }

@@ -1,7 +1,12 @@
 import Scanner, { TokenType, Token } from "./scanner.js";
-import { Chunk } from "./common.js";
-import { Opcode } from "./common.js";
-import { StringObj, Value } from "./value.js";
+import { Chunk } from "./chunk.js";
+import { Opcode } from "./vm.js";
+import Value, { StringObj } from "./value.js";
+
+interface Local {
+    name: Token;
+    depth: number;
+}
 
 enum Precedence {
     PREC_NONE,
@@ -23,151 +28,94 @@ interface ParseRule {
     precedence: Precedence;
 };
 
-const parseRule = (args): ParseRule => {
-    return {
-        prefix: args[0],
-        infix: args[1],
-        precedence: args[2]
-    };
-}
-
-const rules = {
-    [TokenType.TOKEN_LEFT_PAREN]: parseRule(['grouping', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_RIGHT_PAREN]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_LEFT_BRACE]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_RIGHT_BRACE]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_COMMA]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_DOT]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_MINUS]: parseRule(['unary', 'binary', Precedence.PREC_TERM]),
-    [TokenType.TOKEN_PLUS]: parseRule(['NULL', 'binary', Precedence.PREC_TERM]),
-    [TokenType.TOKEN_SEMICOLON]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_SLASH]: parseRule(['NULL', 'binary', Precedence.PREC_FACTOR]),
-    [TokenType.TOKEN_STAR]: parseRule(['NULL', 'binary', Precedence.PREC_FACTOR]),
-    [TokenType.TOKEN_BANG]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_BANG_EQUAL]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_EQUAL]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_EQUAL_EQUAL]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_GREATER]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_GREATER_EQUAL]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_LESS]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_LESS_EQUAL]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_IDENTIFIER]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_STRING]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_NUMBER]: parseRule(['number', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_AND]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_CLASS]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_ELSE]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_FALSE]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_FOR]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_FUN]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_IF]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_NIL]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_OR]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_PRINT]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_RETURN]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_SUPER]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_THIS]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_TRUE]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_VAR]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_WHILE]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_ERROR]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_EOF]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_FALSE]: parseRule(['literal', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_TRUE]: parseRule(['literal', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_NIL]: parseRule(['literal', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_BANG]: parseRule(['unary', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_BANG_EQUAL]: parseRule(['NULL', 'binary', Precedence.PREC_EQUALITY]),
-    [TokenType.TOKEN_EQUAL]: parseRule(['NULL', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_EQUAL_EQUAL]: parseRule(['NULL', 'binary', Precedence.PREC_EQUALITY]),
-    [TokenType.TOKEN_GREATER]: parseRule(['NULL', 'binary', Precedence.PREC_COMPARISON]),
-    [TokenType.TOKEN_GREATER_EQUAL]: parseRule(['NULL', 'binary', Precedence.PREC_COMPARISON]),
-    [TokenType.TOKEN_LESS]: parseRule(['NULL', 'binary', Precedence.PREC_COMPARISON]),
-    [TokenType.TOKEN_LESS_EQUAL]: parseRule(['NULL', 'binary', Precedence.PREC_COMPARISON]),
-    [TokenType.TOKEN_STRING]: parseRule(['string', 'NULL', Precedence.PREC_NONE]),
-    [TokenType.TOKEN_IDENTIFIER]: parseRule(['variable', 'NULL', Precedence.PREC_NONE]),
+const ParseRules = {
+    [TokenType.TOKEN_LEFT_PAREN]: { prefix: 'grouping', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_RIGHT_PAREN]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_LEFT_BRACE]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_RIGHT_BRACE]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_COMMA]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_DOT]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_MINUS]: { prefix: 'unary', infix: 'binary', precedence: Precedence.PREC_TERM },
+    [TokenType.TOKEN_PLUS]: { prefix: 'NULL', infix: 'binary', precedence: Precedence.PREC_TERM },
+    [TokenType.TOKEN_SEMICOLON]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_SLASH]: { prefix: 'NULL', infix: 'binary', precedence: Precedence.PREC_FACTOR },
+    [TokenType.TOKEN_STAR]: { prefix: 'NULL', infix: 'binary', precedence: Precedence.PREC_FACTOR },
+    [TokenType.TOKEN_BANG]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_BANG_EQUAL]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_EQUAL]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_EQUAL_EQUAL]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_GREATER]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_GREATER_EQUAL]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_LESS]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_LESS_EQUAL]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_IDENTIFIER]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_STRING]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_NUMBER]: { prefix: 'number', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_AND]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_CLASS]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_ELSE]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_FALSE]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_FOR]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_FUN]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_IF]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_NIL]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_OR]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_PRINT]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_RETURN]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_SUPER]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_THIS]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_TRUE]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_VAR]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_WHILE]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_ERROR]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_EOF]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_FALSE]: { prefix: 'literal', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_TRUE]: { prefix: 'literal', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_NIL]: { prefix: 'literal', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_BANG]: { prefix: 'unary', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_BANG_EQUAL]: { prefix: 'NULL', infix: 'binary', precedence: Precedence.PREC_EQUALITY },
+    [TokenType.TOKEN_EQUAL]: { prefix: 'NULL', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_EQUAL_EQUAL]: { prefix: 'NULL', infix: 'binary', precedence: Precedence.PREC_EQUALITY },
+    [TokenType.TOKEN_GREATER]: { prefix: 'NULL', infix: 'binary', precedence: Precedence.PREC_COMPARISON },
+    [TokenType.TOKEN_GREATER_EQUAL]: { prefix: 'NULL', infix: 'binary', precedence: Precedence.PREC_COMPARISON },
+    [TokenType.TOKEN_LESS]: { prefix: 'NULL', infix: 'binary', precedence: Precedence.PREC_COMPARISON },
+    [TokenType.TOKEN_LESS_EQUAL]: { prefix: 'NULL', infix: 'binary', precedence: Precedence.PREC_COMPARISON },
+    [TokenType.TOKEN_STRING]: { prefix: 'string', infix: 'NULL', precedence: Precedence.PREC_NONE },
+    [TokenType.TOKEN_IDENTIFIER]: { prefix: 'variable', infix: 'NULL', precedence: Precedence.PREC_NONE },
 };
 
-class Parser {
+class Compiler {
     private previous: Token;
     private current: Token;
     private scanner: Scanner;
-    private hadError: boolean;
 
-    constructor(source: string) {
-        this.scanner = new Scanner(source);
-        this.hadError = false;
-    }
-
-    consume(type: TokenType, message: string): void {
-        if (this.current.type == type) {
-            this.advance();
-            return;
-        }
-
-        this.errorAtCurrent(message);
-    }
-
-    advance(): void {
-        this.previous = this.current;
-
-        while (true) {
-            this.current = this.scanner.scanToken();
-            if (this.current.type != TokenType.TOKEN_ERROR) break;
-
-            this.errorAtCurrent('Invalid token.');
-        }
-    }
-
-    private errorAtCurrent(message: string) {
-        this.errorAt(this.current, message);
-    }
-
-    private errorAt(token: Token, message: string) {
-        console.log(`[line ${token.line}] Error${token.type} at ${token.start}: ${message}`);
-        this.hadError = true;
-    }
-
-    get previousToken(): Token {
-        return this.previous;
-    }
-
-    get currentToken(): Token {
-        return this.current;
-    }
-}
-
-interface Local {
-    name: Token;
-    depth: number;
-}
-
-class Compiler {
-
-    private parser: Parser;
     private chunk: Chunk;
-    private source: string;
     private locals: Local[];
     private localCount: number;
     private scopeDepth: number;
 
     compile(source: string): Chunk {
-        this.source = source;
-        this.parser = new Parser(source);
+        this.scanner = new Scanner(source);
+
         this.chunk = new Chunk();
         this.locals = [];
 
-        this.parser.advance();
+        this.advance();
 
         while (!this.match(TokenType.TOKEN_EOF)) {
             this.declaration();
         }
 
-        this.parser.consume(TokenType.TOKEN_EOF, "Expect end of expression.");
+        this.consume(TokenType.TOKEN_EOF, "Expect end of expression.");
 
         this.endCompiler();
 
         return this.chunk;
     }
+
+    /** 
+     *      DECLARATIONS, STATEMENTS, BLOCKS, EXPRESSIONS  
+     */
 
     private declaration(): void {
         if (this.match(TokenType.TOKEN_VAR)) {
@@ -182,9 +130,9 @@ class Compiler {
             this.printStatement();
         } else if (this.match(TokenType.TOKEN_IF)) {
             this.ifStatement();
-        } else if(this.match(TokenType.TOKEN_WHILE)){
+        } else if (this.match(TokenType.TOKEN_WHILE)) {
             this.whileStatement();
-        } else if(this.match(TokenType.TOKEN_FOR)){
+        } else if (this.match(TokenType.TOKEN_FOR)) {
             this.forStatement();
         } else if (this.match(TokenType.TOKEN_LEFT_BRACE)) {
             this.beginScope();
@@ -196,89 +144,10 @@ class Compiler {
         }
     }
 
-    private forStatement(): void {
-        this.beginScope();
-
-        this.parser.consume(TokenType.TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
-        if(this.match(TokenType.TOKEN_SEMICOLON)){
-            // No initializer.
-        } else if(this.match(TokenType.TOKEN_VAR)){
-            this.varDeclaration();
-        } else {
-            this.expressionStatement();
-        }
-        
-        let loopStart = this.chunk.size;
-        
-        let exitJump = -1;
-        if(!this.match(TokenType.TOKEN_SEMICOLON)){
-            this.expression();
-            this.parser.consume(TokenType.TOKEN_SEMICOLON, "Expect ';' after loop condition.");
-
-            // Jump out of the loop if the condition is false.
-            exitJump = this.emitJump(Opcode.OP_JUMP_IF_FALSE);
-            this.emitByte(Opcode.OP_POP); // Condition.
-        }        
-        
-        if(!this.match(TokenType.TOKEN_RIGHT_PAREN)){
-            const bodyJump = this.emitJump(Opcode.OP_JUMP);
-
-            const incrementStart = this.chunk.size;
-            this.expression();
-            this.emitByte(Opcode.OP_POP);
-            this.parser.consume(TokenType.TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
-
-            this.emitLoop(loopStart);
-            loopStart = incrementStart;
-            this.patchJump(bodyJump);
-        }
-
-        this.statement();
-
-        this.emitLoop(loopStart);
-
-        if(exitJump != -1){
-            this.patchJump(exitJump);
-            this.emitByte(Opcode.OP_POP); // Condition.
-        }
-
-        this.endScope();
-    }
-
-
-    private whileStatement(): void {
-        const loopStart: number = this.chunk.size;
-
-        this.parser.consume(TokenType.TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
-        this.expression();
-        this.parser.consume(TokenType.TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
-
-        const exitJump: number = this.emitJump(Opcode.OP_JUMP_IF_FALSE);
-
-        this.emitByte(Opcode.OP_POP);
-
-        this.statement();
-
-        this.emitLoop(loopStart);
-
-        this.patchJump(exitJump);
-        this.emitByte(Opcode.OP_POP);
-    }
-
-    private emitLoop(loopStart: number): void {
-        this.emitByte(Opcode.OP_LOOP);
-
-        const offset: number = this.chunk.size - loopStart + 2;
-        if (offset > 0xffff) throw Error("Loop body too large.");
-
-        this.emitByte((offset >> 8) & 0xff);
-        this.emitByte(offset & 0xff);
-    }
-
     private ifStatement(): void {
-        this.parser.consume(TokenType.TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+        this.consume(TokenType.TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
         this.expression();
-        this.parser.consume(TokenType.TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+        this.consume(TokenType.TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
 
         const thenJump: number = this.emitJump(Opcode.OP_JUMP_IF_FALSE);
         this.emitByte(Opcode.OP_POP);
@@ -293,23 +162,244 @@ class Compiler {
         this.patchJump(elseJump);
     }
 
-    private emitJump(opcode: Opcode): number {
-        this.emitByte(opcode);
-        this.emitByte(0xff);
-        this.emitByte(0xff);
-        return this.chunk.size - 2;
-    }
+    private varDeclaration(): void {
+        const global: number = this.parseVariable("Expect variable name.");
 
-    private patchJump(offset: number): void {
-        const jump: number = this.chunk.size - offset - 2;
-
-        if (jump > 0xffff) {
-            throw Error("Too much code to jump over.");
+        if (this.match(TokenType.TOKEN_EQUAL)) {
+            this.expression();
+        } else {
+            this.emitByte(Opcode.OP_NIL);
         }
 
-        this.chunk.view[offset] = (jump >> 8) & 0xff;
-        this.chunk.view[offset + 1] = jump & 0xff;
+        this.consume(TokenType.TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+        this.defineVariable(global);
     }
+
+    private printStatement(): void {
+        this.expression();
+        this.consume(TokenType.TOKEN_SEMICOLON, "Expect ';' after value.");
+        this.emitByte(Opcode.OP_PRINT);
+    }
+
+    private expressionStatement(): void {
+        this.expression();
+        this.consume(TokenType.TOKEN_SEMICOLON, "Expect ';' after value.");
+        this.emitByte(Opcode.OP_POP);
+    }
+
+    private forStatement(): void {
+        this.beginScope();
+
+        this.consume(TokenType.TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
+        if (this.match(TokenType.TOKEN_SEMICOLON)) {
+            // No initializer.
+        } else if (this.match(TokenType.TOKEN_VAR)) {
+            this.varDeclaration();
+        } else {
+            this.expressionStatement();
+        }
+
+        let loopStart = this.chunk.size;
+
+        let exitJump = -1;
+        if (!this.match(TokenType.TOKEN_SEMICOLON)) {
+            this.expression();
+            this.consume(TokenType.TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+
+            // Jump out of the loop if the condition is false.
+            exitJump = this.emitJump(Opcode.OP_JUMP_IF_FALSE);
+            this.emitByte(Opcode.OP_POP); // Condition.
+        }
+
+        if (!this.match(TokenType.TOKEN_RIGHT_PAREN)) {
+            const bodyJump = this.emitJump(Opcode.OP_JUMP);
+
+            const incrementStart = this.chunk.size;
+            this.expression();
+            this.emitByte(Opcode.OP_POP);
+            this.consume(TokenType.TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+
+            this.emitLoop(loopStart);
+            loopStart = incrementStart;
+            this.patchJump(bodyJump);
+        }
+
+        this.statement();
+
+        this.emitLoop(loopStart);
+
+        if (exitJump != -1) {
+            this.patchJump(exitJump);
+            this.emitByte(Opcode.OP_POP); // Condition.
+        }
+
+        this.endScope();
+    }
+
+    private whileStatement(): void {
+        const loopStart: number = this.chunk.size;
+
+        this.consume(TokenType.TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+        this.expression();
+        this.consume(TokenType.TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+        const exitJump: number = this.emitJump(Opcode.OP_JUMP_IF_FALSE);
+
+        this.emitByte(Opcode.OP_POP);
+
+        this.statement();
+
+        this.emitLoop(loopStart);
+
+        this.patchJump(exitJump);
+        this.emitByte(Opcode.OP_POP);
+    }
+
+    private expression(): void {
+        this.precedence(Precedence.PREC_ASSIGNMENT);
+    }
+
+    private precedence(precedence: Precedence): void {
+        this.advance();
+
+        const prefixRule = ParseRules[this.previous.type].prefix;
+        if (prefixRule == 'NULL') {
+            throw new Error("Expect expression.");
+        }
+
+        const canAssign = precedence <= Precedence.PREC_ASSIGNMENT;
+        this[prefixRule](canAssign);
+
+        while (precedence <= ParseRules[this.current.type].precedence) {
+            this.advance();
+            const infixRule = ParseRules[this.previous.type].infix;
+            this[infixRule](canAssign);
+        }
+
+        if (canAssign && this.match(TokenType.TOKEN_EQUAL)) {
+            throw new Error("Invalid assignment target.");
+        }
+    }
+
+    private variable(canAssign: boolean): void {
+        this.namedVariable(this.previous, canAssign);
+    }
+
+    private string(): void {
+        const value: string = this.previous.str;
+        this.emitConstant(Value.obj(new StringObj(value)));
+    }
+
+    private literal(): void {
+        switch (this.previous.type) {
+            case TokenType.TOKEN_FALSE: this.emitByte(Opcode.OP_FALSE); break;
+            case TokenType.TOKEN_NIL: this.emitByte(Opcode.OP_NIL); break;
+            case TokenType.TOKEN_TRUE: this.emitByte(Opcode.OP_TRUE); break;
+            default: return;
+        }
+    }
+
+    private number(): void {
+        const value: number = Number(this.previous.str);
+
+        this.emitConstant(Value.number(value));
+    }
+
+    private grouping(): void {
+        this.expression();
+        this.consume(TokenType.TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
+    }
+
+    private unary(): void {
+        const operatorType: TokenType = this.previous.type;
+
+        this.precedence(Precedence.PREC_UNARY);
+
+        switch (operatorType) {
+            case TokenType.TOKEN_MINUS: this.emitByte(Opcode.OP_NEGATE); break;
+            case TokenType.TOKEN_BANG: this.emitByte(Opcode.OP_NOT); break;
+            default: return;
+        }
+
+    }
+
+    private binary(): void {
+        const operatorType: TokenType = this.previous.type;
+
+        const rule: ParseRule = ParseRules[operatorType];
+        this.precedence(rule.precedence + 1);
+
+        switch (operatorType) {
+            case TokenType.TOKEN_PLUS: this.emitByte(Opcode.OP_ADD); break;
+            case TokenType.TOKEN_MINUS: this.emitByte(Opcode.OP_SUBTRACT); break;
+            case TokenType.TOKEN_STAR: this.emitByte(Opcode.OP_MULTIPLY); break;
+            case TokenType.TOKEN_SLASH: this.emitByte(Opcode.OP_DIVIDE); break;
+            case TokenType.TOKEN_BANG_EQUAL: this.emitBytes(Opcode.OP_EQUAL, Opcode.OP_NOT); break;
+            case TokenType.TOKEN_EQUAL_EQUAL: this.emitByte(Opcode.OP_EQUAL); break;
+            case TokenType.TOKEN_GREATER: this.emitByte(Opcode.OP_GREATER); break;
+            case TokenType.TOKEN_GREATER_EQUAL: this.emitBytes(Opcode.OP_LESS, Opcode.OP_NOT); break;
+            case TokenType.TOKEN_LESS: this.emitByte(Opcode.OP_LESS); break;
+            case TokenType.TOKEN_LESS_EQUAL: this.emitBytes(Opcode.OP_GREATER, Opcode.OP_NOT); break;
+
+            default: return;
+        }
+    }
+
+    private block(): void {
+        while ((this.current.type != TokenType.TOKEN_RIGHT_BRACE) && !this.match(TokenType.TOKEN_EOF)) {
+            this.declaration();
+        }
+
+        this.consume(TokenType.TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+    }
+
+    /**
+     *      HELPER FUNCTIONS FOR PARSING & COMPILING
+     *      ::todo:: move to separate file or class 
+     */
+
+    consume(type: TokenType, message: string): void {
+        if (this.current.type == type) {
+            this.advance();
+            return;
+        }
+
+        this.errorAtCurrent(message);
+    }
+
+    private match(type: TokenType): boolean {
+        if (!(this.current.type == type)) return false;
+
+        this.advance();
+        return true;
+    }
+
+    advance(): void {
+        this.previous = this.current;
+
+        while (true) {
+            this.current = this.scanner.scanToken();
+            if (this.current.type != TokenType.TOKEN_ERROR) break;
+
+            this.errorAtCurrent('Invalid token.');
+        }
+    }
+
+    /**
+     *      ERROR HANDLING
+     */
+
+    private errorAtCurrent(message: string) {
+        this.errorAt(this.current, message);
+    }
+
+    private errorAt(token: Token, message: string) {
+        throw Error(`[line ${token.line}] Error${token.type} at ${token.str}: ${message}`);
+    }
+
+    /**
+     *      VARIABLES & LOCALS
+    */
 
     private beginScope(): void {
         this.scopeDepth++;
@@ -324,33 +414,12 @@ class Compiler {
         }
     }
 
-    private block(): void {
-        while ((this.parser.currentToken.type != TokenType.TOKEN_RIGHT_BRACE) && !this.match(TokenType.TOKEN_EOF)) {
-            this.declaration();
-        }
-
-        this.parser.consume(TokenType.TOKEN_RIGHT_BRACE, "Expect '}' after block.");
-    }
-
-    private varDeclaration(): void {
-        const global: number = this.parseVariable("Expect variable name.");
-
-        if (this.match(TokenType.TOKEN_EQUAL)) {
-            this.expression();
-        } else {
-            this.emitByte(Opcode.OP_NIL);
-        }
-
-        this.parser.consume(TokenType.TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
-        this.defineVariable(global);
-    }
-
     private defineVariable(global: number): void {
         this.emitBytes(Opcode.OP_DEFINE_GLOBAL, global);
     }
 
     private parseVariable(errorMessage: string): number {
-        this.parser.consume(TokenType.TOKEN_IDENTIFIER, errorMessage);
+        this.consume(TokenType.TOKEN_IDENTIFIER, errorMessage);
 
         this.declareVariable();
         if (this.scopeDepth > 0) {
@@ -358,7 +427,7 @@ class Compiler {
             return 0
         };
 
-        return this.identifierConstant(this.parser.previousToken);
+        return this.identifierConstant(this.previous);
     }
 
     private markInitialized(): void {
@@ -368,12 +437,12 @@ class Compiler {
     private declareVariable(): void {
         if (this.scopeDepth == 0) return;
 
-        const name: Token = this.parser.previousToken;
+        const name: Token = this.previous;
         for (let i = this.locals.length - 1; i >= 0; i--) {
             const local: Local = this.locals[i];
             if (local.depth != -1 && local.depth < this.scopeDepth) break;
 
-            if (this.sourceSubstring(name.start, name.length) == this.sourceSubstring(local.name.start, local.name.length)) {
+            if (name.str == local.name.str) {
                 throw Error("Already variable with this name in this scope.");
             }
         }
@@ -382,34 +451,7 @@ class Compiler {
     }
 
     private identifierConstant(token: Token): number {
-        return this.chunk.makeConstant(Value.obj(new StringObj(this.sourceSubstring(token.start, token.length))));
-    }
-
-    private printStatement(): void {
-        this.expression();
-        this.parser.consume(TokenType.TOKEN_SEMICOLON, "Expect ';' after value.");
-        this.emitByte(Opcode.OP_PRINT);
-    }
-
-    private expressionStatement(): void {
-        this.expression();
-        this.parser.consume(TokenType.TOKEN_SEMICOLON, "Expect ';' after value.");
-        this.emitByte(Opcode.OP_POP);
-    }
-
-    private match(type: TokenType): boolean {
-        if (!(this.parser.currentToken.type == type)) return false;
-
-        this.parser.advance();
-        return true;
-    }
-
-    private expression(): void {
-        this.precedence(Precedence.PREC_ASSIGNMENT);
-    }
-
-    private variable(canAssign: boolean): void {
-        this.namedVariable(this.parser.previousToken, canAssign);
+        return this.chunk.makeConstant(Value.obj(new StringObj(token.str)));
     }
 
     private namedVariable(name: Token, canAssign: boolean): void {
@@ -433,11 +475,10 @@ class Compiler {
         }
     }
 
-
     private resolveLocal(name: Token): number {
         for (let i = this.localCount - 1; i >= 0; i--) {
             const local: Local = this.locals[i];
-            if (this.sourceSubstring(name.start, name.length) == this.sourceSubstring(local.name.start, local.name.length)) {
+            if (name.str == local.name.str) {
                 if (local.depth == -1) {
                     throw Error("Cannot read local variable in its own initializer.");
                 }
@@ -448,94 +489,36 @@ class Compiler {
         return -1;
     }
 
-    private string(): void {
-        const value: string = this.sourceSubstring(this.parser.previousToken.start + 1, this.parser.previousToken.length - 2);
-        this.emitConstant(Value.obj(new StringObj(value)));
-    }
+    /**
+     *      EMITTING BYTECODE FUNCTIONS
+     */
 
-    private literal(): void {
-        switch (this.parser.previousToken.type) {
-            case TokenType.TOKEN_FALSE: this.emitByte(Opcode.OP_FALSE); break;
-            case TokenType.TOKEN_NIL: this.emitByte(Opcode.OP_NIL); break;
-            case TokenType.TOKEN_TRUE: this.emitByte(Opcode.OP_TRUE); break;
-            default: return;
-        }
-    }
+    private patchJump(offset: number): void {
+        const jump: number = this.chunk.size - offset - 2;
 
-    private number(): void {
-        const value: number = Number(this.sourceSubstring(this.parser.previousToken.start, this.parser.previousToken.length));
-
-        this.emitConstant(Value.number(value));
-    }
-
-    private grouping(): void {
-        this.expression();
-        this.parser.consume(TokenType.TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
-    }
-
-    private unary(): void {
-        const operatorType: TokenType = this.parser.previousToken.type;
-
-        this.precedence(Precedence.PREC_UNARY);
-
-        switch (operatorType) {
-            case TokenType.TOKEN_MINUS: this.emitByte(Opcode.OP_NEGATE); break;
-            case TokenType.TOKEN_BANG: this.emitByte(Opcode.OP_NOT); break;
-            default: return;
+        if (jump > 0xffff) {
+            throw Error("Too much code to jump over.");
         }
 
+        this.chunk.view[offset] = (jump >> 8) & 0xff;
+        this.chunk.view[offset + 1] = jump & 0xff;
     }
 
-    private binary(): void {
-        const operatorType: TokenType = this.parser.previousToken.type;
+    private emitLoop(loopStart: number): void {
+        this.emitByte(Opcode.OP_LOOP);
 
-        const rule: ParseRule = rules[operatorType];
-        this.precedence(rule.precedence + 1);
+        const offset: number = this.chunk.size - loopStart + 2;
+        if (offset > 0xffff) throw Error("Loop body too large.");
 
-        switch (operatorType) {
-            case TokenType.TOKEN_PLUS: this.emitByte(Opcode.OP_ADD); break;
-            case TokenType.TOKEN_MINUS: this.emitByte(Opcode.OP_SUBTRACT); break;
-            case TokenType.TOKEN_STAR: this.emitByte(Opcode.OP_MULTIPLY); break;
-            case TokenType.TOKEN_SLASH: this.emitByte(Opcode.OP_DIVIDE); break;
-            case TokenType.TOKEN_BANG_EQUAL: this.emitBytes(Opcode.OP_EQUAL, Opcode.OP_NOT); break;
-            case TokenType.TOKEN_EQUAL_EQUAL: this.emitByte(Opcode.OP_EQUAL); break;
-            case TokenType.TOKEN_GREATER: this.emitByte(Opcode.OP_GREATER); break;
-            case TokenType.TOKEN_GREATER_EQUAL: this.emitBytes(Opcode.OP_LESS, Opcode.OP_NOT); break;
-            case TokenType.TOKEN_LESS: this.emitByte(Opcode.OP_LESS); break;
-            case TokenType.TOKEN_LESS_EQUAL: this.emitBytes(Opcode.OP_GREATER, Opcode.OP_NOT); break;
-
-            default: return;
-        }
+        this.emitByte((offset >> 8) & 0xff);
+        this.emitByte(offset & 0xff);
     }
 
-    private precedence(precedence: Precedence): void {
-        this.parser.advance();
-
-        const prefixRule = rules[this.parser.previousToken.type].prefix;
-        if (prefixRule == 'NULL') {
-            throw new Error("Expect expression.");
-        }
-
-        const canAssign = precedence <= Precedence.PREC_ASSIGNMENT;
-        this[prefixRule](canAssign);
-
-        while (precedence <= rules[this.parser.currentToken.type].precedence) {
-            this.parser.advance();
-            const infixRule = rules[this.parser.previousToken.type].infix;
-            this[infixRule](canAssign);
-        }
-
-        if (canAssign && this.match(TokenType.TOKEN_EQUAL)) {
-            throw new Error("Invalid assignment target.");
-        }
-    }
-
-    private endCompiler(): void {
-        this.emitReturn();
-    }
-
-    private emitByte(byte: number): void {
-        this.chunk.write(byte, this.parser.previousToken.line);
+    private emitJump(opcode: Opcode): number {
+        this.emitByte(opcode);
+        this.emitByte(0xff);
+        this.emitByte(0xff);
+        return this.chunk.size - 2;
     }
 
     private emitConstant(value: Value): void {
@@ -551,11 +534,18 @@ class Compiler {
         this.emitByte(byte2);
     }
 
-    private sourceSubstring(start: number, length: number): string {
-        return this.source.substring(start, start + length);
+    private emitByte(byte: number): void {
+        this.chunk.write(byte, this.previous.line);
+    }
+
+
+    /**
+     *    COMPILER END FUNCTION 
+    */
+
+    private endCompiler(): void {
+        this.emitReturn();
     }
 }
-
-
 
 export default Compiler;

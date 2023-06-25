@@ -1,5 +1,34 @@
-import { Chunk, Opcode, Disassembler } from "./common.js";
-import { Value, printValue, ValueType, StringObj } from "./value.js";
+import { Chunk } from "./chunk.js";
+import Disassembler from "./disassembler.js";
+import Value, { ValueType, StringObj } from "./value.js";
+
+export enum Opcode {
+    OP_CONSTANT,
+    OP_NIL,
+    OP_TRUE,
+    OP_FALSE,
+    OP_ADD,
+    OP_SUBTRACT,
+    OP_MULTIPLY,
+    OP_DIVIDE,
+    OP_NEGATE,
+    OP_RETURN,
+    OP_NOT,
+    OP_EQUAL,
+    OP_GREATER,
+    OP_LESS,
+    OP_PRINT,
+    OP_POP,
+    OP_DEFINE_GLOBAL,
+    OP_GET_GLOBAL,
+    OP_SET_GLOBAL,
+    OP_GET_LOCAL,
+    OP_SET_LOCAL,
+    OP_JUMP_IF_FALSE,
+    OP_JUMP,
+    OP_LOOP,
+
+};
 
 export enum InterpretResult {
     INTERPRET_OK,
@@ -41,7 +70,7 @@ class VM {
             // This part should be optimized.
             if (this.debug) {
                 this.stack.forEach((value) => {
-                    console.log(`          [ ${printValue(value)} ]`);
+                    console.log(`          [ ${value.toString()} ]`);
                 });
                 this.dissambler.disassembleInstruction(this.ip - 1);
             }
@@ -106,7 +135,7 @@ class VM {
                 case Opcode.OP_PRINT:
                     {
                         const a = this.pop();
-                        console.log(printValue(a));
+                        console.log(a.toString());
                         break;
                     }
                 case Opcode.OP_POP:
@@ -218,6 +247,10 @@ class VM {
                 break;
         }
     }
+
+    /**
+     *      STACK OPERATIONS
+     */
 
     private push(value: Value): void {
         this.stack.push(value);

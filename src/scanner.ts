@@ -22,14 +22,12 @@ export enum TokenType {
 
 export class Token {
     public readonly type: TokenType;
-    public readonly start: number;
-    public readonly length: number;
+    public readonly str: string;
     public readonly line: number;
 
-    constructor(type, start, length, line) {
+    constructor(type, source, start, length, line) {
         this.type = type;
-        this.start = start;
-        this.length = length;
+        this.str = source.substring(start, start + length);
         this.line = line;
     }
 };
@@ -57,7 +55,7 @@ class Scanner {
             tokens.push(this.scanToken());
         }
 
-        tokens.push(new Token(TokenType.TOKEN_EOF, this.current, 0, this.line));
+        tokens.push(new Token(TokenType.TOKEN_EOF, this.source, this.current, 0, this.line));
         return tokens;
     }
 
@@ -89,7 +87,7 @@ class Scanner {
             case '>': return this.makeToken(this.match('=') ? TokenType.TOKEN_GREATER_EQUAL : TokenType.TOKEN_GREATER);
             case '"': return this.string();
         }
-        
+
         return this.errorToken('Unexpected character.');
     }
 
@@ -153,7 +151,6 @@ class Scanner {
 
         return TokenType.TOKEN_IDENTIFIER;
     }
-
 
     private isAlpha(c: string): boolean {
         return (c >= 'a' && c <= 'z') ||
@@ -234,11 +231,11 @@ class Scanner {
     }
 
     private makeToken(type: TokenType): Token {
-        return new Token(type, this.start, this.current - this.start, this.line);
+        return new Token(type, this.source, this.start, this.current - this.start, this.line);
     }
 
     private errorToken(message: string): Token {
-        return new Token(TokenType.TOKEN_ERROR, 0, message.length, this.line);
+        return new Token(TokenType.TOKEN_ERROR, this.source, 0, message.length, this.line);
     }
 }
 

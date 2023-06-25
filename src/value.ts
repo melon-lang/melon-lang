@@ -6,14 +6,13 @@ export enum ValueType {
 };
 
 export abstract class Obj {
-
     abstract toString(): string;
 }
 
 export class StringObj extends Obj {
-    
-    public readonly value : string;
-    
+
+    public readonly value: string;
+
     constructor(chars: string) {
         super();
         this.value = chars;
@@ -24,7 +23,7 @@ export class StringObj extends Obj {
     }
 }
 
-export class Value {
+export default class Value {
     public readonly type: ValueType;
     public readonly value: number;
     public readonly obj: Obj;
@@ -35,9 +34,9 @@ export class Value {
         this.obj = obj;
     }
 
-    is(valueType: ValueType): boolean {
-        return this.type === valueType;
-    }
+    /**
+     *      STATIC CONSTRUCTORS
+     */
 
     static number(value: number): Value {
         return new Value(ValueType.VAL_NUMBER, value);
@@ -55,6 +54,15 @@ export class Value {
         return new Value(ValueType.VAL_OBJ, 0, obj);
     }
 
+    /**
+     *     UTILITY METHODS : COMPARISON, TYPE CHECKING, ETC.
+     */
+
+
+    is(valueType: ValueType): boolean {
+        return this.type === valueType;
+    }
+
     public toString(): string {
         switch (this.type) {
             case ValueType.VAL_BOOL: return this.value === 1 ? "true" : "false";
@@ -68,8 +76,4 @@ export class Value {
         if (this.type !== other.type) return false;
         return this.value === other.value;
     }
-}
- 
-export const printValue = (value: Value): string => {
-    return value.toString();
 }
