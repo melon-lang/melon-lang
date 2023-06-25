@@ -292,7 +292,7 @@ class Scanner {
 	}
 
 	private skipWhitespace(): void {
-		while (true) {
+		for (;;) {
 			const c = this.peek();
 			switch (c) {
 				case ' ':

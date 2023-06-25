@@ -88,7 +88,7 @@ export default class Disassembler {
 		return offset + 2;
 	}
 
-	private logWithOffset(offset, rest) {
+	private logWithOffset(offset, rest): void {
 		let log = offset.toString().padStart(4, '0');
 
 		if (

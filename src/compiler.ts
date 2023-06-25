@@ -642,8 +642,8 @@ class Compiler {
 
 	advance(): void {
 		this.previous = this.current;
-
-		while (true) {
+		
+		for (;;) {
 			this.current = this.scanner.scanToken();
 			if (this.current.type != TokenType.TOKEN_ERROR) break;
 
