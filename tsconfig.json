@@ -1,21 +1,21 @@
 {
-  "compilerOptions": {
-    "target": "es2022",
-    "module": "node16",
-    "lib": ["ES2022"],
-    "moduleResolution": "node16",
-    "rootDir": ".",
-    "outDir": "build",
-    "allowSyntheticDefaultImports": true,
-    "importHelpers": true,
-    "alwaysStrict": true,
-    "sourceMap": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitReturns": true,
-    "noImplicitAny": false,
-    "noImplicitThis": false,
-    "strictNullChecks": false
-  },
-  "include": ["src/**/*", "__tests__/**/*"]
+	"compilerOptions": {
+		"target": "es2022",
+		"module": "node16",
+		"lib": ["ES2022"],
+		"moduleResolution": "node16",
+		"rootDir": ".",
+		"outDir": "build",
+		"allowSyntheticDefaultImports": true,
+		"importHelpers": true,
+		"alwaysStrict": true,
+		"sourceMap": true,
+		"forceConsistentCasingInFileNames": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitReturns": true,
+		"noImplicitAny": false,
+		"noImplicitThis": false,
+		"strictNullChecks": false
+	},
+	"include": ["src/**/*", "__tests__/**/*"]
 }
