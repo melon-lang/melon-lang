@@ -165,6 +165,13 @@ class VM {
                         this.ip += offset;
                         break;
                     }
+
+                case Opcode.OP_LOOP:
+                    {
+                        const offset = this.readShort();
+                        this.ip -= offset;
+                        break;
+                    }
             }
         }
     }

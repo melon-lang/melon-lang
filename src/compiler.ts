@@ -182,6 +182,10 @@ class Compiler {
             this.printStatement();
         } else if (this.match(TokenType.TOKEN_IF)) {
             this.ifStatement();
+        } else if(this.match(TokenType.TOKEN_WHILE)){
+            this.whileStatement();
+        } else if(this.match(TokenType.TOKEN_FOR)){
+            this.forStatement();
         } else if (this.match(TokenType.TOKEN_LEFT_BRACE)) {
             this.beginScope();
             this.block();
@@ -190,6 +194,85 @@ class Compiler {
         else {
             this.expressionStatement();
         }
+    }
+
+    private forStatement(): void {
+        this.beginScope();
+
+        this.parser.consume(TokenType.TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
+        if(this.match(TokenType.TOKEN_SEMICOLON)){
+            // No initializer.
+        } else if(this.match(TokenType.TOKEN_VAR)){
+            this.varDeclaration();
+        } else {
+            this.expressionStatement();
+        }
+        
+        let loopStart = this.chunk.size;
+        
+        let exitJump = -1;
+        if(!this.match(TokenType.TOKEN_SEMICOLON)){
+            this.expression();
+            this.parser.consume(TokenType.TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+
+            // Jump out of the loop if the condition is false.
+            exitJump = this.emitJump(Opcode.OP_JUMP_IF_FALSE);
+            this.emitByte(Opcode.OP_POP); // Condition.
+        }        
+        
+        if(!this.match(TokenType.TOKEN_RIGHT_PAREN)){
+            const bodyJump = this.emitJump(Opcode.OP_JUMP);
+
+            const incrementStart = this.chunk.size;
+            this.expression();
+            this.emitByte(Opcode.OP_POP);
+            this.parser.consume(TokenType.TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+
+            this.emitLoop(loopStart);
+            loopStart = incrementStart;
+            this.patchJump(bodyJump);
+        }
+
+        this.statement();
+
+        this.emitLoop(loopStart);
+
+        if(exitJump != -1){
+            this.patchJump(exitJump);
+            this.emitByte(Opcode.OP_POP); // Condition.
+        }
+
+        this.endScope();
+    }
+
+
+    private whileStatement(): void {
+        const loopStart: number = this.chunk.size;
+
+        this.parser.consume(TokenType.TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+        this.expression();
+        this.parser.consume(TokenType.TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+        const exitJump: number = this.emitJump(Opcode.OP_JUMP_IF_FALSE);
+
+        this.emitByte(Opcode.OP_POP);
+
+        this.statement();
+
+        this.emitLoop(loopStart);
+
+        this.patchJump(exitJump);
+        this.emitByte(Opcode.OP_POP);
+    }
+
+    private emitLoop(loopStart: number): void {
+        this.emitByte(Opcode.OP_LOOP);
+
+        const offset: number = this.chunk.size - loopStart + 2;
+        if (offset > 0xffff) throw Error("Loop body too large.");
+
+        this.emitByte((offset >> 8) & 0xff);
+        this.emitByte(offset & 0xff);
     }
 
     private ifStatement(): void {

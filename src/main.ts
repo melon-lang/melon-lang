@@ -20,16 +20,11 @@ const interpret = (source: string): InterpretResult => {
 }
 
 const program = `
-    let x = "hello"; 
-    if(false) {
-        print "lol";
+    for (let i = 0; i< 5; i = i + 1)
+    {
+        i = i + 10;
+        print i;
     }
-    else  {
-        print x; print "world";
-    }
-    x= 1+2; 
-    let y = 4+x;
-    print y;
 `;
 
 interpret(program);
