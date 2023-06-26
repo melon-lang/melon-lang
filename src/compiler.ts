@@ -1,7 +1,7 @@
-import Scanner, { TokenType, Token } from './scanner.js';
-import { Chunk } from './chunk.js';
-import { Opcode } from './vm.js';
-import Value, { StringObj } from './value.js';
+import Scanner, { TokenType, Token } from './scanner';
+import { Chunk } from './chunk';
+import { Opcode } from './vm';
+import Value, { StringObj } from './value';
 
 interface Local {
 	name: Token;
@@ -346,6 +346,9 @@ class Compiler {
 			this.ifStatement();
 		} else if (this.match(TokenType.TOKEN_WHILE)) {
 			this.whileStatement();
+		} else if(this.match(TokenType.TOKEN_SYSCALL)){
+			console.log("lol")
+			this.syscallStatement();
 		} else if (this.match(TokenType.TOKEN_FOR)) {
 			this.forStatement();
 		} else if (this.match(TokenType.TOKEN_LEFT_BRACE)) {
@@ -355,6 +358,12 @@ class Compiler {
 		} else {
 			this.expressionStatement();
 		}
+	}
+
+	private syscallStatement(): void {
+		this.expression();
+		this.consume(TokenType.TOKEN_SEMICOLON, "Expect ';' after syscall.");
+		this.emitByte(Opcode.OP_INTERRUPT);
 	}
 
 	private ifStatement(): void {

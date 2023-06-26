@@ -1,5 +1,5 @@
-import { Chunk } from './chunk.js';
-import { Opcode } from './vm.js';
+import { Chunk } from './chunk';
+import { Opcode } from './vm';
 
 export default class Disassembler {
 	private chunk: Chunk;

@@ -1,6 +1,6 @@
-import { Chunk } from './chunk.js';
-import Disassembler from './disassembler.js';
-import Value, { ValueType, StringObj } from './value.js';
+import { Chunk } from './chunk';
+import Disassembler from './disassembler';
+import Value, { ValueType, StringObj } from './value';
 
 export enum Opcode {
 	OP_CONSTANT,
@@ -27,12 +27,19 @@ export enum Opcode {
 	OP_JUMP_IF_FALSE,
 	OP_JUMP,
 	OP_LOOP,
+	OP_INTERRUPT
 }
 
-export enum InterpretResult {
+export enum VMStatus {
 	INTERPRET_OK,
 	INTERPRET_COMPILE_ERROR,
 	INTERPRET_RUNTIME_ERROR,
+	INTERPRET_INTERRUPT
+}
+
+export interface InterpretResult {
+	status: VMStatus;
+	interruptCode: string | undefined;
 }
 
 class VM {
@@ -75,7 +82,7 @@ class VM {
 
 			switch (instruction) {
 				case Opcode.OP_RETURN:
-					return InterpretResult.INTERPRET_OK;
+					return {status: VMStatus.INTERPRET_OK, interruptCode: undefined};
 				case Opcode.OP_NEGATE:
 					if (!this.peek().is(ValueType.VAL_NUMBER))
 						throw new Error('Operand must be a number.');
@@ -205,6 +212,13 @@ class VM {
 					const offset = this.readShort();
 					this.ip -= offset;
 					break;
+				}
+				case Opcode.OP_INTERRUPT: {
+					const interruptCode = this.pop();
+					return {
+						status: VMStatus.INTERPRET_INTERRUPT,
+						interruptCode: interruptCode.obj.toString() + "",
+					};
 				}
 			}
 		}

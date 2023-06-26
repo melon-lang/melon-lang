@@ -18,7 +18,7 @@ export class StringObj extends Obj {
 	}
 
 	public toString(): string {
-		return this.value;
+		return this.value.substring(1, this.value.length - 1);
 	}
 }
 

@@ -41,7 +41,7 @@ export enum TokenType {
 	TOKEN_TRUE,
 	TOKEN_VAR,
 	TOKEN_WHILE,
-
+	TOKEN_SYSCALL,
 	TOKEN_ERROR,
 	TOKEN_EOF,
 }
@@ -221,7 +221,15 @@ class Scanner {
 			case 'r':
 				return this.checkKeyword(1, 5, 'eturn', TokenType.TOKEN_RETURN);
 			case 's':
-				return this.checkKeyword(1, 4, 'uper', TokenType.TOKEN_SUPER);
+				if(this.current - this.start > 1) {
+					switch (this.source.charAt(this.start + 1)) {
+						case 'u':
+							return this.checkKeyword(1, 4, 'uper', TokenType.TOKEN_SUPER);
+						case 'y':
+							return this.checkKeyword(1, 6, 'yscall', TokenType.TOKEN_SYSCALL);
+					}
+				}
+				break;
 			case 't':
 				if (this.current - this.start > 1) {
 					switch (this.source.charAt(this.start + 1)) {
