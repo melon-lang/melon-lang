@@ -1,6 +1,8 @@
 import { Chunk } from './chunk';
 import Disassembler from './disassembler';
-import Value, { ValueType, StringObj } from './value';
+import Value, { ValueType } from './value';
+import 'reflect-metadata';
+import { Type, serialize } from 'class-transformer';
 
 export enum Opcode {
 	OP_CONSTANT,
@@ -39,37 +41,54 @@ export enum VMStatus {
 
 export interface InterpretResult {
 	status: VMStatus;
-	interruptCode: string | undefined;
+	interrupt: {
+		code: string;
+		args: [];
+	} | undefined;
+	save: string;
 }
 
 class VM {
+	@Type(() => Chunk)
 	private chunk: Chunk;
+
 	private ip = 0;
 	private debug: boolean;
-	private dissambler: Disassembler;
-	private stack: Value[] = [];
-	private globals: Value[] = [];
 
-	constructor({ debug = false }) {
+	@Type(() => Disassembler)
+	private dissambler: Disassembler;
+
+	@Type(() => Value)
+	private stack: Value[];
+
+	@Type(() => Value)
+	private globals: Map<string, Value>;
+
+	constructor({
+		debug = false,
+	}: {
+		debug?: boolean;
+	} = {}) {
 		this.debug = debug;
+
+		this.stack = [];
+		this.globals = new Map();
 	}
 
-	interpret(chunk): InterpretResult {
+	initAndRun(chunk): InterpretResult {
 		this.chunk = chunk;
 		this.ip = 0;
+
 		this.dissambler = new Disassembler(chunk);
 
-		return this.run();
+		return this.run(3);
 	}
 
-	private readByte(): number {
-		const byte = this.chunk.get(this.ip);
-		this.ip++;
-		return byte;
-	}
+	public run(numInstructions = 1): InterpretResult {
+		const startIp = this.ip;
+		const endIp = startIp + numInstructions;
 
-	private run(): InterpretResult {
-		for (;;) {
+		while (this.ip < endIp) {
 			const instruction = this.readByte();
 
 			// This part should be optimized.
@@ -82,12 +101,12 @@ class VM {
 
 			switch (instruction) {
 				case Opcode.OP_RETURN:
-					return {status: VMStatus.INTERPRET_OK, interruptCode: undefined};
+					return { status: VMStatus.INTERPRET_OK, interrupt: undefined, save: serialize(this) };
 				case Opcode.OP_NEGATE:
 					if (!this.peek().is(ValueType.VAL_NUMBER))
 						throw new Error('Operand must be a number.');
 
-					this.push(Value.number(-this.pop().value));
+					this.push(Value.number(-this.pop().number));
 					break;
 				case Opcode.OP_ADD: {
 					const b = this.pop();
@@ -97,14 +116,14 @@ class VM {
 						a.is(ValueType.VAL_NUMBER) &&
 						b.is(ValueType.VAL_NUMBER)
 					) {
-						this.push(Value.number(a.value + b.value));
+						this.push(Value.number(a.number + b.number));
 					} else if (
 						a.is(ValueType.VAL_OBJ) &&
 						b.is(ValueType.VAL_OBJ)
 					) {
 						this.push(
-							Value.obj(
-								new StringObj(a.toString() + b.toString()),
+							Value.str(
+								a.toString() + b.toString(),
 							),
 						);
 					} else {
@@ -150,7 +169,6 @@ class VM {
 					break;
 				case Opcode.OP_PRINT: {
 					const a = this.pop();
-					console.log(a.toString());
 					break;
 				}
 				case Opcode.OP_POP:
@@ -158,16 +176,17 @@ class VM {
 					break;
 				case Opcode.OP_DEFINE_GLOBAL: {
 					const name = (
-						this.chunk.getConstant(this.readByte()).obj as StringObj
-					).value;
-					this.globals[name] = this.pop();
+						this.chunk.getConstant(this.readByte())
+					).str;
+					this.globals.set(name, this.pop());
 					break;
 				}
 				case Opcode.OP_GET_GLOBAL: {
 					const name = (
-						this.chunk.getConstant(this.readByte()).obj as StringObj
-					).value;
-					const value = this.globals[name];
+						this.chunk.getConstant(this.readByte()).str
+					);
+					const value = this.globals.get(name);
+
 					if (!value) {
 						throw new Error(`Undefined variable '${name}'.`);
 					}
@@ -176,13 +195,13 @@ class VM {
 				}
 				case Opcode.OP_SET_GLOBAL: {
 					const name = (
-						this.chunk.getConstant(this.readByte()).obj as StringObj
-					).value;
-					if (!this.globals[name]) {
+						this.chunk.getConstant(this.readByte()).str
+					);
+					if (!this.globals.get(name)) {
 						throw new Error(`Undefined variable '${name}'.`);
 					}
 
-					this.globals[name] = this.peek();
+					this.globals.set(name, this.peek());
 					break;
 				}
 				case Opcode.OP_GET_LOCAL: {
@@ -207,7 +226,6 @@ class VM {
 					this.ip += offset;
 					break;
 				}
-
 				case Opcode.OP_LOOP: {
 					const offset = this.readShort();
 					this.ip -= offset;
@@ -217,11 +235,23 @@ class VM {
 					const interruptCode = this.pop();
 					return {
 						status: VMStatus.INTERPRET_INTERRUPT,
-						interruptCode: interruptCode.obj.toString() + "",
+						save: serialize(this),
+						interrupt: {
+							code: interruptCode.str,
+							args: []
+						}
 					};
 				}
 			}
 		}
+
+		return { status: VMStatus.INTERPRET_OK, interrupt: undefined, save: serialize(this) };
+	}
+
+	private readByte(): number {
+		const byte = this.chunk.get(this.ip);
+		this.ip++;
+		return byte;
 	}
 
 	private readShort(): number {
@@ -233,7 +263,7 @@ class VM {
 	private isFalsey(value: Value): boolean {
 		return (
 			value.is(ValueType.VAL_NIL) ||
-			(value.is(ValueType.VAL_BOOL) && !value.value)
+			!value.bool
 		);
 	}
 
@@ -250,22 +280,22 @@ class VM {
 
 		switch (op) {
 			case Opcode.OP_ADD:
-				this.push(Value.number(a.value + b.value));
+				this.push(Value.number(a.number + b.number));
 				break;
 			case Opcode.OP_SUBTRACT:
-				this.push(Value.number(a.value - b.value));
+				this.push(Value.number(a.number - b.number));
 				break;
 			case Opcode.OP_MULTIPLY:
-				this.push(Value.number(a.value * b.value));
+				this.push(Value.number(a.number * b.number));
 				break;
 			case Opcode.OP_DIVIDE:
-				this.push(Value.number(a.value / b.value));
+				this.push(Value.number(a.number / b.number));
 				break;
 			case Opcode.OP_GREATER:
-				this.push(Value.bool(a.value > b.value));
+				this.push(Value.bool(a.number > b.number));
 				break;
 			case Opcode.OP_LESS:
-				this.push(Value.bool(a.value < b.value));
+				this.push(Value.bool(a.number < b.number));
 				break;
 		}
 	}

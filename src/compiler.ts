@@ -1,7 +1,7 @@
 import Scanner, { TokenType, Token } from './scanner';
 import { Chunk } from './chunk';
 import { Opcode } from './vm';
-import Value, { StringObj } from './value';
+import Value from './value';
 
 interface Local {
 	name: Token;
@@ -346,8 +346,7 @@ class Compiler {
 			this.ifStatement();
 		} else if (this.match(TokenType.TOKEN_WHILE)) {
 			this.whileStatement();
-		} else if(this.match(TokenType.TOKEN_SYSCALL)){
-			console.log("lol")
+		} else if (this.match(TokenType.TOKEN_SYSCALL)) {
 			this.syscallStatement();
 		} else if (this.match(TokenType.TOKEN_FOR)) {
 			this.forStatement();
@@ -524,7 +523,7 @@ class Compiler {
 
 	private string(): void {
 		const value: string = this.previous.str;
-		this.emitConstant(Value.obj(new StringObj(value)));
+		this.emitConstant(Value.str(value));
 	}
 
 	private literal(): void {
@@ -651,8 +650,8 @@ class Compiler {
 
 	advance(): void {
 		this.previous = this.current;
-		
-		for (;;) {
+
+		for (; ;) {
 			this.current = this.scanner.scanToken();
 			if (this.current.type != TokenType.TOKEN_ERROR) break;
 
@@ -731,7 +730,7 @@ class Compiler {
 	}
 
 	private identifierConstant(token: Token): number {
-		return this.chunk.makeConstant(Value.obj(new StringObj(token.str)));
+		return this.chunk.makeConstant(Value.str(token.str));
 	}
 
 	private namedVariable(name: Token, canAssign: boolean): void {

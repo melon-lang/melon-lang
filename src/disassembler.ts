@@ -1,7 +1,9 @@
 import { Chunk } from './chunk';
 import { Opcode } from './vm';
+import { Type } from 'class-transformer';
 
 export default class Disassembler {
+	@Type(() => Chunk)
 	private chunk: Chunk;
 
 	constructor(chunk: Chunk) {
@@ -10,7 +12,7 @@ export default class Disassembler {
 
 	disassemble(name: string): void {
 		console.log(`== ${name} ==`);
-		for (let offset = 0; offset < this.chunk.size; ) {
+		for (let offset = 0; offset < this.chunk.size;) {
 			offset = this.disassembleInstruction(offset);
 		}
 	}
@@ -66,6 +68,9 @@ export default class Disassembler {
 				return this.jumpInstruction('OP_JUMP', offset);
 			case Opcode.OP_LOOP:
 				return this.jumpInstruction('OP_LOOP', offset);
+			case Opcode.OP_INTERRUPT:
+				return this.byteInstruction('OP_INTERRUPT', offset);
+
 			default:
 				console.log(`Unknown opcode ${instruction}`);
 				return offset + 1;

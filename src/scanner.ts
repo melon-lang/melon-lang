@@ -221,7 +221,7 @@ class Scanner {
 			case 'r':
 				return this.checkKeyword(1, 5, 'eturn', TokenType.TOKEN_RETURN);
 			case 's':
-				if(this.current - this.start > 1) {
+				if (this.current - this.start > 1) {
 					switch (this.source.charAt(this.start + 1)) {
 						case 'u':
 							return this.checkKeyword(1, 4, 'uper', TokenType.TOKEN_SUPER);
@@ -300,7 +300,7 @@ class Scanner {
 	}
 
 	private skipWhitespace(): void {
-		for (;;) {
+		for (; ;) {
 			const c = this.peek();
 			switch (c) {
 				case ' ':

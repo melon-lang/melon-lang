@@ -1,36 +1,42 @@
+import { Type } from "class-transformer";
+
 export enum ValueType {
 	VAL_BOOL,
 	VAL_NIL,
 	VAL_NUMBER,
 	VAL_OBJ,
+	VAL_STR,
 }
 
 export abstract class Obj {
 	abstract toString(): string;
-}
-
-export class StringObj extends Obj {
-	public readonly value: string;
-
-	constructor(chars: string) {
-		super();
-		this.value = chars;
-	}
-
-	public toString(): string {
-		return this.value.substring(1, this.value.length - 1);
-	}
+	abstract toJSON(): object;
 }
 
 export default class Value {
 	public readonly type: ValueType;
-	public readonly value: number;
-	public readonly obj: Obj;
 
-	constructor(type: ValueType, value = 0, obj = null) {
+	private readonly _number: number;
+
+	@Type(() => Obj)
+	private readonly _obj: Obj;
+
+
+	private readonly _str: string;
+
+	static readonly TYPE_VALUE_FIELD_MAP = {
+		[ValueType.VAL_BOOL]: 'bool',
+		[ValueType.VAL_NIL]: 'nil',
+		[ValueType.VAL_NUMBER]: 'number',
+		[ValueType.VAL_OBJ]: 'obj',
+		[ValueType.VAL_STR]: 'str',
+	};
+
+	constructor(type: ValueType, number = 0, obj = null, str = null) {
 		this.type = type;
-		this.value = value;
-		this.obj = obj;
+		this._number = number;
+		this._obj = obj;
+		this._str = str;
 	}
 
 	/**
@@ -49,8 +55,57 @@ export default class Value {
 		return new Value(ValueType.VAL_NIL, 0);
 	}
 
+	static str(str: string): Value {
+		return new Value(ValueType.VAL_STR, 0, null, str);
+	}
+
 	static obj(obj: Obj): Value {
 		return new Value(ValueType.VAL_OBJ, 0, obj);
+	}
+
+	static fromJSON(json: object): Value {
+		const { type, value } = json as any;
+
+		switch (type) {
+			case ValueType.VAL_BOOL:
+				return Value.bool(value);
+			case ValueType.VAL_NIL:
+				return Value.nil();
+			case ValueType.VAL_NUMBER:
+				return Value.number(value);
+			case ValueType.VAL_OBJ:
+				return Value.obj(value);
+			case ValueType.VAL_STR:
+				return Value.str(value);
+		}
+		throw new Error('Invalid value type.');
+	}
+
+	get number(): number {
+		if (this.type !== ValueType.VAL_NUMBER)
+			throw new Error('Value is not a number.');
+		return this._number;
+	}
+
+	get bool(): boolean {
+		if (this.type !== ValueType.VAL_BOOL)
+			throw new Error('Value is not a boolean.');
+
+		return this._number === 1;
+	}
+
+	get obj(): Obj {
+		if (this.type !== ValueType.VAL_OBJ)
+			throw new Error('Value is not an object.');
+
+		return this._obj;
+	}
+
+	get str(): string {
+		if (this.type !== ValueType.VAL_STR)
+			throw new Error('Value is not a string.');
+
+		return this._str;
 	}
 
 	/**
@@ -64,18 +119,29 @@ export default class Value {
 	public toString(): string {
 		switch (this.type) {
 			case ValueType.VAL_BOOL:
-				return this.value === 1 ? 'true' : 'false';
+				return this._number === 1 ? 'true' : 'false';
 			case ValueType.VAL_NIL:
 				return 'nil';
 			case ValueType.VAL_NUMBER:
-				return this.value + '';
+				return this._number + '';
 			case ValueType.VAL_OBJ:
-				return this.obj.toString();
+				return this._obj.toString();
+			case ValueType.VAL_STR:
+				return this._str;
 		}
 	}
 
 	public equalsTo(other: Value): boolean {
 		if (this.type !== other.type) return false;
-		return this.value === other.value;
+		return this.number === other.number;
+	}
+
+	public toJSON(): object {
+		const field = Value.TYPE_VALUE_FIELD_MAP[this.type];
+
+		return {
+			type: this.type,
+			value: this[field]
+		};
 	}
 }
