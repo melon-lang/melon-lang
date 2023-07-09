@@ -1,7 +1,12 @@
 {
-  "name": "node-typescript-boilerplate",
-  "version": "0.0.0",
-  "description": "Minimalistic boilerplate to quick-start Node.js development in TypeScript.",
+  "name": "esc-lang",
+  "version": "1.0.0",
+  "description": "A language designed for creating automations for Apple devices that run blazingly fast ⚡",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
   "engines": {
     "node": ">= 18.12 <19"
   },
