@@ -21,7 +21,6 @@ export default class Value {
 	@Type(() => Obj)
 	private readonly _obj: Obj;
 
-
 	private readonly _str: string;
 
 	static readonly TYPE_VALUE_FIELD_MAP = {

@@ -33,17 +33,18 @@ export enum Opcode {
 }
 
 export enum VMStatus {
+	INTERPRET_FREEZE,
+	INTERPRET_INTERRUPT,
 	INTERPRET_OK,
 	INTERPRET_COMPILE_ERROR,
 	INTERPRET_RUNTIME_ERROR,
-	INTERPRET_INTERRUPT
 }
 
 export interface InterpretResult {
 	status: VMStatus;
 	interrupt: {
 		code: string;
-		args: [];
+		arg: Value;
 	} | undefined;
 	save: string;
 }
@@ -75,13 +76,10 @@ class VM {
 		this.globals = new Map();
 	}
 
-	initAndRun(chunk): InterpretResult {
+	init(chunk): void {
 		this.chunk = chunk;
 		this.ip = 0;
-
 		this.dissambler = new Disassembler(chunk);
-
-		return this.run(3);
 	}
 
 	public run(numInstructions = 1): InterpretResult {
@@ -101,7 +99,7 @@ class VM {
 
 			switch (instruction) {
 				case Opcode.OP_RETURN:
-					return { status: VMStatus.INTERPRET_OK, interrupt: undefined, save: serialize(this) };
+					return { status: VMStatus.INTERPRET_OK, interrupt: undefined, save: this.getSave() };
 				case Opcode.OP_NEGATE:
 					if (!this.peek().is(ValueType.VAL_NUMBER))
 						throw new Error('Operand must be a number.');
@@ -232,20 +230,21 @@ class VM {
 					break;
 				}
 				case Opcode.OP_INTERRUPT: {
+					const arg = this.pop();
 					const interruptCode = this.pop();
 					return {
 						status: VMStatus.INTERPRET_INTERRUPT,
-						save: serialize(this),
+						save: this.getSave(),
 						interrupt: {
 							code: interruptCode.str,
-							args: []
+							arg: arg
 						}
 					};
 				}
 			}
 		}
 
-		return { status: VMStatus.INTERPRET_OK, interrupt: undefined, save: serialize(this) };
+		return { status: this.ip < endIp ? VMStatus.INTERPRET_FREEZE : VMStatus.INTERPRET_OK, interrupt: undefined, save: this.getSave() };
 	}
 
 	private readByte(): number {
@@ -314,6 +313,14 @@ class VM {
 
 	private peek(): Value {
 		return this.stack[this.stack.length - 1];
+	}
+
+	/**
+	 * MISC
+	 */
+
+	private getSave(): string {
+		return encodeURIComponent(serialize(this));
 	}
 }
 

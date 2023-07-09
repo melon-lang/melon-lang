@@ -361,6 +361,11 @@ class Compiler {
 
 	private syscallStatement(): void {
 		this.expression();
+
+		while (this.match(TokenType.TOKEN_COMMA)) {
+			this.expression();
+		}
+
 		this.consume(TokenType.TOKEN_SEMICOLON, "Expect ';' after syscall.");
 		this.emitByte(Opcode.OP_INTERRUPT);
 	}
@@ -522,7 +527,7 @@ class Compiler {
 	}
 
 	private string(): void {
-		const value: string = this.previous.str;
+		const value: string = this.previous.str.substring(1, this.previous.str.length - 1);
 		this.emitConstant(Value.str(value));
 	}
 

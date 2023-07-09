@@ -2,45 +2,45 @@ import 'es6-shim';
 import 'reflect-metadata'
 import interpret from './interpret';
 
-import { VMStatus } from './vm';
+import VM, { VMStatus } from './vm';
+
+import { plainToInstance } from 'class-transformer';
 
 const begin = (sourceCode: string): void => {
-    const _ = `
-        if(false)
-            syscall "is.workflow.actions.pausemusic";
-        
-        let i = 10;
-        while(i>5)
-            i = i - 1;
 
-        syscall "is.workflow.actions.showresult";
+    const _ = `
+    syscall "is.workflow.actions.showresult", "asdas";
+    
+    let i = 0; 
+    for(let j=0; j<1; j=j+1){
+        while(i< 100) 
+            i = i + 1;         
+    }
+    syscall "is.workflow.actions.skipforward";
     `;
 
-    console.log(encodeURIComponent(_));
+    //console.log(encodeURIComponent(_));
 
-    const source = _; //sourceCode;
+    const source = _ //sourceCode; //sourceCode;
 
     if (!source) {
         console.log('No source code found in query params.');
         return;
     }
 
-    const { status, interrupt, save } = interpret(source);
+    const result = interpret(source);
 
-    if (status === VMStatus.INTERPRET_INTERRUPT) {
-        document.write(save);
-    }
+    console.log(result);
+    document.write(JSON.stringify(result));
 };
 
-const resume = (state: string): void => {
-    /*const vm = VM.load(state);
+const resume = (save: string): void => {
+    const vm = plainToInstance(VM, JSON.parse(save));
 
-    if (!source) {
-        console.log('No source code found in query params.');
-        return;
-    }
+    const res = vm.run(50);
 
-    const { status, interrupt, save } = interpret(source);*/
+    document.write(JSON.stringify(res));
+    console.log(res);
 };
 
 ((): void => {
@@ -49,10 +49,14 @@ const resume = (state: string): void => {
     const state = params.get('resume');
     const sourceCode = params.get('begin');
 
-    if (state) {
-        resume(state);
-    }
-    else if (sourceCode) {
-        begin(sourceCode);
+    try {
+        if (state) {
+            resume(state);
+        }
+        else if (sourceCode) {
+            begin(decodeURIComponent(sourceCode));
+        }
+    } catch (e) {
+        document.write(JSON.stringify(e));
     }
 })();

@@ -1,7 +1,6 @@
 import { Chunk } from './chunk';
 import VM, { InterpretResult, VMStatus } from './vm';
 import Compiler from './compiler';
-import { plainToInstance } from 'class-transformer';
 
 const interpret = (source: string): InterpretResult => {
 	const compiler = new Compiler();
@@ -10,19 +9,20 @@ const interpret = (source: string): InterpretResult => {
 	try {
 		chunk = compiler.compile(source);
 	} catch (e) {
+		document.write((e));
 		return { status: VMStatus.INTERPRET_COMPILE_ERROR, interrupt: undefined, save: "" };
 	}
 
-	let vm = new VM({ debug: true });
-	let res = vm.initAndRun(chunk);
+	const vm = new VM({ debug: true });
+	vm.init(chunk);
 
+	const res = vm.run(50);
+	/*
 	while (res.status !== VMStatus.INTERPRET_INTERRUPT) {
-		console.log(JSON.parse(res.save));
 		vm = plainToInstance(VM, JSON.parse(res.save))
 
 		res = vm.run(5);
-
-	}
+	}*/
 
 	return res;
 };
