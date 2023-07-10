@@ -354,8 +354,20 @@ class Compiler {
 			this.beginScope();
 			this.block();
 			this.endScope();
+		} else if (this.match(TokenType.TOKEN_RETURN)) {
+			this.returnStatement();
 		} else {
 			this.expressionStatement();
+		}
+	}
+
+	private returnStatement(): void {
+		if (this.current.type === TokenType.TOKEN_SEMICOLON) {
+			this.emitReturn();
+		} else {
+			this.expression();
+			this.consume(TokenType.TOKEN_SEMICOLON, "Expect ';' after return.");
+			this.emitByte(Opcode.OP_RETURN);
 		}
 	}
 

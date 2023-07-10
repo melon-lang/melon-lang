@@ -47,6 +47,7 @@ export interface InterpretResult {
 		arg: Value;
 	} | undefined;
 	save: string;
+	return_value?: Value;
 }
 
 class VM {
@@ -99,7 +100,7 @@ class VM {
 
 			switch (instruction) {
 				case Opcode.OP_RETURN:
-					return { status: VMStatus.INTERPRET_OK, interrupt: undefined, save: this.getSave() };
+					return { status: VMStatus.INTERPRET_OK, interrupt: undefined, save: this.getSave(), return_value: this.pop() };
 				case Opcode.OP_NEGATE:
 					if (!this.peek().is(ValueType.VAL_NUMBER))
 						throw new Error('Operand must be a number.');
@@ -244,7 +245,7 @@ class VM {
 			}
 		}
 
-		return { status: this.ip < endIp ? VMStatus.INTERPRET_FREEZE : VMStatus.INTERPRET_OK, interrupt: undefined, save: this.getSave() };
+		return { status: this.ip < this.chunk.size ? VMStatus.INTERPRET_FREEZE : VMStatus.INTERPRET_OK, interrupt: undefined, save: this.getSave() };
 	}
 
 	private readByte(): number {

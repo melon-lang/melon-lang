@@ -31,7 +31,7 @@ export default class Value {
 		[ValueType.VAL_STR]: 'str',
 	};
 
-	constructor(type: ValueType, number = 0, obj = null, str = null) {
+	constructor(type: ValueType, number = NaN, obj = null, str = null) {
 		this.type = type;
 		this._number = number;
 		this._obj = obj;
@@ -51,15 +51,15 @@ export default class Value {
 	}
 
 	static nil(): Value {
-		return new Value(ValueType.VAL_NIL, 0);
+		return new Value(ValueType.VAL_NIL, NaN);
 	}
 
 	static str(str: string): Value {
-		return new Value(ValueType.VAL_STR, 0, null, str);
+		return new Value(ValueType.VAL_STR, NaN, null, str);
 	}
 
 	static obj(obj: Obj): Value {
-		return new Value(ValueType.VAL_OBJ, 0, obj);
+		return new Value(ValueType.VAL_OBJ, NaN, obj);
 	}
 
 	static fromJSON(json: object): Value {
@@ -132,7 +132,19 @@ export default class Value {
 
 	public equalsTo(other: Value): boolean {
 		if (this.type !== other.type) return false;
-		return this.number === other.number;
+
+		switch (this.type) {
+			case ValueType.VAL_BOOL:
+				return this.bool === other.bool;
+			case ValueType.VAL_NIL:
+				return true;
+			case ValueType.VAL_NUMBER:
+				return this.number === other.number;
+			case ValueType.VAL_OBJ:
+				return this.obj === other.obj;
+			case ValueType.VAL_STR:
+				return this.str === other.str;
+		}
 	}
 
 	public toJSON(): object {

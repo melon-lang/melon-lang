@@ -1,8 +1,7 @@
-export default {
-	testEnvironment: 'node',
-	preset: 'ts-jest/presets/default-esm',
+module.exports =  {
+	testEnvironment: 'jsdom',
 	transform: {
-		'^.+\\.m?[tj]s?$': ['ts-jest', { useESM: true }],
+		'^.+\\.m?[tj]s?$': ['ts-jest'],
 	},
 	moduleNameMapper: {
 		'^(\\.{1,2}/.*)\\.(m)?js$': '$1',
