@@ -1,4 +1,4 @@
-import { describe, expect, test } from '@jest/globals';
+import { expect, test } from '@jest/globals';
 import { Compiler, VM, VMStatus, Value } from '../src/index';
 
 const compile = (source: string) => {
@@ -16,8 +16,6 @@ const evaluateTillDone = (source: string) => {
 
 	let res = vm.run();
 
-	console.log(res);
-	console.log(VMStatus.INTERPRET_OK);
 
 	while (res.status != VMStatus.INTERPRET_OK) {
 		res = vm.run();
@@ -25,7 +23,6 @@ const evaluateTillDone = (source: string) => {
 		if (res.status == VMStatus.INTERPRET_COMPILE_ERROR || res.status == VMStatus.INTERPRET_RUNTIME_ERROR)
 			throw new Error();
 	}
-	console.log(res.return_value)
 	return res.return_value;
 };
 
@@ -93,3 +90,66 @@ test('If block else', () => {
 	expect(result).toStrictEqual(Value.number(2));
 });
 
+test('Addition', () => {
+	const source = `
+		let a = 1;
+		let b = 2;
+		return a + b;
+		  `;
+
+	const result: Value = evaluateTillDone(source);
+
+	expect(result).toStrictEqual(Value.number(3));
+});
+
+test('Subtraction', () => {
+
+	const source = `
+		let a = 1;
+		let b = 2;
+		return a - b;
+		  `;
+
+	const result: Value = evaluateTillDone(source);
+
+	expect(result).toStrictEqual(Value.number(-1));
+});
+
+test('Multiplication', () => {
+
+	const source = `
+		let a = 1;
+		let b = 2;
+		return a * b;
+		  `;
+
+	const result: Value = evaluateTillDone(source);
+
+	expect(result).toStrictEqual(Value.number(2));
+});
+
+test('Division', () => {
+
+	const source = `
+		let a = 1;
+		let b = 2;
+		return a / b;
+		  `;
+
+	const result: Value = evaluateTillDone(source);
+
+	expect(result).toStrictEqual(Value.number(0.5));
+});
+
+test('Binary Operations', () => {
+	
+	const source = `
+		let a = 7;
+		let b = 2;
+		return a + b * a / b - a;
+		  `;
+
+	const result: Value = evaluateTillDone(source);
+
+	expect(result).toStrictEqual(Value.number(7));
+});
