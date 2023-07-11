@@ -1,6 +1,6 @@
 <div>
     <img align="left" width="90" height="90" src="/docs/logo-white.png#gh-dark-mode-only" />
-    <img align="left" width="90" height="90"  src="/docs/logo-gray.png#gh-light-mode-only" />
+    <img align="left" width="90"   src="/docs/logo-gray.png#gh-light-mode-only" />
     <h1>esc-lang</h1>
     <i>is short for: <b>E</b>xpress <b>S</b>hort<b>c</b>uts <b>Lang</b>uage</i>
 </div>
