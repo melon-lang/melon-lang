@@ -1,5 +1,5 @@
 <div>
-    <img align="left" width="90" height="90" src="/docs/logo.png" />
+    <img align="left" width="90" height="90" src="/docs/logo.svg" />
  
     <h1>esc-lang</h1>
     <i>is short for: <b>E</b>xpress <b>S</b>hort<b>c</b>uts <b>Lang</b>uage</i>
