@@ -153,3 +153,20 @@ test('Binary Operations', () => {
 
 	expect(result).toStrictEqual(Value.number(7));
 });
+
+test('For statement', () => {
+	
+	const source = `
+		let a = 7;
+		let b = 2;
+
+		for(let i=0; i<100; i = i+ 1)
+			a = a + 1;
+
+		return a;
+		  `;
+
+	const result: Value = evaluateTillDone(source);
+
+	expect(result).toStrictEqual(Value.number(107));
+});

@@ -1,5 +1,6 @@
 import Value from './value';
 import { Type } from 'class-transformer';
+
 export class Chunk {
 	public view: number[];
 	private count: number;
