@@ -5,7 +5,7 @@
         <summary><h1 style="display: inline-block;">esc-lang</h1></summary>
       </ul>
     </div>
-    <i>is short for: <b>E</b>xpress <b>S</b>hort<b>c</b>uts <b>Lang</b>uage</i>
+    is short for: <b>E</b>xpress <b>S</b>hort<b>c</b>uts <b>Lang</b>uage
 </div>
 
 ## What is it? 
