@@ -1,19 +1,19 @@
 {
-  "name": "melon",
-  "version": "1.0.0",
-  "description": "",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "name": "melon-lang",
+  "version": "1.0.5",
   "type": "module",
-  "directories": {
-    "test": "test"
-  },
   "scripts": {
     "test": "jest",
     "dev": "tsc --watch",
     "start": "ts-node dist/src/index.js"
   },
-  "author": "",
+  "description": "A language designed for creating automations for Apple devices that run blazingly fast ⚡",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "files": [
+    "/dist"
+  ],
+  "author": "Eren Yenigul",
   "license": "ISC",
   "dependencies": {
     "jest": "^29.6.4",

@@ -1,6 +1,6 @@
 import { Token, TokenType } from './lexer';
 
-export type AST = (Declaration | Statement)[] ;
+export type AST = (Declaration | Statement)[];
 export type Declaration = FunctionDeclaration | VariableDeclaration | Statement;
 export type Statement = Expression | Call | If | While | For | Return | VariableAssignment | Block | ExpressionStatement;
 export type Expression = Literal | Identifier | Call | Block | BinaryOperation | UnaryOperation;
@@ -121,20 +121,20 @@ export class ASTNode {
     }
 }
 
-export class Literal extends ASTNode{
+export class Literal extends ASTNode {
     value: Token
 }
 
-export class Identifier extends ASTNode{
+export class Identifier extends ASTNode {
     name: Token
 }
 
-export class Call extends ASTNode{
+export class Call extends ASTNode {
     func: Expression
     args: Expression[]
 }
 
-export class Block extends ASTNode{
+export class Block extends ASTNode {
     nodes: ASTNode[]
 }
 
@@ -150,45 +150,45 @@ export class BinaryOperation extends ASTNode {
     rhs: Expression
 }
 
-export class If extends ASTNode{
+export class If extends ASTNode {
     condition: Expression
     then: Block
     else?: Block
 }
 
-export class While extends ASTNode{
+export class While extends ASTNode {
     condition: Expression
     body: Block
 }
 
-export class For extends ASTNode{
+export class For extends ASTNode {
     init: Statement
     condition: Expression
     update: Statement
     body: Block
 }
 
-export class FunctionDeclaration extends ASTNode{
+export class FunctionDeclaration extends ASTNode {
     name: Token
     params: Token[]
     body: Block
 }
 
-export class Return extends ASTNode{
+export class Return extends ASTNode {
     value: Expression
 }
 
-export class VariableDeclaration extends ASTNode{
+export class VariableDeclaration extends ASTNode {
     name: Token
     value: Expression
 }
 
-export class VariableAssignment extends ASTNode{
+export class VariableAssignment extends ASTNode {
     name: Token
     value: Expression
 }
 
-export class ExpressionStatement extends ASTNode{
+export class ExpressionStatement extends ASTNode {
     expression: Expression
 }
 
@@ -196,7 +196,7 @@ export default class Parser {
 
     private tokens: Token[];
     private pos = 0;
-    
+
     constructor(tokens: Token[]) {
         this.tokens = tokens;
     }
@@ -204,12 +204,12 @@ export default class Parser {
     private peek(n = 0): Token {
         if (this.pos + n >= this.tokens.length)
             return this.tokens[this.tokens.length - 1];
-        
+
         return this.tokens[this.pos + n];
     }
 
-    private advance(n=1): void {
-        for(let i=0; i<n; i++){
+    private advance(n = 1): void {
+        for (let i = 0; i < n; i++) {
             this.pos++;
         }
     }
@@ -217,8 +217,7 @@ export default class Parser {
     public run(): AST {
         const ast: AST = [];
 
-        while(this.peek().type !== TokenType.EOF)
-        {
+        while (this.peek().type !== TokenType.EOF) {
             const declaration = this.declaration();
             ast.push(declaration);
         }
@@ -229,9 +228,9 @@ export default class Parser {
     private declaration(): Declaration {
         const t = this.peek();
 
-        if(t.type === TokenType.FUNCTION)
+        if (t.type === TokenType.FUNCTION)
             return this.function();
-        else if(t.type === TokenType.LET)
+        else if (t.type === TokenType.LET)
             return this.variableDecleration();
         else
             return this.statement();
@@ -239,8 +238,8 @@ export default class Parser {
 
     private statement(): Statement {
         const t = this.peek();
-        
-        switch(t.type){
+
+        switch (t.type) {
             case TokenType.RETURN:
                 return this.return();
             case TokenType.IF:
@@ -259,7 +258,7 @@ export default class Parser {
     private expressionStatement(): ExpressionStatement {
         const expr = this.expression();
 
-        if(this.peek().type !== TokenType.SEMICOLON)
+        if (this.peek().type !== TokenType.SEMICOLON)
             this.error("Expected ';'");
         this.advance();
 
@@ -270,17 +269,17 @@ export default class Parser {
         this.advance();
 
         const name = this.peek();
-        if(name.type !== TokenType.IDENTIFIER)
+        if (name.type !== TokenType.IDENTIFIER)
             this.error("Expected identifier after 'let'");
 
         this.advance();
-        if(this.peek().type !== TokenType.ASSIGN)
+        if (this.peek().type !== TokenType.ASSIGN)
             this.error("Expected '=' after identifier");
 
         this.advance();
         const value = this.expression();
 
-        if(this.peek().type !== TokenType.SEMICOLON)
+        if (this.peek().type !== TokenType.SEMICOLON)
             this.error("Expected ';'");
         this.advance();
 
@@ -290,13 +289,13 @@ export default class Parser {
     private while(): While {
         this.advance();
 
-        if(this.peek().type !== TokenType.LPAREN)
+        if (this.peek().type !== TokenType.LPAREN)
             this.error("Expected '(' after 'while'");
 
         this.advance();
         const condition = this.expression();
 
-        if(this.peek().type !== TokenType.RPAREN)
+        if (this.peek().type !== TokenType.RPAREN)
             this.error("Expected ')' after condition");
 
         this.advance();
@@ -308,25 +307,25 @@ export default class Parser {
     private for(): For {
         this.advance();
 
-        if(this.peek().type !== TokenType.LPAREN)
+        if (this.peek().type !== TokenType.LPAREN)
             this.error("Expected '(' after 'for'");
 
         this.advance();
         let init: Statement;
-        if(this.peek().type === TokenType.LET)
+        if (this.peek().type === TokenType.LET)
             init = this.variableDecleration();
         else
             init = this.expressionStatement();
 
         const condition = this.expression();
 
-        if(this.peek().type !== TokenType.SEMICOLON)
+        if (this.peek().type !== TokenType.SEMICOLON)
             this.error("Expected ';' after condition statement");
 
         this.advance();
         const update = this.expression();
 
-        if(this.peek().type !== TokenType.RPAREN)
+        if (this.peek().type !== TokenType.RPAREN)
             this.error("Expected ')' after update statement");
 
         this.advance();
@@ -337,20 +336,20 @@ export default class Parser {
 
     private if(): If {
         this.advance();
-        
-        if(this.peek().type !== TokenType.LPAREN)
+
+        if (this.peek().type !== TokenType.LPAREN)
             this.error("Expected '(' after 'if'");
-        
+
         this.advance();
         const condition = this.expression();
 
-        if(this.peek().type !== TokenType.RPAREN)
+        if (this.peek().type !== TokenType.RPAREN)
             this.error("Expected ')' after condition");
 
         this.advance();
         const then = this.block();
 
-        if(this.peek().type === TokenType.ELSE){
+        if (this.peek().type === TokenType.ELSE) {
             this.advance();
             const els = this.block();
             return ASTNode.If(condition, then, els);
@@ -360,43 +359,43 @@ export default class Parser {
     }
 
 
-    private return() : Return {
+    private return(): Return {
         this.advance();
         const value = this.expression();
-        
+
         const t = this.peek();
-        
-        if(t.type !== TokenType.SEMICOLON)
+
+        if (t.type !== TokenType.SEMICOLON)
             this.error("Expected ';' after return statement");
-        
+
         this.advance();
 
         return ASTNode.Return(value);
     }
 
-    private function(): FunctionDeclaration{
+    private function(): FunctionDeclaration {
         this.advance();
         const name = this.peek();
         this.advance();
 
         if (this.peek().type !== TokenType.LPAREN)
             this.error("Expected '(' after function name");
-        
+
         this.advance();
         const params: Token[] = [];
 
-        while(this.peek().type !== TokenType.RPAREN){
-            if(this.peek().type !== TokenType.IDENTIFIER)
+        while (this.peek().type !== TokenType.RPAREN) {
+            if (this.peek().type !== TokenType.IDENTIFIER)
                 this.error("Expected identifier in parameter list");
 
             params.push(this.peek());
             this.advance();
 
-            if(this.peek().type !== TokenType.COMMA){
-                if(this.peek().type !== TokenType.RPAREN)
+            if (this.peek().type !== TokenType.COMMA) {
+                if (this.peek().type !== TokenType.RPAREN)
                     this.error("Expected ')' after parameter list");
                 break;
-            }else{
+            } else {
                 this.advance();
             }
         }
@@ -407,14 +406,14 @@ export default class Parser {
         return ASTNode.FunctionDeclaration(name, params, body);
     }
 
-    private block(): Block{
-        if(this.peek().type !== TokenType.LBRACE)
+    private block(): Block {
+        if (this.peek().type !== TokenType.LBRACE)
             return ASTNode.Block([this.statement()]);
 
         this.advance();
         const nodes: ASTNode[] = [];
 
-        while(this.peek().type !== TokenType.RBRACE){
+        while (this.peek().type !== TokenType.RBRACE) {
             nodes.push(this.declaration());
         }
 
@@ -429,7 +428,7 @@ export default class Parser {
     private equality(): Expression {
         let expr = this.comparison();
 
-        while(this.peek().type === TokenType.EQ || this.peek().type === TokenType.NEQ){
+        while (this.peek().type === TokenType.EQ || this.peek().type === TokenType.NEQ) {
             const op = this.peek();
             this.advance();
             const rhs = this.comparison();
@@ -443,7 +442,7 @@ export default class Parser {
     private comparison(): Expression {
         let expr = this.term();
 
-        while(this.peek().type === TokenType.GT || this.peek().type === TokenType.GTE || this.peek().type === TokenType.LT || this.peek().type === TokenType.LTE){
+        while (this.peek().type === TokenType.GT || this.peek().type === TokenType.GTE || this.peek().type === TokenType.LT || this.peek().type === TokenType.LTE) {
             const op = this.peek();
             this.advance();
             const rhs = this.term();
@@ -457,7 +456,7 @@ export default class Parser {
     private term(): Expression {
         let expr = this.factor();
 
-        while(this.peek().type === TokenType.PLUS || this.peek().type === TokenType.MINUS){
+        while (this.peek().type === TokenType.PLUS || this.peek().type === TokenType.MINUS) {
             const op = this.peek();
             this.advance();
             const rhs = this.factor();
@@ -469,9 +468,9 @@ export default class Parser {
     }
 
     private factor(): Expression {
-        let expr : Expression = this.unary();
+        let expr: Expression = this.unary();
 
-        while(this.peek().type === TokenType.MUL || this.peek().type === TokenType.DIV){
+        while (this.peek().type === TokenType.MUL || this.peek().type === TokenType.DIV) {
             const op = this.peek();
             this.advance();
             const rhs = this.unary();
@@ -482,46 +481,46 @@ export default class Parser {
         return expr;
     }
 
-    private unary(): Expression{
+    private unary(): Expression {
         let op = this.peek();
 
-        if(op.type === TokenType.MINUS || op.type === TokenType.NOT){
+        if (op.type === TokenType.MINUS || op.type === TokenType.NOT) {
             this.advance();
             const rand = this.primary();
 
             return ASTNode.UnaryOperation(op, rand, true);
-        } else if(op.type === TokenType.INC || op.type === TokenType.DEC){
+        } else if (op.type === TokenType.INC || op.type === TokenType.DEC) {
             this.advance();
             const rand = this.primary();
 
-            if(!(rand instanceof Identifier))
+            if (!(rand instanceof Identifier))
                 this.error("Expected identifier after increment/decrement operator");
 
             return ASTNode.UnaryOperation(op, rand, true);
         }
-        
+
         const primary = this.primary();
 
         op = this.peek();
-        if(op.type === TokenType.INC || op.type === TokenType.DEC){
+        if (op.type === TokenType.INC || op.type === TokenType.DEC) {
             this.advance();
 
-            if(!(primary instanceof Identifier))
+            if (!(primary instanceof Identifier))
                 this.error("Expected identifier before increment/decrement operator");
 
             return ASTNode.UnaryOperation(op, primary, false);
-        }else if(op.type === TokenType.LPAREN){
+        } else if (op.type === TokenType.LPAREN) {
             this.advance();
             const args: Expression[] = [];
 
-            while(this.peek().type !== TokenType.RPAREN){
+            while (this.peek().type !== TokenType.RPAREN) {
                 args.push(this.expression());
 
-                if(this.peek().type !== TokenType.COMMA){
-                    if(this.peek().type !== TokenType.RPAREN)
+                if (this.peek().type !== TokenType.COMMA) {
+                    if (this.peek().type !== TokenType.RPAREN)
                         this.error("Expected ')' after argument list");
                     break;
-                }else{
+                } else {
                     this.advance();
                 }
             }
@@ -536,7 +535,7 @@ export default class Parser {
     private primary(): Expression {
         const t = this.peek();
 
-        switch(t.type){
+        switch (t.type) {
             case TokenType.NULL:
                 this.advance();
                 return ASTNode.Literal(t);
@@ -555,8 +554,8 @@ export default class Parser {
                 return ASTNode.Literal(t);
             case TokenType.IDENTIFIER:
                 this.advance();
-                
-                if(this.peek().type === TokenType.ASSIGN){
+
+                if (this.peek().type === TokenType.ASSIGN) {
                     this.advance();
                     const rhs = this.expression();
 
@@ -567,21 +566,21 @@ export default class Parser {
                 this.advance();
                 const expr = this.expression();
 
-                if(this.peek().type !== TokenType.RPAREN)
+                if (this.peek().type !== TokenType.RPAREN)
                     this.error("Expected ')' after expression");
 
                 this.advance();
                 return expr;
 
             default:
-                this.error("Unexpected token in expression: "+ t.type);
+                this.error("Unexpected token in expression: " + t.type);
 
                 // Unreachable
-                return ASTNode.Literal({type: TokenType.NUMBER, value: ``, line: 0});
+                return ASTNode.Literal({ type: TokenType.NUMBER, value: ``, line: 0 });
         }
     }
 
-    private error(msg?: string){
-        throw new Error("Parser error at line "+ this.peek().line + ": " + (msg || "Unexpected token"));
+    private error(msg?: string) {
+        throw new Error("Parser error at line " + this.peek().line + ": " + (msg || "Unexpected token"));
     }
 }

@@ -152,14 +152,14 @@ export default class VM {
         while (true) {
             const instruction = this.text[this.ip];
 
-            console.log(''.padStart(this.frames.length, '\t'),this.ip + ":", instruction.type, instruction.value, (`[` + this.stack.map(v => `'` + v.value + `'`).join(', ') + `]` ))
+            console.log(''.padStart(this.frames.length, '\t'), this.ip + ":", instruction.type, instruction.value, (`[` + this.stack.map(v => `'` + v.value + `'`).join(', ') + `]`))
 
             this.execute(instruction);
 
             this.ip++;
 
             if (this.ip >= this.text.length) {
-                if(this.frames.length === 1)
+                if (this.frames.length === 1)
                     break;
 
                 this.frames.pop();
@@ -299,9 +299,9 @@ export default class VM {
 
                     if (func.type === ValueType.NATIVE) {
                         const args = [];
-                        for(let i = 0; i < value; i++)
+                        for (let i = 0; i < value; i++)
                             args.push(this.stack.pop());
-                        
+
                         if (func.value === `print`) {
                             for (let i = 0; i < value; i++)
                                 console.log(args[i].value);
@@ -314,10 +314,10 @@ export default class VM {
                         }
 
                         break;
-                    } 
+                    }
 
                     const args = [func];
-                    for(let i = 0; i < value; i++)
+                    for (let i = 0; i < value; i++)
                         args.push(this.stack.pop());
 
                     this.frames.push({
@@ -329,7 +329,7 @@ export default class VM {
                     break;
                 }
             case Opcode.RET:
-                if(value === 1)
+                if (value === 1)
                     this.frames.at(-2).stack.push(this.stack.pop());
                 else
                     this.frames.at(-2).stack.push(Value.null());

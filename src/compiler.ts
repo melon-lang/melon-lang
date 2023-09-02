@@ -15,7 +15,6 @@ class Compiler {
     private locals: Local[] = [];
     private depth: number = 0;
 
-
     constructor(ast: AST, locals?: Local[], data?: Value[]) {
         this.ast = ast;
         this.program = {
@@ -98,14 +97,15 @@ class Compiler {
         for (const arg of node.args) {
             this.codegen(arg);
         }
-        if (node.func instanceof Identifier && node.func.name.value === "print" ) {
+
+        if (node.func instanceof Identifier && node.func.name.value === "print") {
             this.program.data.push(Value.native("print"));
 
             this.program.text.push({
                 type: Opcode.DATA,
                 value: this.program.data.length - 1
             });
-        } else if (node.func instanceof Identifier && node.func.name.value === "syscall" ){
+        } else if (node.func instanceof Identifier && node.func.name.value === "syscall") {
             this.program.data.push(Value.native("syscall"));
 
             this.program.text.push({
@@ -113,7 +113,7 @@ class Compiler {
                 value: this.program.data.length - 1
             });
         }
-        else{
+        else {
             this.codegen(node.func);
         }
 
@@ -335,16 +335,16 @@ class Compiler {
         this.program.data.push(Value.function(func));
         const index = this.program.data.length - 1;
 
-        const locals = [{name: node.name.value, depth: 0}]
-        
+        const locals = [{ name: node.name.value, depth: 0 }]
+
         if (node.params.length > 0) {
-            locals.push(...node.params.map(arg => ({name: arg.value, depth: 1})));
+            locals.push(...node.params.map(arg => ({ name: arg.value, depth: 1 })));
         }
-        
+
         const compiler = new Compiler([node.body], locals, this.program.data);
         const program = compiler.run();
 
-        func.body = program.text; 
+        func.body = program.text;
 
         func.body.push({
             type: Opcode.RET,
