@@ -112,8 +112,7 @@ class Compiler {
                 type: Opcode.DATA,
                 value: this.program.data.length - 1
             });
-        }
-        else {
+        } else {
             this.codegen(node.func);
         }
 
