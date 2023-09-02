@@ -1,0 +1,28 @@
+{
+  "name": "melon",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "type": "module",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "jest",
+    "dev": "tsc --watch",
+    "start": "ts-node dist/src/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "jest": "^29.6.4",
+    "jest-environment-jsdom": "^29.6.4",
+    "ts-jest": "^29.1.1",
+    "tsc": "^2.0.4"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.4",
+    "@types/node": "^20.5.7"
+  }
+}
