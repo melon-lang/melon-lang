@@ -321,7 +321,7 @@ export default class Parser {
 
         if (this.peek().type !== TokenType.SEMICOLON)
             this.error("Expected ';' after condition statement");
-
+        
         this.advance();
         const update = this.expression();
 

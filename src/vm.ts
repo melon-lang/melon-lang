@@ -1,3 +1,5 @@
+import { Type, serialize, deserialize } from 'class-transformer';
+
 export enum Opcode {
     PUSH = "push",
     POP = "pop",
@@ -42,7 +44,11 @@ export enum Opcode {
 
     CLOSURE = "closure",
 
-    NATIVE = "native"
+    NATIVE = "native",
+
+    PARSE_NUMBER = "parse_number",
+
+    RANDOM = "random",
 }
 
 export enum ValueType {
@@ -80,10 +86,6 @@ export class Value {
         return new Value(ValueType.FUNCTION, value);
     }
 
-    static closure(value: Closure) {
-        return new Value(ValueType.CLOSURE, value);
-    }
-
     static native(value: string) {
         return new Value(ValueType.NATIVE, value);
     }
@@ -93,45 +95,90 @@ export class Value {
     }
 }
 
-export interface Closure {
-    func: Function;
-    env: undefined;
-}
-
-export interface Function {
+export class Function {
     name: string;
     args: string[];
+
+    @Type(() => Instruction)
     body: Instruction[];
+
+    constructor(name: string, args: string[], body: Instruction[]) {
+        this.name = name;
+        this.args = args;
+        this.body = body;
+    }
 }
 
-export interface Instruction {
+export class Instruction {
     type: Opcode;
     value?: number;
+
+    constructor(type: Opcode, value?: number) {
+        this.type = type;
+        this.value = value;
+    }
 }
 
-export interface Program {
+export class Program {
     text: Instruction[];
     data: Value[];
+
+    constructor(text: Instruction[], data: Value[]) {
+        this.text = text;
+        this.data = data;
+    }
 }
 
-interface CallFrame {
+class CallFrame {
     ip: number;
+
+    @Type(() => Value)
     stack: Value[];
+
+    @Type(() => Instruction)
     text: Instruction[];
+
+    constructor(ip: number, stack: Value[], text: Instruction[]) {
+        this.ip = ip;
+        this.stack = stack;
+        this.text = text;
+    }
 }
 
-export default class VM {
+export enum VMStatus {
+    RUNNING = "running",
+    HALTED = "halted",
+    ERROR = "error",
+    SYSCALL = "syscall"
+}
 
+export interface VMImage {
+    state : string;
+    status: VMStatus;
+
+    syscall?: Syscall;
+}
+
+export interface Syscall {
+    name: string;
+    args: Value[];
+}
+export default class VM {
+    @Type(() => Value)
     private data: Value[];
+    
+    @Type(() => CallFrame)
     private frames: CallFrame[];
+
+    @Type(() => Value)
     private globals: Map<string, Value>;
 
-    constructor(program: Program) {
-        this.data = program.data;
-        this.frames = [{ ip: 0, stack: [], text: program.text }];
-        this.globals = new Map();
-    }
+    private syscall?: Syscall = undefined;
 
+    public get halted () {
+        return this.frames.length === 0 ;
+    }
+    
     private get ip() {
         return this.frames[this.frames.length - 1].ip;
     }
@@ -148,23 +195,26 @@ export default class VM {
         return this.frames[this.frames.length - 1].text;
     }
 
-    public run() {
-        while (true) {
+    public run(steps: number = Infinity) {
+        while (steps-- > 0 && this.frames.length > 0 && !this.syscall) {
             const instruction = this.text[this.ip];
 
-            console.log(''.padStart(this.frames.length, '\t'), this.ip + ":", instruction.type, instruction.value, (`[` + this.stack.map(v => `'` + v.value + `'`).join(', ') + `]`))
+            console.log(''.padStart(this.frames.length, '\t'), this.ip + ":", instruction.type, instruction.value)
 
             this.execute(instruction);
 
             this.ip++;
 
             if (this.ip >= this.text.length) {
-                if (this.frames.length === 1)
-                    break;
-
                 this.frames.pop();
+
+                if (this.frames.length === 0) {
+                    break;
+                }
             }
         }
+
+        return this.serialize(this.syscall? VMStatus.SYSCALL : this.frames.length === 0 ? VMStatus.HALTED : VMStatus.RUNNING, this.syscall);
     }
 
     private execute(instruction: Instruction) {
@@ -177,8 +227,18 @@ export default class VM {
                 this.stack.pop();
                 break;
             case Opcode.ADD:
-                this.stack.push(Value.number(this.stack.pop().value + this.stack.pop().value));
-                break;
+                {
+                    const a = this.stack.pop();
+                    const b = this.stack.pop();
+                    
+                    if (a.type === ValueType.NUMBER || b.type === ValueType.NUMBER)
+                        this.stack.push(Value.number(b.value + a.value));
+                    else if (a.type === ValueType.STRING || b.type === ValueType.STRING)
+                        this.stack.push(Value.string(b.value + a.value));
+                    else
+                        throw new Error("Cannot add non-numbers or non-strings");
+                    break;
+                }
             case Opcode.SUB: {
                 const a = this.stack.pop();
                 const b = this.stack.pop();
@@ -186,7 +246,7 @@ export default class VM {
                 if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
                     throw new Error("Cannot subtract non-numbers");
 
-                this.stack.push(Value.number(b.value - a.value));
+                this.stack.push(Value.number(a.value - b.value));
                 break;
             }
             case Opcode.MUL:
@@ -197,7 +257,7 @@ export default class VM {
                     if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
                         throw new Error("Cannot multiply non-numbers");
 
-                    this.stack.push(Value.number(b.value * a.value));
+                    this.stack.push(Value.number(a.value * b.value));
                     break;
                 }
             case Opcode.DIV:
@@ -208,7 +268,7 @@ export default class VM {
                     if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
                         throw new Error("Cannot divide non-numbers");
 
-                    this.stack.push(Value.number(b.value / a.value));
+                    this.stack.push(Value.number(a.value / b.value));
                     break;
                 }
             case Opcode.LT:
@@ -230,7 +290,7 @@ export default class VM {
                     if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
                         throw new Error("Cannot compare non-numbers");
 
-                    this.stack.push(Value.boolean(b.value > a.value));
+                    this.stack.push(Value.boolean(a.value > b.value));
                     break;
                 }
             case Opcode.LTE:
@@ -241,7 +301,7 @@ export default class VM {
                     if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
                         throw new Error("Cannot compare non-numbers");
 
-                    this.stack.push(Value.boolean(b.value <= a.value));
+                    this.stack.push(Value.boolean(a.value <= b.value));
                     break;
                 }
             case Opcode.GTE:
@@ -252,7 +312,7 @@ export default class VM {
                     if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
                         throw new Error("Cannot compare non-numbers");
 
-                    this.stack.push(Value.boolean(b.value >= a.value));
+                    this.stack.push(Value.boolean(a.value >= b.value));
                     break;
                 }
             case Opcode.EQ:
@@ -271,7 +331,7 @@ export default class VM {
                     if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
                         throw new Error("Cannot compare non-numbers");
 
-                    this.stack.push(Value.boolean(b.value >= a.value));
+                    this.stack.push(Value.boolean(a.value >= b.value));
                     break;
                 }
             case Opcode.NEQ:
@@ -300,31 +360,27 @@ export default class VM {
                     if (func.type === ValueType.NATIVE) {
                         const args = [];
                         for (let i = 0; i < value; i++)
-                            args.push(this.stack.pop());
+                            args.unshift(this.stack.pop());
 
-                        if (func.value === `print`) {
-                            for (let i = 0; i < value; i++)
-                                console.log(args[i].value);
-
-                            this.stack.push(Value.null());
-                        }
-                        else if (func.value === `syscall`) {
+                        if (func.value === `syscall`) {
                             console.log(`syscall INVOKED WITH ARGS : ${args.map(a => a).join(`, `)}`);
-                            this.stack.push(Value.null());
+                            this.syscall = {
+                                name: args[0].value,
+                                args: args.slice(1)
+                            };
                         }
-
                         break;
                     }
 
                     const args = [func];
                     for (let i = 0; i < value; i++)
-                        args.push(this.stack.pop());
+                        args.unshift(this.stack.pop());
 
-                    this.frames.push({
-                        ip: -1,
-                        stack: args,
-                        text: func.value.body
-                    });
+                    this.frames.push(new CallFrame(
+                        -1,
+                        args,
+                        func.value.body
+                    ));
 
                     break;
                 }
@@ -348,32 +404,67 @@ export default class VM {
             case Opcode.DECLAREGL:
                 {
                     const id = this.data[value].value;
-                    this.globals[id] = this.stack.pop();
+                    this.globals.set(id, this.stack.pop());
                     break;
                 }
 
             case Opcode.LOADGL:
                 {
                     const id = this.data[value].value;
-                    this.stack.push(this.globals[id]);
+                    this.stack.push(this.globals.get(id));
                     break;
                 }
             case Opcode.SETGL:
                 {
                     const id = this.data[value].value;
-                    this.globals[id] = this.stack.at(-1);
+                    this.globals.set(id, this.stack.at(-1));
+                    break;
+                }
+            case Opcode.PARSE_NUMBER:
+                {
+                    const str = this.stack.pop().value;
+
+                    if (isNaN(Number(str)))
+                        throw new Error(`Cannot parse ${str} as number`);
+
+                    this.stack.push(Value.number(Number(str)));
+                    break;
+                }
+            case Opcode.RANDOM:
+                {
+                    this.stack.push(Value.number(Math.random()));
+
                     break;
                 }
         }
     }
 
+    private serialize(status: VMStatus = VMStatus.RUNNING, syscall? : Syscall) : VMImage {
+        return {
+            state: btoa(serialize(this)),
+            status: status,
+            syscall
+        };
+    }
 
+    public static deserialize(image: VMImage, arg: Value): VM { 
+        const vm = deserialize(VM, atob(image.state));
 
+        if(image.status === VMStatus.SYSCALL && arg !== undefined)
+            vm.frames.at(-1).stack.push(arg);
+        
+        vm.syscall = undefined;
+        
+        return vm;
+    }
 
+    public static create(program: Program): VM {
+        const vm = new VM();
 
+        vm.data = program.data;
+        vm.frames = [new CallFrame(0, [], program.text )];
+        vm.globals = new Map();
 
-
-
-
-
+        return vm;
+    }
 }

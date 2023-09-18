@@ -3,7 +3,7 @@
     "target": "es2022",
     "module": "ES2015",
     "lib": ["ES2022", "DOM"],
-    "moduleResolution": "node",
+    "moduleResolution": "Node",
     "rootDir": ".",
     "outDir": "dist",
     "allowSyntheticDefaultImports": true,
