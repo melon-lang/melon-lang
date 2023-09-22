@@ -284,16 +284,19 @@ export default class Parser {
         return ASTNode.ImportStatement(path);
     }
 
-    private expressionStatement(): ExpressionStatement {
+    private expressionStatement(forceSemicolon = false): ExpressionStatement {
         const expr = this.expression();
 
-        if (this.peek().type === TokenType.SEMICOLON){
+        if (forceSemicolon && this.peek().type !== TokenType.SEMICOLON)
+            throw new Error("Expected ';' after variable declaration");
+        
+        if (this.peek().type === TokenType.SEMICOLON)
             this.advance();
-        }
+        
         return ASTNode.ExpressionStatement(expr);
     }
 
-    private variableDecleration(): VariableDeclaration {
+    private variableDecleration(forceSemicolon = false): VariableDeclaration {
         this.advance();
 
         const name = this.peek();
@@ -307,9 +310,11 @@ export default class Parser {
         this.advance();
         const value = this.expression();
 
-        if (this.peek().type === TokenType.SEMICOLON){
+        if (forceSemicolon && this.peek().type !== TokenType.SEMICOLON)
+            throw new Error("Expected ';' after variable declaration");
+        
+        if (this.peek().type === TokenType.SEMICOLON)
             this.advance();
-        }
 
         return ASTNode.VariableDeclaration(name, value);
     }
@@ -341,9 +346,9 @@ export default class Parser {
         this.advance();
         let init: Statement;
         if (this.peek().type === TokenType.LET)
-            init = this.variableDecleration();
+            init = this.variableDecleration(true);
         else
-            init = this.expressionStatement();
+            init = this.expressionStatement(true);
 
         const condition = this.expression();
 
