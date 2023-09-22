@@ -2,7 +2,7 @@ import { Token, TokenType } from './lexer';
 
 export type AST = (Declaration | Statement)[];
 export type Declaration = FunctionDeclaration | VariableDeclaration | Statement;
-export type Statement = Expression | Call | If | While | For | Return | VariableAssignment | Block | ExpressionStatement;
+export type Statement = Expression | Call | If | While | For | Return | VariableAssignment | Block | ExpressionStatement | ImportStatement;
 export type Expression = Literal | Identifier | Call | Block | BinaryOperation | UnaryOperation;
 
 export class ASTNode {
@@ -119,6 +119,17 @@ export class ASTNode {
 
         return res;
     }
+
+    static ImportStatement(path: Token): ImportStatement {
+        const res = new ImportStatement();
+        res.path = path;
+
+        return res;
+    }
+}
+
+export class ImportStatement extends ASTNode {
+    path: Token
 }
 
 export class Literal extends ASTNode {
@@ -250,9 +261,27 @@ export default class Parser {
                 return this.for();
             case TokenType.LBRACE:
                 return this.block();
+            case TokenType.IMPORT:
+                return this.import();
             default:
                 return this.expressionStatement();
         }
+    }
+
+    private import(): ImportStatement {
+        this.advance();
+
+        const path = this.peek();
+        if (path.type !== TokenType.IDENTIFIER)
+            this.error("Expected identifier after 'import'");
+
+        this.advance();
+        if (this.peek().type !== TokenType.SEMICOLON)
+            this.error("Expected ';'");
+
+        this.advance();
+
+        return ASTNode.ImportStatement(path);
     }
 
     private expressionStatement(): ExpressionStatement {

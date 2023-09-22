@@ -45,6 +45,7 @@ export enum TokenType {
     INC = "INC",
     DEC = "DEC",
     NULL = "NULL",
+    IMPORT = "IMPORT",
 }
 
 class Lexer {
@@ -236,6 +237,8 @@ class Lexer {
                     tokens.push({ type: TokenType.LET, value, line: this.line });
                 } else if (value === "null") {
                     tokens.push({ type: TokenType.NULL, value, line: this.line });
+                } else if(value === "import") {
+                    tokens.push({ type: TokenType.IMPORT, value, line: this.line });
                 } else {
                     tokens.push({ type: TokenType.IDENTIFIER, value, line: this.line });
                 }

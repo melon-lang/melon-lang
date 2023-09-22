@@ -1,5 +1,5 @@
 import { TokenType } from './lexer';
-import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement } from './parser';
+import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement } from './parser';
 import { Program, Opcode, Value, Instruction } from './vm';
 
 interface Local {
@@ -23,7 +23,7 @@ const nativesWithSyscall = {
 }
 
 const nativesWithOpcode = {
-    'number' : {
+    'number': {
         opcode: Opcode.PARSE_NUMBER,
         args: 1
     },
@@ -88,9 +88,19 @@ class Compiler {
             this.function(node);
         else if (node instanceof ExpressionStatement)
             this.expressionStatement(node);
+        else if (node instanceof ImportStatement)
+            this.import(node);
         else {
             throw new Error(`Unknown node type ${node.constructor.name}`);
         }
+    }
+
+    private import(node: ImportStatement) {
+        this.emitData(Value.string(node.path.value));
+        this.emitText(
+            Opcode.IMPORT,
+            this.program.data.length - 1
+        );
     }
 
     private literal(node: Literal) {
@@ -125,7 +135,7 @@ class Compiler {
             if (name in nativesWithSyscall) {
                 const { syscallId, args } = nativesWithSyscall[name];
 
-                if(node.args.length > args) {
+                if (node.args.length > args) {
                     throw new Error(`Too many arguments passed to ${name}`);
                 }
 
@@ -156,7 +166,7 @@ class Compiler {
             } else if (name in nativesWithOpcode) {
                 const { opcode, args } = nativesWithOpcode[name];
 
-                if(node.args.length > args) {
+                if (node.args.length > args) {
                     throw new Error(`Too many arguments passed to ${name}`);
                 }
 
@@ -183,7 +193,7 @@ class Compiler {
                     Opcode.CALL,
                     node.args.length
                 );
-                
+
                 return;
             }
         }
@@ -352,9 +362,9 @@ class Compiler {
                 Opcode.JUMP,
             );
             this.program.text.push(jump);
-            
+
             jumpf.value++;
-            
+
             this.codegen(node.else);
             jump.value = this.program.text.length;
         }

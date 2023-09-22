@@ -49,6 +49,7 @@ export enum Opcode {
     PARSE_NUMBER = "parse_number",
 
     RANDOM = "random",
+    IMPORT = "import"
 }
 
 export enum ValueType {
@@ -153,7 +154,7 @@ export enum VMStatus {
 }
 
 export interface VMImage {
-    state : string;
+    state: string;
     status: VMStatus;
 
     syscall?: Syscall;
@@ -166,7 +167,7 @@ export interface Syscall {
 export default class VM {
     @Type(() => Value)
     private data: Value[];
-    
+
     @Type(() => CallFrame)
     private frames: CallFrame[];
 
@@ -175,10 +176,10 @@ export default class VM {
 
     private syscall?: Syscall = undefined;
 
-    public get halted () {
-        return this.frames.length === 0 ;
+    public get halted() {
+        return this.frames.length === 0;
     }
-    
+
     private get ip() {
         return this.frames[this.frames.length - 1].ip;
     }
@@ -214,7 +215,7 @@ export default class VM {
             }
         }
 
-        return this.serialize(this.syscall? VMStatus.SYSCALL : this.frames.length === 0 ? VMStatus.HALTED : VMStatus.RUNNING, this.syscall);
+        return this.serialize(this.syscall ? VMStatus.SYSCALL : this.frames.length === 0 ? VMStatus.HALTED : VMStatus.RUNNING, this.syscall);
     }
 
     private execute(instruction: Instruction) {
@@ -230,7 +231,7 @@ export default class VM {
                 {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
-                    
+
                     if (a.type === ValueType.NUMBER || b.type === ValueType.NUMBER)
                         this.stack.push(Value.number(b.value + a.value));
                     else if (a.type === ValueType.STRING || b.type === ValueType.STRING)
@@ -436,10 +437,14 @@ export default class VM {
 
                     break;
                 }
+            case Opcode.IMPORT:
+                {
+
+                }
         }
     }
 
-    private serialize(status: VMStatus = VMStatus.RUNNING, syscall? : Syscall) : VMImage {
+    private serialize(status: VMStatus = VMStatus.RUNNING, syscall?: Syscall): VMImage {
         return {
             state: btoa(serialize(this)),
             status: status,
@@ -447,14 +452,14 @@ export default class VM {
         };
     }
 
-    public static deserialize(image: VMImage, arg: Value): VM { 
+    public static deserialize(image: VMImage, arg: Value): VM {
         const vm = deserialize(VM, atob(image.state));
 
-        if(image.status === VMStatus.SYSCALL && arg !== undefined)
+        if (image.status === VMStatus.SYSCALL && arg !== undefined)
             vm.frames.at(-1).stack.push(arg);
-        
+
         vm.syscall = undefined;
-        
+
         return vm;
     }
 
@@ -462,7 +467,7 @@ export default class VM {
         const vm = new VM();
 
         vm.data = program.data;
-        vm.frames = [new CallFrame(0, [], program.text )];
+        vm.frames = [new CallFrame(0, [], program.text)];
         vm.globals = new Map();
 
         return vm;
