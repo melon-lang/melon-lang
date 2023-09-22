@@ -276,10 +276,10 @@ export default class Parser {
             this.error("Expected identifier after 'import'");
 
         this.advance();
-        if (this.peek().type !== TokenType.SEMICOLON)
-            this.error("Expected ';'");
-
-        this.advance();
+        
+        if (this.peek().type === TokenType.SEMICOLON){
+            this.advance();
+        }
 
         return ASTNode.ImportStatement(path);
     }
@@ -287,10 +287,9 @@ export default class Parser {
     private expressionStatement(): ExpressionStatement {
         const expr = this.expression();
 
-        if (this.peek().type !== TokenType.SEMICOLON)
-            this.error("Expected ';'");
-        this.advance();
-
+        if (this.peek().type === TokenType.SEMICOLON){
+            this.advance();
+        }
         return ASTNode.ExpressionStatement(expr);
     }
 
@@ -308,9 +307,9 @@ export default class Parser {
         this.advance();
         const value = this.expression();
 
-        if (this.peek().type !== TokenType.SEMICOLON)
-            this.error("Expected ';'");
-        this.advance();
+        if (this.peek().type === TokenType.SEMICOLON){
+            this.advance();
+        }
 
         return ASTNode.VariableDeclaration(name, value);
     }
@@ -348,10 +347,10 @@ export default class Parser {
 
         const condition = this.expression();
 
-        if (this.peek().type !== TokenType.SEMICOLON)
-            this.error("Expected ';' after condition statement");
+        if (this.peek().type === TokenType.SEMICOLON){
+            this.advance();
+        }
         
-        this.advance();
         const update = this.expression();
 
         if (this.peek().type !== TokenType.RPAREN)
@@ -394,10 +393,9 @@ export default class Parser {
 
         const t = this.peek();
 
-        if (t.type !== TokenType.SEMICOLON)
-            this.error("Expected ';' after return statement");
-
-        this.advance();
+        if (this.peek().type === TokenType.SEMICOLON){
+            this.advance();
+        }
 
         return ASTNode.Return(value);
     }
