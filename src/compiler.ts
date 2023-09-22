@@ -1,5 +1,5 @@
 import { TokenType } from './lexer';
-import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement } from './parser';
+import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement } from './parser';
 import { Program, Opcode, Value, Instruction } from './vm';
 
 interface Local {
@@ -90,9 +90,15 @@ class Compiler {
             this.expressionStatement(node);
         else if (node instanceof ImportStatement)
             this.import(node);
+        else if (node instanceof EmptyStatement)
+            this.empty(node);
         else {
             throw new Error(`Unknown node type ${node.constructor.name}`);
         }
+    }
+
+    private empty(node: EmptyStatement) {
+        this.emitText(Opcode.NOP);
     }
 
     private import(node: ImportStatement) {
@@ -397,7 +403,7 @@ class Compiler {
         this.codegen(node.condition);
 
         const jumpf: Instruction = new Instruction(
-            Opcode.JUMPF,
+             (node.condition instanceof EmptyStatement) ? Opcode.NOP : Opcode.JUMPF,
         );
 
         this.program.text.push(jumpf);

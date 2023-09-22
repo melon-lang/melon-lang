@@ -49,7 +49,9 @@ export enum Opcode {
     PARSE_NUMBER = "parse_number",
 
     RANDOM = "random",
-    IMPORT = "import"
+    IMPORT = "import",
+
+    NOP = "nop"
 }
 
 export enum ValueType {
@@ -439,8 +441,13 @@ export default class VM {
                 }
             case Opcode.IMPORT:
                 {
-
+                    break;
                 }
+            case Opcode.NOP:
+                break;
+
+            default:
+                throw new Error(`Unknown opcode ${type}`);
         }
     }
 

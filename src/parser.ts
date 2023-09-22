@@ -2,7 +2,7 @@ import { Token, TokenType } from './lexer';
 
 export type AST = (Declaration | Statement)[];
 export type Declaration = FunctionDeclaration | VariableDeclaration | Statement;
-export type Statement = Expression | Call | If | While | For | Return | VariableAssignment | Block | ExpressionStatement | ImportStatement;
+export type Statement = Expression | Call | If | While | For | Return | VariableAssignment | Block | ExpressionStatement | ImportStatement | EmptyStatement;
 export type Expression = Literal | Identifier | Call | Block | BinaryOperation | UnaryOperation;
 
 export class ASTNode {
@@ -126,6 +126,10 @@ export class ASTNode {
 
         return res;
     }
+
+    static EmptyStatement(): EmptyStatement {
+        return new EmptyStatement();
+    }
 }
 
 export class ImportStatement extends ASTNode {
@@ -203,6 +207,10 @@ export class ExpressionStatement extends ASTNode {
     expression: Expression
 }
 
+export class EmptyStatement extends ASTNode {
+    // Empty
+}
+
 export default class Parser {
 
     private tokens: Token[];
@@ -263,9 +271,17 @@ export default class Parser {
                 return this.block();
             case TokenType.IMPORT:
                 return this.import();
+            case TokenType.SEMICOLON:
+                return this.empty();
             default:
                 return this.expressionStatement();
         }
+    }
+
+    private empty(): EmptyStatement {
+        this.advance();
+
+        return ASTNode.EmptyStatement();
     }
 
     private import(): ImportStatement {
@@ -276,8 +292,8 @@ export default class Parser {
             this.error("Expected identifier after 'import'");
 
         this.advance();
-        
-        if (this.peek().type === TokenType.SEMICOLON){
+
+        if (this.peek().type === TokenType.SEMICOLON) {
             this.advance();
         }
 
@@ -289,10 +305,10 @@ export default class Parser {
 
         if (forceSemicolon && this.peek().type !== TokenType.SEMICOLON)
             throw new Error("Expected ';' after variable declaration");
-        
+
         if (this.peek().type === TokenType.SEMICOLON)
             this.advance();
-        
+
         return ASTNode.ExpressionStatement(expr);
     }
 
@@ -312,7 +328,7 @@ export default class Parser {
 
         if (forceSemicolon && this.peek().type !== TokenType.SEMICOLON)
             throw new Error("Expected ';' after variable declaration");
-        
+
         if (this.peek().type === TokenType.SEMICOLON)
             this.advance();
 
@@ -347,21 +363,36 @@ export default class Parser {
         let init: Statement;
         if (this.peek().type === TokenType.LET)
             init = this.variableDecleration(true);
+        else if (this.peek().type === TokenType.SEMICOLON)
+            init = this.empty();
         else
             init = this.expressionStatement(true);
 
-        const condition = this.expression();
 
-        if (this.peek().type === TokenType.SEMICOLON){
+        let condition;
+        if (this.peek().type === TokenType.SEMICOLON)
+            condition = this.empty();
+        else {
+            condition = this.expression();
+
+            if (this.peek().type !== TokenType.SEMICOLON) 
+                throw new Error("Expected ';' after condition");
+            
             this.advance();
         }
-        
-        const update = this.expression();
 
-        if (this.peek().type !== TokenType.RPAREN)
-            this.error("Expected ')' after update statement");
+        let update;
+        if (this.peek().type === TokenType.RPAREN)
+            update = this.empty();
+        else {
+            update = this.expression();
 
-        this.advance();
+            if (this.peek().type !== TokenType.RPAREN)
+                this.error("Expected ')' after update statement");
+            
+            this.advance();
+        }
+
         const body = this.block();
 
         return ASTNode.For(init, condition, update, body);
@@ -398,7 +429,7 @@ export default class Parser {
 
         const t = this.peek();
 
-        if (this.peek().type === TokenType.SEMICOLON){
+        if (this.peek().type === TokenType.SEMICOLON) {
             this.advance();
         }
 
