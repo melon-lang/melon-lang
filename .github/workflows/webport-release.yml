@@ -25,6 +25,7 @@ jobs:
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "latest"
+          title: "Webport Build"
           prerelease: true
           files: |
             webport/dist/index.html
