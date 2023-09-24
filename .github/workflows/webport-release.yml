@@ -8,11 +8,12 @@ on:
 
 jobs:
   tagged-release:
-    name: "Webport Tagged Release"
+    name: "Tagged Release"
     runs-on: "ubuntu-latest"
+
     steps:
       - name: "Build & test"
-      - run: |
+        run: |
           npm i
           npm run build:webport
 
