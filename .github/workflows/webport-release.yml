@@ -12,11 +12,15 @@ jobs:
     runs-on: "ubuntu-latest"
 
     steps:
-      - name: "Build & test"
-        run: |
-          npm i
-          npm run build:webport
-
+      - uses: actions/checkout@v3
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build:webport
+      
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
