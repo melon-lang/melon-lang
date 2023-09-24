@@ -1,4 +1,4 @@
-import { compile } from "../src/index";
+import { compile } from '../src/index';
 import VM, { VMImage } from '../src/vm';
 
 const debug = (value) => {
