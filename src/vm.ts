@@ -13,7 +13,6 @@ export enum Opcode {
     GTE = "gte",
     EQ = "eq",
     GTEQ = "gteq",
-    LTEQ = "lteq",
     NEQ = "neq",
     AND = "and",
     OR = "or",
@@ -202,8 +201,6 @@ export default class VM {
         while (steps-- > 0 && this.frames.length > 0 && !this.syscall) {
             const instruction = this.text[this.ip];
 
-            console.log(''.padStart(this.frames.length, '\t'), this.ip + ":", instruction.type, instruction.value)
-
             this.execute(instruction);
 
             this.ip++;
@@ -293,7 +290,7 @@ export default class VM {
                     if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
                         throw new Error("Cannot compare non-numbers");
 
-                    this.stack.push(Value.boolean(a.value > b.value));
+                    this.stack.push(Value.boolean(b.value > a.value));
                     break;
                 }
             case Opcode.LTE:
@@ -304,7 +301,7 @@ export default class VM {
                     if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
                         throw new Error("Cannot compare non-numbers");
 
-                    this.stack.push(Value.boolean(a.value <= b.value));
+                    this.stack.push(Value.boolean(b.value <= a.value));
                     break;
                 }
             case Opcode.GTE:
@@ -315,7 +312,7 @@ export default class VM {
                     if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
                         throw new Error("Cannot compare non-numbers");
 
-                    this.stack.push(Value.boolean(a.value >= b.value));
+                    this.stack.push(Value.boolean(b.value >= a.value));
                     break;
                 }
             case Opcode.EQ:
@@ -324,17 +321,6 @@ export default class VM {
                     const b = this.stack.pop();
 
                     this.stack.push(Value.boolean(b.value === a.value));
-                    break;
-                }
-            case Opcode.GTEQ:
-                {
-                    const a = this.stack.pop();
-                    const b = this.stack.pop();
-
-                    if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
-                        throw new Error("Cannot compare non-numbers");
-
-                    this.stack.push(Value.boolean(a.value >= b.value));
                     break;
                 }
             case Opcode.NEQ:
@@ -366,7 +352,6 @@ export default class VM {
                             args.unshift(this.stack.pop());
 
                         if (func.value === `syscall`) {
-                            console.log(`syscall INVOKED WITH ARGS : ${args.map(a => a).join(`, `)}`);
                             this.syscall = {
                                 name: args[0].value,
                                 args: args.slice(1)
@@ -431,6 +416,34 @@ export default class VM {
                         throw new Error(`Cannot parse ${str} as number`);
 
                     this.stack.push(Value.number(Number(str)));
+                    break;
+                }
+            case Opcode.INC:
+                {
+                    const a = this.stack.pop();
+
+                    if (a.type !== ValueType.NUMBER)
+                        throw new Error("Cannot increment non-number");
+
+                    this.stack.push(Value.number(a.value + 1));
+                    break;
+                }
+            case Opcode.DEC:
+                {
+                    const a = this.stack.pop();
+
+                    if (a.type !== ValueType.NUMBER)
+                        throw new Error("Cannot decrement non-number");
+
+                    this.stack.push(Value.number(a.value - 1));
+                    break;
+                }
+            case Opcode.COPY:
+                {
+                    const a = this.stack.pop();
+
+                    this.stack.push(a);
+                    this.stack.push(a);
                     break;
                 }
             case Opcode.RANDOM:

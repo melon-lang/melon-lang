@@ -19,6 +19,5 @@ export const evaluate = (program: Program) => {
     let vm = VM.create(program);
     const state = vm.run();
 
-    vm = VM.deserialize(state, Value.string(`hello worlds`));
-    vm.run();
+    return state
 }

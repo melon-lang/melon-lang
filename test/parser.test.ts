@@ -10,7 +10,6 @@ test('should parse a function declaration', () => {
     const parser = new Parser(tokens);
 
     const ast = parser.run();
-    console.log(ast);
 });
 
 
@@ -20,7 +19,6 @@ test('should parse an if statement', () => {
     const parser = new Parser(tokens);
 
     const ast = parser.run();
-    console.log(ast);
 });
 
 test('should parse an expression', () => {
@@ -29,7 +27,6 @@ test('should parse an expression', () => {
     const parser = new Parser(tokens);
 
     const ast = parser.run();
-    console.log(ast);
 });
 
 test('should parse an assignment', () => {
@@ -38,7 +35,6 @@ test('should parse an assignment', () => {
     const parser = new Parser(tokens);
 
     const ast = parser.run();
-    console.log(ast);
 });
 
 test('should parse a declaration', () => {
@@ -47,7 +43,6 @@ test('should parse a declaration', () => {
     const parser = new Parser(tokens);
 
     const ast = parser.run();
-    console.log(ast);
 });
 
 test('should parse a while loop', () => {
@@ -56,5 +51,4 @@ test('should parse a while loop', () => {
     const parser = new Parser(tokens);
 
     const ast = parser.run();
-    console.log(ast);
 });

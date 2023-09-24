@@ -5,10 +5,11 @@ test('should tokenize a simple expression', () => {
     const lexer = new Lexer('1 + 2');
     const tokens = lexer.run();
 
-    expect(tokens.map(t=> ({type: t.type, value: t.value}))).toEqual([
-        { type: TokenType.NUMBER, value: '1' },
-        { type: TokenType.PLUS, value: '+' },
-        { type: TokenType.NUMBER, value: '2' }
+    expect(tokens).toEqual([
+        { line: 1, type: TokenType.NUMBER, value: '1'},
+        { line: 1,type: TokenType.PLUS, value: '+' },
+        { line: 1,type: TokenType.NUMBER, value: '2' },
+        { line: 1,type: TokenType.EOF, value: '\0' }
     ]);
 });
 
@@ -17,11 +18,13 @@ test('should tokenize an expression', () => {
     const tokens = lexer.run();
 
     expect(tokens).toEqual([
-        { type: TokenType.FOR, value: 'for' },
-        { type: TokenType.PLUS, value: '+' },
-        { type: TokenType.NUMBER, value: '2' },
-        { type: TokenType.LBRACE, value: '{' },
-        { type: TokenType.STRING, value: 'looooooo32423' }
+        { line: 1,type: TokenType.FOR, value: 'for' },
+        { line: 1,type: TokenType.PLUS, value: '+' },
+        { line: 1,type: TokenType.NUMBER, value: '2' },
+        { line: 1,type: TokenType.LBRACE, value: '{' },
+        { line: 1,type: TokenType.STRING, value: 'looooooo32423' },
+        { line: 1,type: TokenType.EOF, value: '\0' }
+
     ]);
 });
 
@@ -30,15 +33,16 @@ test('should tokenize an expression with a string', () => {
     const tokens = lexer.run();
 
     expect(tokens).toEqual([
-        { type: TokenType.FOR, value: 'for' },
-        { type: TokenType.PLUS, value: '+' },
-        { type: TokenType.DIV, value: '/' },
-        { type: TokenType.AND, value: '&&' },
-        { type: TokenType.IF, value: 'if' },
-        { type: TokenType.WHILE, value: 'while' },
-        { type: TokenType.CONTINUE, value: 'continue' },
-        { type: TokenType.BREAK, value: 'break' },
-        { type: TokenType.LBRACE, value: '{' },
-        { type: TokenType.STRING, value: '123_00**' }
+        { line: 1,type: TokenType.FOR, value: 'for' },
+        { line: 1,type: TokenType.PLUS, value: '+' },
+        { line: 1,type: TokenType.DIV, value: '/' },
+        { line: 1,type: TokenType.AND, value: '&&' },
+        { line: 1,type: TokenType.IF, value: 'if' },
+        { line: 1,type: TokenType.WHILE, value: 'while' },
+        { line: 1,type: TokenType.CONTINUE, value: 'continue' },
+        { line: 1,type: TokenType.BREAK, value: 'break' },
+        { line: 1,type: TokenType.LBRACE, value: '{' },
+        { line: 1,type: TokenType.STRING, value: '123_00**' },
+        { line: 1,type: TokenType.EOF, value: '\0' }
     ]);
 });
