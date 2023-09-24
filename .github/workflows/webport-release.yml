@@ -30,4 +30,4 @@ jobs:
           title: "Webport Build"
           prerelease: true
           files: |
-            webport/dist/index.html
+            webport/dist/build
