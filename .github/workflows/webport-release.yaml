@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: "Build & test"
       - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js 1.18
         uses: actions/setup-node@v3
         with:
           node-version: 1.18
