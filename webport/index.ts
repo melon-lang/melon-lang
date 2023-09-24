@@ -7,7 +7,7 @@ const getParams = () => {
   const data = window.location.href;
 
   const matches = [
-    ...data.matchAll(/data:text\/html;((?:[^=;]*=[^=;]*;)+)base64/g),
+    ...data.matchAll(/data:text\/html;((?:[^=;]*=[^;]*;)+)base64/g),
   ];
 
   const params = {};
