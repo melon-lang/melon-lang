@@ -11,12 +11,16 @@ jobs:
     name: "Webport Tagged Release"
     runs-on: "ubuntu-latest"
     steps:
-      # ...
       - name: "Build & test"
-        run: |
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: 1.18
+          cache: 'npm'
+      - run: |
           npm ci
           npm run build:webport
-          echo "done!"
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
