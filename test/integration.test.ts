@@ -184,6 +184,27 @@ const testPrograms = [
         `,
         expected: {type: ValueType.NUMBER, value: 35}
     },
+    {
+        program: `
+            let dummy = 5 == 5 || 4 == 5;
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: true}
+    },
+    {
+        program: `
+            let dummy = 5 == 5 && 4 == 5;
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: false}
+    },
+    {
+        program: `
+            let dummy = 4 == 9000 && "string" == "string" || 5 == 5;
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: true}
+    }
 ]
 
 

@@ -226,6 +226,28 @@ export default class VM {
             case Opcode.POP:
                 this.stack.pop();
                 break;
+            case Opcode.OR:
+                {
+                    const a = this.stack.pop();
+                    const b = this.stack.pop();
+
+                    if (a.type !== ValueType.BOOLEAN || b.type !== ValueType.BOOLEAN)
+                        throw new Error("Cannot OR non-booleans");
+
+                    this.stack.push(Value.boolean(b.value || a.value));
+                    break;
+                }
+            case Opcode.AND:
+                    {
+                        const a = this.stack.pop();
+                        const b = this.stack.pop();
+
+                        if (a.type !== ValueType.BOOLEAN || b.type !== ValueType.BOOLEAN)
+                            throw new Error("Cannot AND non-booleans");
+
+                        this.stack.push(Value.boolean(b.value && a.value));
+                        break;
+                    }
             case Opcode.ADD:
                 {
                     const a = this.stack.pop();

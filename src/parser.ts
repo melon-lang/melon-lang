@@ -485,7 +485,21 @@ export default class Parser {
     }
 
     private expression(): Expression {
-        return this.equality();
+        return this.andOr();
+    }
+
+    private andOr(): Expression {
+        let expr = this.equality();
+
+        while (this.peek().type === TokenType.AND || this.peek().type === TokenType.OR) {
+            const op = this.peek();
+            this.advance();
+            const rhs = this.equality();
+
+            expr = ASTNode.BinaryOperation(op, expr, rhs);
+        }
+
+        return expr;
     }
 
     private equality(): Expression {

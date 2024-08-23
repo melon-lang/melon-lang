@@ -314,6 +314,10 @@ class Compiler {
             opcode = Opcode.GT;
         else if (type === TokenType.GTE)
             opcode = Opcode.GTE;
+        else if (type === TokenType.AND)
+            opcode = Opcode.AND;
+        else if (type === TokenType.OR)
+            opcode = Opcode.OR;
         else
             throw new Error(`Unknown binary operator ${type}`);
 
