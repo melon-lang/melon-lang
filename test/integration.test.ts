@@ -376,6 +376,17 @@ const validTestPrograms = [
         let result = decToZero(10);
         `,
         expected: {type: ValueType.NUMBER, value: 0}
+    },
+    {
+        program: `
+        function decToNegative(i, j){
+            if (i < 0) return 0;
+            return decToNegative(i-j, j);
+        }
+
+        let result = decToNegative(10, 1);
+        `,
+        expected: {type: ValueType.NUMBER, value: 0}
     }
 ]
 
