@@ -204,7 +204,151 @@ const testPrograms = [
             result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: true}
-    }
+    },
+    {
+        program: `  
+            let dummy = bool("true");
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: true}
+    },
+    {
+        program: `
+            let dummy = bool("false");
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: false}
+    },
+    {
+        program: `
+            let dummy = bool("true") && bool("false");
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: false}
+    },
+    {
+        program: `
+            let dummy = bool("true") || bool("false");
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: true}
+    },
+    {
+        program: `
+            let dummy = bool("true") && bool("true");
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: true}
+    },
+    {
+        program: `
+            let dummy = bool("false") || bool("false");
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: false}
+    },
+    {
+        program: `
+            let dummy = bool("false") || bool("true");
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: true}
+    },
+    {
+        program: `
+            let dummy = bool("false") && bool("true");
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: false}
+    },
+    {
+        program: `
+            let dummy = bool("false") && bool("true") || bool("true");
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: true}
+    },
+    {
+        program: `
+            let dummy = bool("false") && bool("true") || bool("false");
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: false}
+    },
+    {
+        program: `
+            let dummy = bool("false") && bool("false") || bool("false");
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: false}
+    },
+    {
+        program: `
+            let dummy = bool("true") && bool("true") || bool("true");
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: true}
+    },
+    {
+        program: `
+            let dummy = bool("true") && bool("true") || bool("false");
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: true}
+    },
+    {
+        program: `
+            let dummy = bool("true") && bool("false") || bool("true");
+            result = dummy;
+        `,
+        expected: {type: ValueType.BOOLEAN, value: true}
+    },
+    {
+        program: `
+            let num = "123";
+            
+            result = num + 1;
+        `,
+        expected: {type: ValueType.STRING, value: '1231'}
+    },
+    {
+        program: ``,
+        expected: {type: ValueType.NULL, value: null}
+    },
+    {
+        program: `
+            let num = "123";
+            num = number(num);
+            result = num + 1;
+        `,
+        expected: {type: ValueType.NUMBER, value: 124}
+    },
+    {
+        program: `
+            let a = 0;
+            let b = 1;
+
+            result = a + b;
+            result = bool(a+b);
+        `,
+        expected: {type: ValueType.BOOLEAN, value: true}
+    },
+    {
+        program: `
+            function add(a, b) {
+                return a + b;
+            }
+
+            function sub(a, b) {
+                return a - b;
+            }
+
+            result = add(1, -100);
+            result = sub(result, -100);
+            result = bool(result);
+        `,
+        expected: {type: ValueType.BOOLEAN, value: true}
+    },
 ]
 
 
