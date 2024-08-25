@@ -1,4 +1,4 @@
-module.exports =  {
+export default  {
 	testEnvironment: 'jsdom',
 	transform: {
 		'^.+\\.m?[tj]s?$': ['ts-jest'],
