@@ -33,3 +33,9 @@ export class VariableAlreadyDeclaredInScope extends CompilationError {
         super(`Variable ${variableName} is already declared in this scope.`)
     }
 }
+
+export class FunctionArgumentNumberMismatch extends RuntimeError {
+    constructor(functionName: string, expected: number, got: number){
+        super(`Function ${functionName} expects ${expected} arguments, got ${got}.`)
+    }
+}

@@ -1,5 +1,5 @@
 import { Type, serialize, deserialize } from 'class-transformer';
-import { VariableAlreadyDeclared, VariableNotDeclared } from './error';
+import { FunctionArgumentNumberMismatch, VariableAlreadyDeclared, VariableNotDeclared } from './error';
 
 export enum Opcode {
     PUSH = "push",
@@ -381,6 +381,9 @@ export default class VM {
                         }
                         break;
                     }
+
+                    if(func.value.args.length !== value)
+                        throw new FunctionArgumentNumberMismatch(func.value.name, func.value.args.length, value);
 
                     const args = [];
                     for (let i = 0; i < value; i++)

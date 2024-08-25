@@ -1,7 +1,7 @@
 import { expect, test } from '@jest/globals';
 import { compile, evaluate } from '../src/index';
 import { ValueType } from '../src/vm';
-import { VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
+import { FunctionArgumentNumberMismatch, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
 import exp from 'constants';
 
 const evalValidProgram = (program: string) => {
@@ -387,7 +387,7 @@ const validTestPrograms = [
         let result = decToNegative(10, 1);
         `,
         expected: {type: ValueType.NUMBER, value: 0}
-    }
+    },
 ]
 
 const invalidTestPrograms = [
@@ -460,6 +460,17 @@ const invalidTestPrograms = [
         `,
         expected: VariableNotDeclared
     },
+    {
+        program: `
+        function decToNegative(i, j){
+            if (i < 0) return 0;
+            return decToNegative(i-j);
+        }
+
+        let result = decToNegative(10, 1);
+        `,
+        expected: FunctionArgumentNumberMismatch
+    }
 ];
 
 test.each(validTestPrograms)('.eval($program)',
