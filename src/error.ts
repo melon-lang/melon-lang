@@ -18,7 +18,7 @@ class CompilationError extends MelonError {
 
 export class VariableNotDeclared extends RuntimeError {
     constructor(variableName: string){
-        super(`Variable ${variableName} was not declared before assignment.`)
+        super(`Variable ${variableName} was not declared.`)
     }
 }
 
