@@ -1,3 +1,4 @@
+import { VariableAlreadyDeclaredInScope } from './error';
 import { TokenType } from './lexer';
 import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement } from './parser';
 import { Program, Opcode, Value, Instruction } from './vm';
@@ -35,6 +36,10 @@ const nativesWithOpcode = {
         opcode: Opcode.PARSE_BOOL,
         args: 1
     },
+    'str': {
+        opcode: Opcode.TO_STRING,
+        args: 1
+    }
 }
 
 class Compiler {
@@ -497,6 +502,8 @@ class Compiler {
                     name,
                     depth: this.depth
                 });
+            } else {
+                throw new VariableAlreadyDeclaredInScope(name);
             }
         }
     }

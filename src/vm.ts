@@ -1,4 +1,5 @@
 import { Type, serialize, deserialize } from 'class-transformer';
+import { VariableAlreadyDeclared, VariableNotDeclared } from './error';
 
 export enum Opcode {
     PUSH = "push",
@@ -41,8 +42,6 @@ export enum Opcode {
     DECLAREGL = "declaregl",
     LOADGL = "loadgl",
 
-    CLOSURE = "closure",
-
     NATIVE = "native",
 
     PARSE_NUMBER = "parse_number",
@@ -51,7 +50,8 @@ export enum Opcode {
     IMPORT = "import",
 
     NOP = "nop",
-    PARSE_BOOL = "PARSE_BOOL"
+    PARSE_BOOL = "PARSE_BOOL",
+    TO_STRING = "TO_STRING"
 }
 
 export enum ValueType {
@@ -59,7 +59,6 @@ export enum ValueType {
     NUMBER = "number",
     BOOLEAN = "boolean",
     FUNCTION = "function",
-    CLOSURE = "closure",
     NATIVE = 'native',
     NULL = "null"
 }
@@ -269,7 +268,7 @@ export default class VM {
                 if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
                     throw new Error(`Cannot subtract non-numbers ${a.value} and ${b.value}`);
 
-                this.stack.push(Value.number(a.value - b.value));
+                this.stack.push(Value.number(b.value - a.value));
                 break;
             }
             case Opcode.MUL:
@@ -383,9 +382,11 @@ export default class VM {
                         break;
                     }
 
-                    const args = [func];
+                    const args = [];
                     for (let i = 0; i < value; i++)
-                        args.push(this.stack.pop());
+                        args.unshift(this.stack.pop());
+                    
+                    args.unshift(func);
 
                     this.frames.push(new CallFrame(
                         -1,
@@ -415,19 +416,30 @@ export default class VM {
             case Opcode.DECLAREGL:
                 {
                     const id = this.data[value].value;
+
+                    if(this.globals.has(id))
+                        throw new VariableAlreadyDeclared(id);
+
                     this.globals.set(id, this.stack.pop());
                     break;
                 }
-
             case Opcode.LOADGL:
                 {
                     const id = this.data[value].value;
+
+                    if(!this.globals.has(id))
+                        throw new VariableNotDeclared(id);
+
                     this.stack.push(this.globals.get(id));
                     break;
                 }
             case Opcode.SETGL:
                 {
                     const id = this.data[value].value;
+
+                    if(!this.globals.has(id))
+                        throw new VariableNotDeclared(id);
+
                     this.globals.set(id, this.stack.at(-1));
                     break;
                 }
@@ -449,6 +461,27 @@ export default class VM {
                         throw new Error(`Cannot parse ${str} as boolean`);
 
                     this.stack.push(Value.boolean(str === "true" || str === "1" || str === 1));
+                    break;
+                }
+            case Opcode.TO_STRING:
+                {
+                    const a = this.stack.pop();
+
+                    if (a.type == ValueType.STRING)
+                        this.stack.push(Value.string(a.value));
+                    else if (a.type == ValueType.BOOLEAN)
+                        this.stack.push(Value.string(a.value));
+                    else if (a.type == ValueType.NUMBER)
+                        this.stack.push(Value.string(a.value.toString()));
+                    else if (a.type == ValueType.NULL)
+                        this.stack.push(Value.string(a.value));
+                    else if (a.type == ValueType.NATIVE)
+                        this.stack.push(Value.string(`<melon.native.${a.value}()>`));
+                    else if (a.type == ValueType.FUNCTION)
+                        this.stack.push(Value.string(`<${a.value.name}()>`))
+                    else
+                        throw Error(`Invalid type for a value: ${a.type}`);
+
                     break;
                 }
             case Opcode.NEG:

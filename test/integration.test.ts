@@ -1,8 +1,10 @@
 import { expect, test } from '@jest/globals';
 import { compile, evaluate } from '../src/index';
 import { ValueType } from '../src/vm';
+import { VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
+import exp from 'constants';
 
-const evalProgram = (program: string) => {
+const evalValidProgram = (program: string) => {
     program += 'syscall("dummy", result);';
 
     const state = evaluate(compile(program));
@@ -17,7 +19,11 @@ const evalProgram = (program: string) => {
     return result;
 }
 
-const testPrograms = [
+const evalInvalidProgram = (program: string) => {
+    evaluate(compile(program));
+}
+
+const validTestPrograms = [
     {
         program: 'let result = 1 + 2;',
         expected: {type: ValueType.NUMBER, value: 3}
@@ -159,167 +165,166 @@ const testPrograms = [
     {
         program: `
             let dummy = 0;
-            result = dummy++;
+            let result = dummy++;
         `,
         expected: {type: ValueType.NUMBER, value: 1}
     },
     {
         program: `
             let dummy = 0;
-            result = ++dummy;
+            let result = ++dummy;
         `,
         expected: {type: ValueType.NUMBER, value: 0}
     },
     {
         program: `
             let dummy = 0;
-            result = (++dummy) + 54;
+            let result = (++dummy) + 54;
         `,
         expected: {type: ValueType.NUMBER, value: 54}
     },
     {
         program: `
             let dummy = 0;
-            result = (dummy++) + 34;
+            let result = (dummy++) + 34;
         `,
         expected: {type: ValueType.NUMBER, value: 35}
     },
     {
         program: `
             let dummy = 5 == 5 || 4 == 5;
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: true}
     },
     {
         program: `
             let dummy = 5 == 5 && 4 == 5;
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: false}
     },
     {
         program: `
             let dummy = 4 == 9000 && "string" == "string" || 5 == 5;
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: true}
     },
     {
         program: `  
             let dummy = bool("true");
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: true}
     },
     {
         program: `
             let dummy = bool("false");
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: false}
     },
     {
         program: `
             let dummy = bool("true") && bool("false");
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: false}
     },
     {
         program: `
             let dummy = bool("true") || bool("false");
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: true}
     },
     {
         program: `
             let dummy = bool("true") && bool("true");
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: true}
     },
     {
         program: `
             let dummy = bool("false") || bool("false");
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: false}
     },
     {
         program: `
             let dummy = bool("false") || bool("true");
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: true}
     },
     {
         program: `
             let dummy = bool("false") && bool("true");
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: false}
     },
     {
         program: `
             let dummy = bool("false") && bool("true") || bool("true");
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: true}
     },
     {
         program: `
             let dummy = bool("false") && bool("true") || bool("false");
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: false}
     },
     {
         program: `
             let dummy = bool("false") && bool("false") || bool("false");
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: false}
     },
     {
         program: `
             let dummy = bool("true") && bool("true") || bool("true");
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: true}
     },
     {
         program: `
             let dummy = bool("true") && bool("true") || bool("false");
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: true}
     },
     {
         program: `
             let dummy = bool("true") && bool("false") || bool("true");
-            result = dummy;
+            let result = dummy;
         `,
         expected: {type: ValueType.BOOLEAN, value: true}
     },
     {
         program: `
             let num = "123";
-            
-            result = num + 1;
+            let result = num + str(1);
         `,
         expected: {type: ValueType.STRING, value: '1231'}
     },
     {
-        program: ``,
+        program: `let result = null;`,
         expected: {type: ValueType.NULL, value: null}
     },
     {
         program: `
             let num = "123";
             num = number(num);
-            result = num + 1;
+            let result = num + 1;
         `,
         expected: {type: ValueType.NUMBER, value: 124}
     },
@@ -328,7 +333,7 @@ const testPrograms = [
             let a = 0;
             let b = 1;
 
-            result = a + b;
+            let result = a + b;
             result = bool(a+b);
         `,
         expected: {type: ValueType.BOOLEAN, value: true}
@@ -343,18 +348,118 @@ const testPrograms = [
                 return a - b;
             }
 
-            result = add(1, -100);
+            let result = add(1, -100);
             result = sub(result, -100);
             result = bool(result);
         `,
         expected: {type: ValueType.BOOLEAN, value: true}
+    },    
+    {
+        program: `
+        function fib(i){
+            if (i == 0) return 0;
+            if (i == 1) return 1;
+            return fib(i-1) + fib(i-2);
+        }
+
+        let result = fib(10);
+        `,
+        expected: {type: ValueType.NUMBER, value: 55}
     },
+    {
+        program: `
+        function decToZero(i){
+            if (i == 0) return 0;
+            return decToZero(i-1);
+        }
+
+        let result = decToZero(10);
+        `,
+        expected: {type: ValueType.NUMBER, value: 0}
+    }
 ]
 
+const invalidTestPrograms = [
+    {
+        program: `
+        let x = 1;
+        let x = 2;
+        `,
+        expected: VariableAlreadyDeclared
+    },
+    {
+        program: `
+        {
+            let x = 1;
+            let x = "lol";
+        }
+        `,
+        expected: VariableAlreadyDeclaredInScope
+    },
+    {
+        program: `
+        if(true){
+            let x = 1;
+            {
+                {
+                    {
+                        let x = "lol"
+                    }
+                }
+            };
+        }
+        `,
+        expected: VariableAlreadyDeclaredInScope
+    },
+    {
+        program:`
+        x++;
+        `,
+        expected: VariableNotDeclared
+    },
+    {
+        program:`
+        if(true){
+            let y = 100;    
+        }
+        let y = x + 1000;
+        `,
+        expected: VariableNotDeclared
+    },
+    {
+        program:`
+        let y = 100;
+        for(let i = 0; i < 100; i++){
+            y = y - 1;   
+        }
+        x = y;
+        `,
+        expected: VariableNotDeclared
+    },
+    {
+        program:`
+        let y = 100;
+        for(let i = 0; i < 100; i++){
+            y = y - 1;
+        }
+        
+        if (y == 0){
+            x = y;
+        }
+        `,
+        expected: VariableNotDeclared
+    },
+];
 
-test.each(testPrograms)('.eval($program)',
+test.each(validTestPrograms)('.eval($program)',
     ({ program, expected }) => {
-        const result = evalProgram(program);
+        const result = evalValidProgram(program);
         expect(result).toEqual(expected);
+    }
+);
+
+test.each(invalidTestPrograms)('.eval($program)',
+    ({ program, expected }) => {
+        expect(() => evalInvalidProgram(program)).toThrowError(expected);
     }
 );

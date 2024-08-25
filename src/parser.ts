@@ -385,7 +385,7 @@ export default class Parser {
         if (this.peek().type === TokenType.RPAREN)
             update = this.empty();
         else {
-            update = this.expression();
+            update = this.expressionStatement(false);
 
             if (this.peek().type !== TokenType.RPAREN)
                 this.error("Expected ')' after update statement");
