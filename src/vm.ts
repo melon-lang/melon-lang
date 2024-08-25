@@ -50,7 +50,8 @@ export enum Opcode {
     RANDOM = "random",
     IMPORT = "import",
 
-    NOP = "nop"
+    NOP = "nop",
+    PARSE_BOOL = "PARSE_BOOL"
 }
 
 export enum ValueType {
@@ -238,27 +239,27 @@ export default class VM {
                     break;
                 }
             case Opcode.AND:
-                    {
-                        const a = this.stack.pop();
-                        const b = this.stack.pop();
+                {
+                    const a = this.stack.pop();
+                    const b = this.stack.pop();
 
-                        if (a.type !== ValueType.BOOLEAN || b.type !== ValueType.BOOLEAN)
-                            throw new Error("Cannot AND non-booleans");
+                    if (a.type !== ValueType.BOOLEAN || b.type !== ValueType.BOOLEAN)
+                        throw new Error("Cannot AND non-booleans");
 
-                        this.stack.push(Value.boolean(b.value && a.value));
-                        break;
-                    }
+                    this.stack.push(Value.boolean(b.value && a.value));
+                    break;
+                }
             case Opcode.ADD:
                 {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type === ValueType.NUMBER || b.type === ValueType.NUMBER)
+                    if (a.type === ValueType.NUMBER && b.type === ValueType.NUMBER)
                         this.stack.push(Value.number(b.value + a.value));
-                    else if (a.type === ValueType.STRING || b.type === ValueType.STRING)
+                    else if (a.type === ValueType.STRING && b.type === ValueType.STRING)
                         this.stack.push(Value.string(b.value + a.value));
                     else
-                        throw new Error("Cannot add non-numbers or non-strings");
+                        throw new Error(`Cannot add ${a.type} ${a.value} with ${b.type} ${b.value}`);
                     break;
                 }
             case Opcode.SUB: {
@@ -266,7 +267,7 @@ export default class VM {
                 const b = this.stack.pop();
 
                 if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
-                    throw new Error("Cannot subtract non-numbers");
+                    throw new Error(`Cannot subtract non-numbers ${a.value} and ${b.value}`);
 
                 this.stack.push(Value.number(a.value - b.value));
                 break;
@@ -384,7 +385,7 @@ export default class VM {
 
                     const args = [func];
                     for (let i = 0; i < value; i++)
-                        args.unshift(this.stack.pop());
+                        args.push(this.stack.pop());
 
                     this.frames.push(new CallFrame(
                         -1,
@@ -440,12 +441,32 @@ export default class VM {
                     this.stack.push(Value.number(Number(str)));
                     break;
                 }
+            case Opcode.PARSE_BOOL:
+                {
+                    const str = this.stack.pop().value;
+
+                    if (str !== "true" && str !== "false" && str !== "1" && str !== "0" && str !== 1 && str !== 0)
+                        throw new Error(`Cannot parse ${str} as boolean`);
+
+                    this.stack.push(Value.boolean(str === "true" || str === "1" || str === 1));
+                    break;
+                }
+            case Opcode.NEG:
+                {
+                    const a = this.stack.pop();
+
+                    if (a.type !== ValueType.NUMBER)
+                        throw new Error(`Cannot negate non-number ${a.value}`);
+
+                    this.stack.push(Value.number(-a.value));
+                    break;
+                }
             case Opcode.INC:
                 {
                     const a = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new Error("Cannot increment non-number");
+                        throw new Error(`Cannot increment non-number ${a.value}`);
 
                     this.stack.push(Value.number(a.value + 1));
                     break;
@@ -455,7 +476,7 @@ export default class VM {
                     const a = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new Error("Cannot decrement non-number");
+                        throw new Error(`Cannot increment non-number ${a.value}`);
 
                     this.stack.push(Value.number(a.value - 1));
                     break;

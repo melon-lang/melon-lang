@@ -31,6 +31,10 @@ const nativesWithOpcode = {
         opcode: Opcode.RANDOM,
         args: 0
     },
+    'bool': {
+        opcode: Opcode.PARSE_BOOL,
+        args: 1
+    },
 }
 
 class Compiler {
