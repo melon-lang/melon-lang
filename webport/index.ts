@@ -80,15 +80,15 @@ const resume = (save: string, value): void => {
       begin(sourceCode);
     } else {
       document.write(
-        JSON.stringify({
+        btoa(JSON.stringify({
           error: 'No source code found in query params.'
-        })
+        }))
       );
     }
   } catch (e) {
-    document.write(
+    document.write(btoa(
       JSON.stringify({
         error: e.message,
-      }));
+      })));
   }
 })();
