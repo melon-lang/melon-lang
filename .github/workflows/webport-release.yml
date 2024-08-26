@@ -22,6 +22,7 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build:webport
+      - run: mv dist/webport/index.html dist/webport/build
       
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
@@ -30,4 +31,4 @@ jobs:
           title: "Webport Build"
           prerelease: true
           files: |
-            dist/webport
+            dist/webport/build
