@@ -79,9 +79,16 @@ const resume = (save: string, value): void => {
     } else if (sourceCode) {
       begin(sourceCode);
     } else {
-      document.write('No source code found in query params.');
+      document.write(
+        JSON.stringify({
+          error: 'No source code found in query params.'
+        })
+      );
     }
   } catch (e) {
-    document.write(JSON.stringify(e));
+    document.write(
+      JSON.stringify({
+        error: e.message,
+      }));
   }
 })();
