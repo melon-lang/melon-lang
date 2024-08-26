@@ -44,13 +44,13 @@ export class VariableAlreadyDeclaredInScope extends CompilationError {
 
 export class FunctionArgumentNumberMismatch extends RuntimeError {
     constructor(functionName: string, expected: number, got: number){
-        super(`Function ${functionName} expects ${expected} arguments, got ${got}.`)
+        super(`Function ${functionName} expects ${expected} argument(s), got ${got}.`)
     }
 }
 
 export class NativeFunctionArgumentNumberMismatch extends CompilationError {
     constructor(functionName: string, expected: number, got: number){
-        super(`Native function ${functionName} expects ${expected} arguments, got ${got}.`)
+        super(`Native function ${functionName} expects ${expected} argument(s), got ${got}.`)
     }
 }
 
