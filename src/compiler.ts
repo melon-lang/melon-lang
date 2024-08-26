@@ -97,8 +97,6 @@ class Compiler {
             this.function(node);
         else if (node instanceof ExpressionStatement)
             this.expressionStatement(node);
-        else if (node instanceof ImportStatement)
-            this.import(node);
         else if (node instanceof EmptyStatement)
             this.empty(node);
         else {
@@ -108,14 +106,6 @@ class Compiler {
 
     private empty(node: EmptyStatement) {
         this.emitText(Opcode.NOP);
-    }
-
-    private import(node: ImportStatement) {
-        this.emitData(Value.string(node.path.value));
-        this.emitText(
-            Opcode.IMPORT,
-            this.program.data.length - 1
-        );
     }
 
     private literal(node: Literal) {

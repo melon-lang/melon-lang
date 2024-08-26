@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { Type, serialize, deserialize } from 'class-transformer';
-import { FunctionArgumentNumberMismatch, InvalidType, VariableAlreadyDeclared, VariableNotDeclared } from './error';
+import { CompilerBug, FunctionArgumentNumberMismatch, InvalidType, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclared, VariableNotDeclared } from './error';
 
 export enum Opcode {
     PUSH = "push",
@@ -48,7 +48,6 @@ export enum Opcode {
     PARSE_NUMBER = "parse_number",
 
     RANDOM = "random",
-    IMPORT = "import",
 
     NOP = "nop",
     PARSE_BOOL = "PARSE_BOOL",
@@ -98,6 +97,20 @@ export class Value {
     }
 }
 
+export class Stack extends Array<Value> {
+    
+    constructor(values: Value[] = []) {
+        super(...values);
+    }
+
+    pop() {
+        if (this.length === 0)
+            throw new CompilerBug("Stack underflow. There is nothing to pop from the VM stack.");
+
+        return super.pop();
+    }
+}
+
 export class Function {
     name: string;
     args: string[];
@@ -136,14 +149,14 @@ class CallFrame {
     ip: number;
 
     @Type(() => Value)
-    stack: Value[];
+    stack: Stack;
 
     @Type(() => Instruction)
     text: Instruction[];
 
     constructor(ip: number, stack: Value[], text: Instruction[]) {
         this.ip = ip;
-        this.stack = stack;
+        this.stack = new Stack(stack);
         this.text = text;
     }
 }
@@ -166,6 +179,7 @@ export interface Syscall {
     name: string;
     args: Value[];
 }
+
 export default class VM {
     @Type(() => Value)
     private data: Value[];
@@ -375,6 +389,9 @@ export default class VM {
                             args.unshift(this.stack.pop());
 
                         if (func.value === `syscall`) {
+                            if (args.length == 0)
+                                throw new NativeFunctionArgumentNumberMismatch("syscall", 1, args.length);
+                            
                             this.syscall = {
                                 name: args[0].value,
                                 args: args.slice(1)
@@ -531,10 +548,6 @@ export default class VM {
                 {
                     this.stack.push(Value.number(Math.random()));
 
-                    break;
-                }
-            case Opcode.IMPORT:
-                {
                     break;
                 }
             case Opcode.NOP:

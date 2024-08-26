@@ -24,6 +24,12 @@ export class SyntaxError extends CompilationError {
     }
 }
 
+export class CompilerBug extends MelonError {
+    constructor(message: string){
+        super(`There might be a bug in the melon compiler: ${message}`)
+    }
+}
+
 export class VariableNotDeclared extends RuntimeError {
     constructor(variableName: string){
         super(`Variable ${variableName} was not declared.`)

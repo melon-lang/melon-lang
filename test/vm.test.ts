@@ -198,6 +198,52 @@ const testCases: {
                 status: VMStatus.HALTED,
             }
         },
+        // syscall
+        {
+            program:
+                new Program(
+                    [
+                        { type: Opcode.DATA, value: 0 },
+                        { type: Opcode.DATA, value: 1 },
+                        { type: Opcode.CALL, value: 1 },
+                    ],
+                    [
+                        { type: ValueType.STRING, value: "dummy-syscall" },
+                        { type: ValueType.NATIVE, value: "syscall" },
+                    ]
+                ),
+            steps: 3,
+            expected: {
+                state: {
+                    "frames": [],
+                },
+                status: VMStatus.SYSCALL,
+                syscall: { name: 'dummy-syscall', args: [] }
+            }
+        },
+        {
+            program:
+                new Program(
+                    [
+                        { type: Opcode.DATA, value: 0 },
+                        { type: Opcode.DATA, value: 1 },
+                        { type: Opcode.CALL, value: 2 },
+                    ],
+                    [
+                        { type: ValueType.NATIVE, value: "dummy-syscall" },
+                        { type: ValueType.NATIVE, value: "5" },
+                        { type: ValueType.NATIVE, value: "syscall" },
+                    ]
+                ),
+            steps: 3,
+            expected: {
+                state: {
+                    "frames": [],
+                },
+                status: VMStatus.SYSCALL,
+                syscall: { name: 'dummy-syscall', args: [] }
+            }
+        },
     ]
 
 test.each(testCases)('.eval($program)',
