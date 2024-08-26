@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import { Type, serialize, deserialize } from 'class-transformer';
 import { FunctionArgumentNumberMismatch, InvalidType, VariableAlreadyDeclared, VariableNotDeclared } from './error';
 
@@ -197,7 +198,7 @@ export default class VM {
         return this.frames[this.frames.length - 1].text;
     }
 
-    public run(steps: number = Infinity) {
+    public run(steps: number = Infinity): VMImage {
         while (steps-- > 0 && this.frames.length > 0 && !this.syscall) {
             const instruction = this.text[this.ip];
 
@@ -290,7 +291,7 @@ export default class VM {
                     if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
                         throw new Error("Cannot divide non-numbers");
 
-                    this.stack.push(Value.number(a.value / b.value));
+                    this.stack.push(Value.number(b.value / a.value));
                     break;
                 }
             case Opcode.LT:
