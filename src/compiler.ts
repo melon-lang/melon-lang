@@ -1,4 +1,4 @@
-import { VariableAlreadyDeclaredInScope } from './error';
+import { NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclaredInScope } from './error';
 import { TokenType } from './lexer';
 import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement } from './parser';
 import { Program, Opcode, Value, Instruction } from './vm';
@@ -11,7 +11,7 @@ interface Local {
 const nativesWithSyscall = {
     'print': {
         syscallId: 'is.workflow.actions.showresult',
-        args: Infinity
+        args: 1
     },
     'input': {
         syscallId: 'is.workflow.actions.prompt',
@@ -151,7 +151,7 @@ class Compiler {
                 const { syscallId, args } = nativesWithSyscall[name];
 
                 if (node.args.length > args) {
-                    throw new Error(`Too many arguments passed to ${name}`);
+                    throw new NativeFunctionArgumentNumberMismatch(name, args, node.args.length);
                 }
 
                 this.program.data.push(Value.string(syscallId));
@@ -182,7 +182,7 @@ class Compiler {
                 const { opcode, args } = nativesWithOpcode[name];
 
                 if (node.args.length > args) {
-                    throw new Error(`Too many arguments passed to ${name}`);
+                    throw new NativeFunctionArgumentNumberMismatch(name, args, node.args.length);
                 }
 
                 for (const arg of node.args) {

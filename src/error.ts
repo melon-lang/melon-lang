@@ -1,3 +1,5 @@
+import { ValueType } from "./vm"
+
 class MelonError extends Error {
     constructor(message: string){
         super(`[melon] ${message}`)
@@ -13,6 +15,12 @@ class RuntimeError extends MelonError {
 class CompilationError extends MelonError {
     constructor(message: string){
         super(`Compilation Error: ${message}`)
+    }
+}
+
+export class SyntaxError extends CompilationError {
+    constructor(message: string){
+        super(`Syntax Error: ${message}`)
     }
 }
 
@@ -37,5 +45,17 @@ export class VariableAlreadyDeclaredInScope extends CompilationError {
 export class FunctionArgumentNumberMismatch extends RuntimeError {
     constructor(functionName: string, expected: number, got: number){
         super(`Function ${functionName} expects ${expected} arguments, got ${got}.`)
+    }
+}
+
+export class NativeFunctionArgumentNumberMismatch extends CompilationError {
+    constructor(functionName: string, expected: number, got: number){
+        super(`Native function ${functionName} expects ${expected} arguments, got ${got}.`)
+    }
+}
+
+export class InvalidType extends CompilationError {
+   constructor(expected: ValueType, got: ValueType){
+         super(`Expected ${expected}, got ${got}.`)
     }
 }

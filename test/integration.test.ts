@@ -1,7 +1,7 @@
 import { expect, test } from '@jest/globals';
 import { compile, evaluate } from '../src/index';
 import { ValueType } from '../src/vm';
-import { FunctionArgumentNumberMismatch, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
+import { FunctionArgumentNumberMismatch, InvalidType, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
 import exp from 'constants';
 
 const evalValidProgram = (program: string) => {
@@ -470,6 +470,18 @@ const invalidTestPrograms = [
         let result = decToNegative(10, 1);
         `,
         expected: FunctionArgumentNumberMismatch
+    },
+    {
+        program: `
+        print(1,2);
+        `,
+        expected: NativeFunctionArgumentNumberMismatch
+    },
+    {
+        program: `
+        1 && true;
+        `,
+        expected: InvalidType
     }
 ];
 

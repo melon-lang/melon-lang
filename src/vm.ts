@@ -1,5 +1,5 @@
 import { Type, serialize, deserialize } from 'class-transformer';
-import { FunctionArgumentNumberMismatch, VariableAlreadyDeclared, VariableNotDeclared } from './error';
+import { FunctionArgumentNumberMismatch, InvalidType, VariableAlreadyDeclared, VariableNotDeclared } from './error';
 
 export enum Opcode {
     PUSH = "push",
@@ -232,7 +232,7 @@ export default class VM {
                     const b = this.stack.pop();
 
                     if (a.type !== ValueType.BOOLEAN || b.type !== ValueType.BOOLEAN)
-                        throw new Error("Cannot OR non-booleans");
+                        throw new InvalidType(ValueType.BOOLEAN, a.type);
 
                     this.stack.push(Value.boolean(b.value || a.value));
                     break;
@@ -243,7 +243,7 @@ export default class VM {
                     const b = this.stack.pop();
 
                     if (a.type !== ValueType.BOOLEAN || b.type !== ValueType.BOOLEAN)
-                        throw new Error("Cannot AND non-booleans");
+                        throw new InvalidType(ValueType.BOOLEAN, a.type);
 
                     this.stack.push(Value.boolean(b.value && a.value));
                     break;
@@ -458,10 +458,11 @@ export default class VM {
                 }
             case Opcode.PARSE_BOOL:
                 {
-                    const str = this.stack.pop().value;
+                    const a = this.stack.pop();
+                    const str = a.value;
 
                     if (str !== "true" && str !== "false" && str !== "1" && str !== "0" && str !== 1 && str !== 0)
-                        throw new Error(`Cannot parse ${str} as boolean`);
+                        throw new InvalidType(ValueType.BOOLEAN, a.type);
 
                     this.stack.push(Value.boolean(str === "true" || str === "1" || str === 1));
                     break;

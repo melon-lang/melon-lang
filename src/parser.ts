@@ -1,4 +1,5 @@
 import { Token, TokenType } from './lexer';
+import { SyntaxError } from './error';
 
 export type AST = (Declaration | Statement)[];
 export type Declaration = FunctionDeclaration | VariableDeclaration | Statement;
@@ -304,7 +305,7 @@ export default class Parser {
         const expr = this.expression();
 
         if (forceSemicolon && this.peek().type !== TokenType.SEMICOLON)
-            throw new Error("Expected ';' after variable declaration");
+            throw new SyntaxError("Expected ';' after variable declaration");
 
         if (this.peek().type === TokenType.SEMICOLON)
             this.advance();
@@ -327,7 +328,7 @@ export default class Parser {
         const value = this.expression();
 
         if (forceSemicolon && this.peek().type !== TokenType.SEMICOLON)
-            throw new Error("Expected ';' after variable declaration");
+            throw new SyntaxError("Expected ';' after variable declaration");
 
         if (this.peek().type === TokenType.SEMICOLON)
             this.advance();
@@ -376,7 +377,7 @@ export default class Parser {
             condition = this.expression();
 
             if (this.peek().type !== TokenType.SEMICOLON) 
-                throw new Error("Expected ';' after condition");
+                throw new SyntaxError("Expected ';' after condition");
             
             this.advance();
         }
@@ -658,6 +659,6 @@ export default class Parser {
     }
 
     private error(msg?: string) {
-        throw new Error("Parser error at line " + this.peek().line + ": " + (msg || "Unexpected token"));
+        throw new SyntaxError("Parser error at line " + this.peek().line + ": " + (msg || "Unexpected token"));
     }
 }
