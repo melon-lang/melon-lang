@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "module": "ES2015",
+    "lib": ["ES2022", "DOM"],
+    "moduleResolution": "Node",
+    "rootDir": ".",
+    "outDir": "dist",
+    "allowSyntheticDefaultImports": true,
+    "noEmit": false,
+    "importHelpers": true,   
+    "downlevelIteration": true,
+    "alwaysStrict": true,
+    "sourceMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "strictNullChecks": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "declaration": true,
+    "types": ["reflect-metadata", "node"],
+    "paths": {
+      "tslib": ["../node_modules/tslib/tslib.d.ts"]
+    },
+    "esModuleInterop": true
+  },
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node",
+  },
+  "include": ["webport/**/*", "../src/**/*"]
+}

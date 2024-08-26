@@ -1,29 +1,40 @@
-const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const HtmlInlineScriptPlugin = require('html-inline-script-webpack-plugin');
+import path from 'path';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin';
+import { fileURLToPath } from 'url';
 
-module.exports = {
-    context: path.resolve(__dirname ),
+const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
+const __dirname = path.dirname(__filename); // get the name of the directory
+
+export default {
+    context: path.resolve(__dirname),
     devtool: 'inline-source-map',
     entry: './index.ts',
     mode: 'development',
     module: {
         rules: [{
             test: /\.tsx?$/,
-            use: 'ts-loader',
-            exclude: /\.\.\/node_modules/
+            use: [{
+                loader: 'ts-loader',
+                options: {
+                    configFile: "../tsconfig.webport.json"
+                }
+            }],
+            exclude: /\.\.\/node_modules/,
         }]
     },
     output: {
         filename: 'bundle.js',
-        path: path.resolve(__dirname, 'dist')
+        path: path.resolve(__dirname, '../dist/webport')
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js']
     },
-    plugins: [new HtmlWebpackPlugin({
-        title: 'melon webport',
-        inject: 'head'
-    }),
-    new HtmlInlineScriptPlugin()],
+    plugins: [
+        new HtmlWebpackPlugin({
+            title: 'melon webport',
+            inject: 'head'
+        }),
+        new HtmlInlineScriptPlugin(),
+    ],
 };
