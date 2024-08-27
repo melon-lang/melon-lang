@@ -27,7 +27,6 @@ jobs:
         uses: InsonusK/get-latest-release@v1.0.1
         with:
           myToken: "${{ secrets.GITHUB_TOKEN }}"
-          exclude_types: "release"
           view_top: 1
       
       - name: Bump release version
@@ -46,6 +45,6 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           title: "Melon v${{ steps.bump_version.outputs.next-version }}"
           automatic_release_tag: "${{ steps.bump_version.outputs.next-version }}"
-          prerelease: true
+          prerelease: false
           files: |
             dist/webport/build
