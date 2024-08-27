@@ -1,10 +1,11 @@
 import { expect, test } from '@jest/globals';
 import VM, { Opcode, Program, ValueType, VMImage, VMStatus } from '../src/vm';
 import exp from 'constants';
+import { CompilerBug, MelonError } from '../src/error';
 
 const decodeString = (str: string) => (JSON.parse(atob(str)));
 
-const testCases: {
+const validTestCases: {
     program: Program;
     steps: number;
     expected: { state: any, status: VMStatus, syscall?: any };
@@ -111,7 +112,7 @@ const testCases: {
             steps: 3,
             expected: {
                 state: {
-                    "data": [{ "type": ValueType.NUMBER, "value": 3}, { "type": ValueType.NUMBER, "value": 2 }],
+                    "data": [{ "type": ValueType.NUMBER, "value": 3 }, { "type": ValueType.NUMBER, "value": 2 }],
                     "frames": [
                         {
                             ip: 3,
@@ -221,6 +222,13 @@ const testCases: {
                 syscall: { name: 'dummy-syscall', args: [] }
             }
         },
+    ]
+
+const invalidTestCases: {
+    program: Program;
+    steps: number;
+    expected: typeof MelonError;
+}[] = [
         {
             program:
                 new Program(
@@ -236,17 +244,12 @@ const testCases: {
                     ]
                 ),
             steps: 3,
-            expected: {
-                state: {
-                    "frames": [],
-                },
-                status: VMStatus.SYSCALL,
-                syscall: { name: 'dummy-syscall', args: [] }
-            }
+            expected: CompilerBug
         },
     ]
 
-test.each(testCases)('.eval($program)',
+
+test.each(validTestCases)('.eval($program)',
     ({ program, steps, expected }) => {
 
         const vm = VM.create(program);
@@ -259,5 +262,15 @@ test.each(testCases)('.eval($program)',
         expect(image.status).toEqual(expected.status);
 
         expect(image.syscall).toEqual(expected.syscall);
+    }
+);
+
+test.each(invalidTestCases)('.eval($program)',
+    ({ program, steps, expected }) => {
+
+        expect(() => {
+            const vm = VM.create(program);
+            vm.run(steps);
+        }).toThrow(expected);
     }
 );
