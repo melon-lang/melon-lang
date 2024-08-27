@@ -18,7 +18,7 @@ class CompilationError extends MelonError {
     }
 }
 
-export class SyntaxError extends CompilationError {
+export class SyntaxError extends MelonError {
     constructor(message: string){
         super(`Syntax Error: ${message}`)
     }
