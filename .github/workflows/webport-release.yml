@@ -21,7 +21,26 @@ jobs:
       - run: npm ci
       - run: npm run build:webport
       - run: mv dist/webport/index.html dist/webport/build
+
       
+      - name: Bump release version
+        id: bump_version
+        uses: christian-draeger/increment-semantic-version@1.1.0
+        with:
+          current-version: "${{ env.VERSION }}" # also accepted: 'v2.11.7-alpha.3' | '2.11.7-alpha3'
+          version-fragment: 'bug'
+      
+      - name: Do something with your bumped release version
+        run: echo ${{ steps.bump_version.outputs.next-version }}
+        # will print 2.12.0
+      
+      - uses: mmoyaferrer/set-github-variable@v1.0.0
+        with:
+            name: 'VERSION'
+            value: "${{ steps.bump_version.outputs.next-version }}"
+            repository: melon-lang/melon-lang
+            token: ${{ secrets.REPO_ACCESS_TOKEN }}
+            
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
