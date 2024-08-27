@@ -34,7 +34,7 @@ jobs:
         id: bump_version
         uses: christian-draeger/increment-semantic-version@1.1.0
         with:
-          current-version: "${{ vars.VERSION }}" # also accepted: 'v2.11.7-alpha.3' | '2.11.7-alpha3'
+          current-version: "${{ steps.last_release.outputs.tag_name }}" # also accepted: 'v2.11.7-alpha.3' | '2.11.7-alpha3'
           version-fragment: 'bug'
       
       - name: Do something with your bumped release version
@@ -44,7 +44,7 @@ jobs:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          title: "Webport Build"
+          title: "Melon v${{ steps.bump_version.outputs.next-version }}"
           automatic_release_tag: "${{ steps.bump_version.outputs.next-version }}"
           prerelease: true
           files: |
