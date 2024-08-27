@@ -20,7 +20,7 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build:webport
-      - run: mv dist/webport/index.html dist/webport/build
+      - run: mv dist/webport/index.html dist/webport/build.html
 
       - name: "call action"
         id: last_release
@@ -47,4 +47,4 @@ jobs:
           automatic_release_tag: "${{ steps.bump_version.outputs.next-version }}"
           prerelease: false
           files: |
-            dist/webport/build
+            dist/webport/build.html
