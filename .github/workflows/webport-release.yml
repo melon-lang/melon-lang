@@ -39,12 +39,13 @@ jobs:
             name: 'VERSION'
             value: "${{ steps.bump_version.outputs.next-version }}"
             repository: melon-lang/melon-lang
-            token: ${{ secrets.REPO_ACCESS_TOKEN }}
+            token: ${{ secrets.GITHUB_TOKEN }}
             
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           title: "Webport Build"
+          automatic_release_tag: "${{ vars.VERSION }}"
           prerelease: true
           files: |
             dist/webport/build
