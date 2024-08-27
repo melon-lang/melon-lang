@@ -27,7 +27,7 @@ jobs:
         id: bump_version
         uses: christian-draeger/increment-semantic-version@1.1.0
         with:
-          current-version: "${{ env.VERSION }}" # also accepted: 'v2.11.7-alpha.3' | '2.11.7-alpha3'
+          current-version: "${{ vars.VERSION }}" # also accepted: 'v2.11.7-alpha.3' | '2.11.7-alpha3'
           version-fragment: 'bug'
       
       - name: Do something with your bumped release version
