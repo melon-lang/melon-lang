@@ -167,28 +167,28 @@ const validTestSourceCodes = [
             let dummy = 0;
             let result = dummy++;
         `,
-        expected: {type: ValueType.NUMBER, value: 1}
+        expected: {type: ValueType.NUMBER, value: 0}
     },
     {
         sourceCode: `
             let dummy = 0;
             let result = ++dummy;
         `,
-        expected: {type: ValueType.NUMBER, value: 0}
+        expected: {type: ValueType.NUMBER, value: 1}
     },
     {
         sourceCode: `
             let dummy = 0;
             let result = (++dummy) + 54;
         `,
-        expected: {type: ValueType.NUMBER, value: 54}
+        expected: {type: ValueType.NUMBER, value: 55}
     },
     {
         sourceCode: `
             let dummy = 0;
             let result = (dummy++) + 34;
         `,
-        expected: {type: ValueType.NUMBER, value: 35}
+        expected: {type: ValueType.NUMBER, value: 34}
     },
     {
         sourceCode: `
@@ -387,6 +387,21 @@ const validTestSourceCodes = [
         let result = decToNegative(10, 1);
         `,
         expected: {type: ValueType.NUMBER, value: 0}
+    },
+    // Overrides the built-in random function
+    {
+        sourceCode: `
+        let i = 0;
+        let result = i++;
+        `,
+        expected: {type: ValueType.NUMBER, value: 0}
+    },
+    {
+        sourceCode: `
+        let i = 0;
+        let result = ++i;
+        `,
+        expected: {type: ValueType.NUMBER, value: 1}
     },
 ]
 

@@ -260,7 +260,7 @@ class Compiler {
 
             this.loadVariable(node.rand.name.value);
 
-            if (node.prefix) {
+            if (!node.prefix) {
                 this.emitText(
                     Opcode.COPY,
                 );
@@ -272,7 +272,7 @@ class Compiler {
 
             this.assignVariable(node.rand.name.value);
 
-            if (node.prefix) {
+            if (!node.prefix) {
                 this.emitText(
                     Opcode.POP,
                 );
