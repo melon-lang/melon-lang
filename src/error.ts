@@ -1,24 +1,24 @@
 import { ValueType } from "./vm"
 
-class MelonError extends Error {
+export class MelonError extends Error {
     constructor(message: string){
         super(`[melon] ${message}`)
     }
 }
 
-class RuntimeError extends MelonError {
+export class RuntimeError extends MelonError {
     constructor(message: string){
         super(`Runtime Error: ${message}`)
     }
 }
 
-class CompilationError extends MelonError {
+export class CompilationError extends MelonError {
     constructor(message: string){
         super(`Compilation Error: ${message}`)
     }
 }
 
-export class SyntaxError extends CompilationError {
+export class SyntaxError extends MelonError {
     constructor(message: string){
         super(`Syntax Error: ${message}`)
     }
@@ -61,7 +61,19 @@ export class NativeFunctionArgumentNumberMismatch extends CompilationError {
 }
 
 export class InvalidType extends CompilationError {
-   constructor(expected: ValueType, got: ValueType){
-         super(`Expected ${expected}, got ${got}.`)
+   constructor(expected: ValueType, got: ValueType, message: string = ''){
+         super(`${message} Expected ${expected}, got ${got}.`)
+    }
+}
+
+export class DivisionByZero extends RuntimeError {
+    constructor(){
+        super(`Division by zero.`)
+    }
+}
+
+export class InvalidFormat extends RuntimeError {
+    constructor(message){
+        super(message);
     }
 }

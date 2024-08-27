@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { Type, serialize, deserialize } from 'class-transformer';
-import { CompilerBug, FunctionArgumentNumberMismatch, InvalidType, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclared, VariableNotDeclared } from './error';
+import { CompilerBug, DivisionByZero, FunctionArgumentNumberMismatch, InvalidFormat, InvalidType, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclared, VariableNotDeclared } from './error';
 
 export enum Opcode {
     PUSH = "push",
@@ -273,7 +273,7 @@ export default class VM {
                     else if (a.type === ValueType.STRING && b.type === ValueType.STRING)
                         this.stack.push(Value.string(b.value + a.value));
                     else
-                        throw new Error(`Cannot add ${a.type} ${a.value} with ${b.type} ${b.value}`);
+                        throw new InvalidType(a.type, b.type, `Cannot add ${a.type} ${a.value} with ${b.type} ${b.value}`);
                     break;
                 }
             case Opcode.SUB: {
@@ -281,7 +281,7 @@ export default class VM {
                 const b = this.stack.pop();
 
                 if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
-                    throw new Error(`Cannot subtract non-numbers ${a.value} and ${b.value}`);
+                    throw new InvalidType(a.type, b.type, `Cannot subtract non-numbers ${a.value} and ${b.value}`);
 
                 this.stack.push(Value.number(b.value - a.value));
                 break;
@@ -291,8 +291,10 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
-                        throw new Error("Cannot multiply non-numbers");
+                    if (a.type !== ValueType.NUMBER)
+                        throw new InvalidType(ValueType.NUMBER, a.type, "Cannot multiply non-numbers");
+                    if (b.type !== ValueType.NUMBER)
+                        throw new InvalidType(ValueType.NUMBER, b.type, "Cannot multiply non-numbers");
 
                     this.stack.push(Value.number(a.value * b.value));
                     break;
@@ -302,8 +304,13 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
-                        throw new Error("Cannot divide non-numbers");
+                    if (a.type !== ValueType.NUMBER)
+                        throw new InvalidType(ValueType.NUMBER, a.type, "Cannot divide non-numbers");
+                    if (b.type !== ValueType.NUMBER)
+                        throw new InvalidType(ValueType.NUMBER, b.type, "Cannot divide non-numbers");
+
+                    if(a.value === 0)
+                        throw new DivisionByZero();
 
                     this.stack.push(Value.number(b.value / a.value));
                     break;
@@ -313,8 +320,11 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
-                        throw new Error("Cannot compare non-numbers: " + a.type + " " + b.type);
+                    if (a.type !== ValueType.NUMBER)
+                        throw new InvalidType(ValueType.NUMBER, a.type, "Cannot compare (<) non-numbers");
+                    if (b.type !== ValueType.NUMBER)
+                        throw new InvalidType(ValueType.NUMBER, b.type, "Cannot compare (<) non-numbers");
+
 
                     this.stack.push(Value.boolean(b.value < a.value));
                     break;
@@ -324,8 +334,10 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
-                        throw new Error("Cannot compare non-numbers");
+                    if (a.type !== ValueType.NUMBER)
+                        throw new InvalidType(ValueType.NUMBER, a.type, "Cannot compare (>) non-numbers");
+                    if (b.type !== ValueType.NUMBER)
+                        throw new InvalidType(ValueType.NUMBER, b.type, "Cannot compare (>) non-numbers");
 
                     this.stack.push(Value.boolean(b.value > a.value));
                     break;
@@ -335,8 +347,10 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
-                        throw new Error("Cannot compare non-numbers");
+                    if (a.type !== ValueType.NUMBER)
+                        throw new InvalidType(ValueType.NUMBER, a.type, "Cannot compare (<=) non-numbers");
+                    if (b.type !== ValueType.NUMBER)
+                        throw new InvalidType(ValueType.NUMBER, b.type, "Cannot compare (<=) non-numbers");
 
                     this.stack.push(Value.boolean(b.value <= a.value));
                     break;
@@ -346,8 +360,10 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
-                        throw new Error("Cannot compare non-numbers");
+                    if (a.type !== ValueType.NUMBER)
+                        throw new InvalidType(ValueType.NUMBER, a.type, "Cannot compare (>=) non-numbers");
+                    if (b.type !== ValueType.NUMBER)
+                        throw new InvalidType(ValueType.NUMBER, b.type, "Cannot compare (>=) non-numbers");
 
                     this.stack.push(Value.boolean(b.value >= a.value));
                     break;
@@ -357,7 +373,7 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    this.stack.push(Value.boolean(b.value === a.value));
+                    this.stack.push(Value.boolean(a.type === b.type && b.value === a.value));
                     break;
                 }
             case Opcode.NEQ:
@@ -365,7 +381,7 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    this.stack.push(Value.boolean(b.value !== a.value));
+                    this.stack.push(Value.boolean(a.type !== b.type || b.value !== a.value));
                     break;
                 }
             case Opcode.JUMP:
@@ -469,7 +485,7 @@ export default class VM {
                     const str = this.stack.pop().value;
 
                     if (isNaN(Number(str)))
-                        throw new Error(`Cannot parse ${str} as number`);
+                        throw new InvalidFormat(`Cannot parse ${str} as number`);
 
                     this.stack.push(Value.number(Number(str)));
                     break;
@@ -511,7 +527,7 @@ export default class VM {
                     const a = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new Error(`Cannot negate non-number ${a.value}`);
+                        throw new InvalidType(ValueType.NUMBER, a.type, `Cannot negate non-number ${a.value}`);
 
                     this.stack.push(Value.number(-a.value));
                     break;
@@ -521,7 +537,7 @@ export default class VM {
                     const a = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new Error(`Cannot increment non-number ${a.value}`);
+                        throw new InvalidType(ValueType.NUMBER, a.type, `Cannot increment non-number ${a.value}`);
 
                     this.stack.push(Value.number(a.value + 1));
                     break;
@@ -531,7 +547,7 @@ export default class VM {
                     const a = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new Error(`Cannot increment non-number ${a.value}`);
+                        throw new InvalidType( ValueType.NUMBER, a.type, `Cannot decrement non-number ${a.value}`);
 
                     this.stack.push(Value.number(a.value - 1));
                     break;
@@ -554,7 +570,7 @@ export default class VM {
                 break;
 
             default:
-                throw new Error(`Unknown opcode ${type}`);
+                throw new CompilerBug(`Unknown opcode ${type}`);
         }
     }
 

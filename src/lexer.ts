@@ -86,7 +86,7 @@ class Lexer {
     }
 
     private error(msg?: string): void {
-        throw new Error(`Invalid character at ${this.line}:${this.column}`
+        throw new SyntaxError(`Invalid character at ${this.line}:${this.column}`
             + ` "${this.peek()}"`
         );
     }

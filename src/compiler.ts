@@ -1,4 +1,4 @@
-import { NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclaredInScope } from './error';
+import { CompilerBug, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclaredInScope } from './error';
 import { TokenType } from './lexer';
 import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement } from './parser';
 import { Program, Opcode, Value, Instruction } from './vm';
@@ -100,7 +100,7 @@ class Compiler {
         else if (node instanceof EmptyStatement)
             this.empty(node);
         else {
-            throw new Error(`Unknown node type ${node.constructor.name}`);
+            throw new CompilerBug(`Unknown node type ${node.constructor.name}`);
         }
     }
 
@@ -123,7 +123,7 @@ class Compiler {
         else if (node.value.type === TokenType.NULL)
             constant = Value.null();
         else
-            throw new Error(`Unknown literal type ${node.value.type}`);
+            throw new CompilerBug(`Unknown literal type ${node.value.type}`);
 
         this.program.data.push(constant);
 
@@ -252,11 +252,11 @@ class Compiler {
         else if (type === TokenType.DEC)
             opcode = Opcode.DEC;
         else
-            throw new Error(`Unknown unary operator ${type}`);
+            throw new CompilerBug(`Unknown unary operator ${type}`);
 
         if (opcode === Opcode.INC || opcode === Opcode.DEC) {
             if (!(node.rand instanceof Identifier))
-                throw new Error(`Invalid operand for ${type}`);
+                throw new SyntaxError(`Invalid operand ${node.rand} for ${type}`);
 
             this.loadVariable(node.rand.name.value);
 
@@ -318,7 +318,7 @@ class Compiler {
         else if (type === TokenType.OR)
             opcode = Opcode.OR;
         else
-            throw new Error(`Unknown binary operator ${type}`);
+            throw new CompilerBug(`Unknown binary operator ${type}`);
 
         this.emitText(opcode);
     }
