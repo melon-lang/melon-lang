@@ -128,9 +128,11 @@ export class Function {
 export class Instruction {
     type: Opcode;
     value?: number;
+    lineNumber?: number;
 
-    constructor(type: Opcode, value?: number) {
+    constructor(type: Opcode, lineNumber: number, value?: number, ) {
         this.type = type;
+        this.lineNumber = lineNumber;
         this.value = value;
     }
 }
@@ -233,7 +235,7 @@ export default class VM {
     }
 
     private execute(instruction: Instruction) {
-        const { type, value } = instruction;
+        const { type, value, lineNumber } = instruction;
         switch (type) {
             case Opcode.PUSH:
                 this.stack.push(this.data[value]);
@@ -247,7 +249,7 @@ export default class VM {
                     const b = this.stack.pop();
 
                     if (a.type !== ValueType.BOOLEAN || b.type !== ValueType.BOOLEAN)
-                        throw new InvalidType(ValueType.BOOLEAN, a.type);
+                        throw new InvalidType(lineNumber, ValueType.BOOLEAN, a.type);
 
                     this.stack.push(Value.boolean(b.value || a.value));
                     break;
@@ -258,7 +260,7 @@ export default class VM {
                     const b = this.stack.pop();
 
                     if (a.type !== ValueType.BOOLEAN || b.type !== ValueType.BOOLEAN)
-                        throw new InvalidType(ValueType.BOOLEAN, a.type);
+                        throw new InvalidType(lineNumber, ValueType.BOOLEAN, a.type);
 
                     this.stack.push(Value.boolean(b.value && a.value));
                     break;
@@ -273,7 +275,7 @@ export default class VM {
                     else if (a.type === ValueType.STRING && b.type === ValueType.STRING)
                         this.stack.push(Value.string(b.value + a.value));
                     else
-                        throw new InvalidType(a.type, b.type, `Cannot add ${a.type} ${a.value} with ${b.type} ${b.value}`);
+                        throw new InvalidType(lineNumber, a.type, b.type, `Cannot add ${a.type} ${a.value} with ${b.type} ${b.value}`);
                     break;
                 }
             case Opcode.SUB: {
@@ -281,7 +283,7 @@ export default class VM {
                 const b = this.stack.pop();
 
                 if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
-                    throw new InvalidType(a.type, b.type, `Cannot subtract non-numbers ${a.value} and ${b.value}`);
+                    throw new InvalidType(lineNumber, a.type, b.type, `Cannot subtract non-numbers ${a.value} and ${b.value}`);
 
                 this.stack.push(Value.number(b.value - a.value));
                 break;
@@ -292,9 +294,9 @@ export default class VM {
                     const b = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(ValueType.NUMBER, a.type, "Cannot multiply non-numbers");
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, "Cannot multiply non-numbers");
                     if (b.type !== ValueType.NUMBER)
-                        throw new InvalidType(ValueType.NUMBER, b.type, "Cannot multiply non-numbers");
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot multiply non-numbers");
 
                     this.stack.push(Value.number(a.value * b.value));
                     break;
@@ -305,12 +307,12 @@ export default class VM {
                     const b = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(ValueType.NUMBER, a.type, "Cannot divide non-numbers");
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, "Cannot divide non-numbers");
                     if (b.type !== ValueType.NUMBER)
-                        throw new InvalidType(ValueType.NUMBER, b.type, "Cannot divide non-numbers");
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot divide non-numbers");
 
                     if(a.value === 0)
-                        throw new DivisionByZero();
+                        throw new DivisionByZero(lineNumber);
 
                     this.stack.push(Value.number(b.value / a.value));
                     break;
@@ -321,9 +323,9 @@ export default class VM {
                     const b = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(ValueType.NUMBER, a.type, "Cannot compare (<) non-numbers");
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, "Cannot compare (<) non-numbers");
                     if (b.type !== ValueType.NUMBER)
-                        throw new InvalidType(ValueType.NUMBER, b.type, "Cannot compare (<) non-numbers");
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot compare (<) non-numbers");
 
 
                     this.stack.push(Value.boolean(b.value < a.value));
@@ -335,9 +337,9 @@ export default class VM {
                     const b = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(ValueType.NUMBER, a.type, "Cannot compare (>) non-numbers");
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, "Cannot compare (>) non-numbers");
                     if (b.type !== ValueType.NUMBER)
-                        throw new InvalidType(ValueType.NUMBER, b.type, "Cannot compare (>) non-numbers");
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot compare (>) non-numbers");
 
                     this.stack.push(Value.boolean(b.value > a.value));
                     break;
@@ -348,9 +350,9 @@ export default class VM {
                     const b = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(ValueType.NUMBER, a.type, "Cannot compare (<=) non-numbers");
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, "Cannot compare (<=) non-numbers");
                     if (b.type !== ValueType.NUMBER)
-                        throw new InvalidType(ValueType.NUMBER, b.type, "Cannot compare (<=) non-numbers");
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot compare (<=) non-numbers");
 
                     this.stack.push(Value.boolean(b.value <= a.value));
                     break;
@@ -361,9 +363,9 @@ export default class VM {
                     const b = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(ValueType.NUMBER, a.type, "Cannot compare (>=) non-numbers");
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, "Cannot compare (>=) non-numbers");
                     if (b.type !== ValueType.NUMBER)
-                        throw new InvalidType(ValueType.NUMBER, b.type, "Cannot compare (>=) non-numbers");
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot compare (>=) non-numbers");
 
                     this.stack.push(Value.boolean(b.value >= a.value));
                     break;
@@ -406,7 +408,7 @@ export default class VM {
 
                         if (func.value === `syscall`) {
                             if (args.length == 0)
-                                throw new NativeFunctionArgumentNumberMismatch("syscall", 1, args.length);
+                                throw new NativeFunctionArgumentNumberMismatch(lineNumber, "syscall", 1, args.length);
                             
                             this.syscall = {
                                 name: args[0].value,
@@ -417,7 +419,7 @@ export default class VM {
                     }
 
                     if(func.value.args.length !== value)
-                        throw new FunctionArgumentNumberMismatch(func.value.name, func.value.args.length, value);
+                        throw new FunctionArgumentNumberMismatch(lineNumber, func.value.name, func.value.args.length, value);
 
                     const args = [];
                     for (let i = 0; i < value; i++)
@@ -455,7 +457,7 @@ export default class VM {
                     const id = this.data[value].value;
 
                     if(this.globals.has(id))
-                        throw new VariableAlreadyDeclared(id);
+                        throw new VariableAlreadyDeclared(lineNumber, id);
 
                     this.globals.set(id, this.stack.pop());
                     break;
@@ -465,7 +467,7 @@ export default class VM {
                     const id = this.data[value].value;
 
                     if(!this.globals.has(id))
-                        throw new VariableNotDeclared(id);
+                        throw new VariableNotDeclared(lineNumber, id);
 
                     this.stack.push(this.globals.get(id));
                     break;
@@ -475,7 +477,7 @@ export default class VM {
                     const id = this.data[value].value;
 
                     if(!this.globals.has(id))
-                        throw new VariableNotDeclared(id);
+                        throw new VariableNotDeclared(lineNumber, id);
 
                     this.globals.set(id, this.stack.at(-1));
                     break;
@@ -485,7 +487,7 @@ export default class VM {
                     const str = this.stack.pop().value;
 
                     if (isNaN(Number(str)))
-                        throw new InvalidFormat(`Cannot parse ${str} as number`);
+                        throw new InvalidFormat(lineNumber, `Cannot parse ${str} as number`);
 
                     this.stack.push(Value.number(Number(str)));
                     break;
@@ -496,7 +498,7 @@ export default class VM {
                     const str = a.value;
 
                     if (str !== "true" && str !== "false" && str !== "1" && str !== "0" && str !== 1 && str !== 0)
-                        throw new InvalidType(ValueType.BOOLEAN, a.type);
+                        throw new InvalidType(lineNumber, ValueType.BOOLEAN, a.type);
 
                     this.stack.push(Value.boolean(str === "true" || str === "1" || str === 1));
                     break;
@@ -527,7 +529,7 @@ export default class VM {
                     const a = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(ValueType.NUMBER, a.type, `Cannot negate non-number ${a.value}`);
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, `Cannot negate non-number ${a.value}`);
 
                     this.stack.push(Value.number(-a.value));
                     break;
@@ -537,7 +539,7 @@ export default class VM {
                     const a = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(ValueType.NUMBER, a.type, `Cannot increment non-number ${a.value}`);
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, `Cannot increment non-number ${a.value}`);
 
                     this.stack.push(Value.number(a.value + 1));
                     break;
@@ -547,7 +549,7 @@ export default class VM {
                     const a = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType( ValueType.NUMBER, a.type, `Cannot decrement non-number ${a.value}`);
+                        throw new InvalidType(lineNumber,  ValueType.NUMBER, a.type, `Cannot decrement non-number ${a.value}`);
 
                     this.stack.push(Value.number(a.value - 1));
                     break;

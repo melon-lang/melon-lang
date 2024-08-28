@@ -1,6 +1,6 @@
 import { CompilerBug, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclaredInScope } from './error';
 import { TokenType } from './lexer';
-import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement } from './parser';
+import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement, BreakStatement, ContinueStatement } from './parser';
 import { Program, Opcode, Value, Instruction } from './vm';
 
 interface Local {
@@ -49,6 +49,9 @@ class Compiler {
 
     private locals: Local[] = [];
     private depth: number = 0;
+
+    private breaks: Instruction[][] = [];
+    private continues: Instruction[][] = [];
 
     constructor(ast: AST, locals?: Local[], data?: Value[]) {
         this.ast = ast;
@@ -99,13 +102,47 @@ class Compiler {
             this.expressionStatement(node);
         else if (node instanceof EmptyStatement)
             this.empty(node);
+        else if (node instanceof BreakStatement)
+            this.break(node);
+        else if (node instanceof ContinueStatement)
+            this.continue(node);
         else {
             throw new CompilerBug(`Unknown node type ${node.constructor.name}`);
         }
     }
 
+    private continue(node: ContinueStatement) {
+        if (this.continues.length === 0) {
+            throw new CompilerBug('Continue statement outside of loop');
+        }
+
+        const instruction = this.emitText(
+            Opcode.JUMP,
+            node.lineNumber
+        );
+
+        this.continues[this.continues.length - 1].push(
+            instruction
+        );
+    }
+
+    private break(node: BreakStatement) {
+        if (this.breaks.length === 0) {
+            throw new CompilerBug('Break statement outside of loop');
+        }
+
+        const instruction = this.emitText(
+            Opcode.JUMP,
+            node.lineNumber
+        );
+
+        this.breaks[this.breaks.length - 1].push(
+            instruction
+        );
+    }
+
     private empty(node: EmptyStatement) {
-        this.emitText(Opcode.NOP);
+        this.emitText(Opcode.NOP, node.lineNumber);
     }
 
     private literal(node: Literal) {
@@ -129,6 +166,7 @@ class Compiler {
 
         this.emitText(
             Opcode.DATA,
+            node.lineNumber,
             this.program.data.length - 1
         );
     }
@@ -141,13 +179,14 @@ class Compiler {
                 const { syscallId, args } = nativesWithSyscall[name];
 
                 if (node.args.length > args) {
-                    throw new NativeFunctionArgumentNumberMismatch(name, args, node.args.length);
+                    throw new NativeFunctionArgumentNumberMismatch(node.lineNumber, name, args, node.args.length);
                 }
 
                 this.program.data.push(Value.string(syscallId));
 
                 this.emitText(
                     Opcode.DATA,
+                    node.lineNumber,
                     this.program.data.length - 1
                 );
 
@@ -159,11 +198,13 @@ class Compiler {
 
                 this.emitText(
                     Opcode.DATA,
+                    node.lineNumber,
                     this.program.data.length - 1
                 );
 
                 this.emitText(
                     Opcode.CALL,
+                    node.lineNumber,
                     node.args.length + 1
                 );
 
@@ -172,14 +213,14 @@ class Compiler {
                 const { opcode, args } = nativesWithOpcode[name];
 
                 if (node.args.length > args) {
-                    throw new NativeFunctionArgumentNumberMismatch(name, args, node.args.length);
+                    throw new NativeFunctionArgumentNumberMismatch(node.lineNumber,name, args, node.args.length);
                 }
 
                 for (const arg of node.args) {
                     this.codegen(arg);
                 }
 
-                this.emitText(opcode);
+                this.emitText(opcode, node.lineNumber);
 
                 return;
             } else if (node.func.name.value === "syscall") {
@@ -191,11 +232,13 @@ class Compiler {
 
                 this.emitText(
                     Opcode.DATA,
+                    node.lineNumber,
                     this.program.data.length - 1
                 );
 
                 this.emitText(
                     Opcode.CALL,
+                    node.lineNumber,
                     node.args.length
                 );
 
@@ -211,6 +254,7 @@ class Compiler {
 
         this.emitText(
             Opcode.CALL,
+            node.lineNumber,
             node.args.length
         );
     }
@@ -222,6 +266,7 @@ class Compiler {
 
         this.emitText(
             Opcode.RET,
+            node.lineNumber,
             node.value ? 1 : 0
         );
 
@@ -231,11 +276,12 @@ class Compiler {
         this.codegen(node.expression);
         this.emitText(
             Opcode.POP,
+            node.lineNumber
         );
     }
 
     private identifier(node: Identifier) {
-        this.loadVariable(node.name.value);
+        this.loadVariable(node.name.value, node);
     }
 
     private unaryOperation(node: UnaryOperation) {
@@ -258,23 +304,26 @@ class Compiler {
             if (!(node.rand instanceof Identifier))
                 throw new SyntaxError(`Invalid operand ${node.rand} for ${type}`);
 
-            this.loadVariable(node.rand.name.value);
+            this.loadVariable(node.rand.name.value, node);
 
             if (!node.prefix) {
                 this.emitText(
                     Opcode.COPY,
+                    node.lineNumber
                 );
             }
 
             this.emitText(
                 opcode,
+                node.lineNumber
             );
 
-            this.assignVariable(node.rand.name.value);
+            this.assignVariable(node.rand.name.value, node);
 
             if (!node.prefix) {
                 this.emitText(
                     Opcode.POP,
+                    node.lineNumber
                 );
             }
         } else {
@@ -282,6 +331,7 @@ class Compiler {
 
             this.emitText(
                 opcode,
+                node.lineNumber
             );
         }
     }
@@ -320,7 +370,7 @@ class Compiler {
         else
             throw new CompilerBug(`Unknown binary operator ${type}`);
 
-        this.emitText(opcode);
+        this.emitText(opcode, node.lineNumber);
     }
 
     private variableAssignment(node: VariableAssignment) {
@@ -328,7 +378,7 @@ class Compiler {
 
         const name = node.name.value;
 
-        this.assignVariable(name);
+        this.assignVariable(name, node);
     }
 
     private variableDeclaration(node: VariableDeclaration) {
@@ -336,7 +386,7 @@ class Compiler {
 
         const name = node.name.value;
 
-        this.declareVariable(name);
+        this.declareVariable(name, node);
     }
 
     private block(node: Block) {
@@ -350,7 +400,7 @@ class Compiler {
             if (this.locals[i].depth <= this.depth)
                 break;
 
-            this.emitText(Opcode.POP);
+            this.emitText(Opcode.POP, node.lineNumber);
             this.locals.pop();
         }
     }
@@ -360,6 +410,7 @@ class Compiler {
 
         const jumpf: Instruction = new Instruction(
             Opcode.JUMPF,
+            node.lineNumber
         );
 
         this.program.text.push(jumpf);
@@ -369,6 +420,7 @@ class Compiler {
         if (node.else) {
             const jump: Instruction = new Instruction(
                 Opcode.JUMP,
+                node.lineNumber
             );
             this.program.text.push(jump);
 
@@ -380,47 +432,84 @@ class Compiler {
     }
 
     private while(node: While) {
+        this.breaks.push([]);
+        this.continues.push([]);
+        
         const start = this.program.text.length;
         this.codegen(node.condition);
 
         const jumpf: Instruction = new Instruction(
             Opcode.JUMPF,
+            node.lineNumber
         );
 
         this.program.text.push(jumpf);
+
         this.codegen(node.body);
 
         const jump: Instruction = new Instruction(
             Opcode.JUMP,
+            node.lineNumber,
             start
         );
 
         this.program.text.push(jump);
         jumpf.value = this.program.text.length;
+
+        const breaks = this.breaks.pop();
+        const continues = this.continues.pop();
+
+        for (const instruction of breaks) {
+            instruction.value = this.program.text.length;
+        }
+
+        for (const instruction of continues) {
+            instruction.value = start;
+        }
     }
 
     private for(node: For) {
+        this.breaks.push([]);
+        this.continues.push([]);
+
         this.codegen(node.init);
 
         const start = this.program.text.length;
         this.codegen(node.condition);
 
         const jumpf: Instruction = new Instruction(
-             (node.condition instanceof EmptyStatement) ? Opcode.NOP : Opcode.JUMPF,
+            (node.condition instanceof EmptyStatement) ? Opcode.NOP : Opcode.JUMPF,
+            node.lineNumber
         );
 
         this.program.text.push(jumpf);
 
         this.codegen(node.body);
+
+        const updateStart = this.program.text.length;
+
         this.codegen(node.update);
 
         const jump: Instruction = new Instruction(
             Opcode.JUMP,
+            node.lineNumber,
             start
         );
 
         this.program.text.push(jump);
         jumpf.value = this.program.text.length;
+
+
+        const breaks = this.breaks.pop();
+        const continues = this.continues.pop();
+
+        for (const instruction of breaks) {
+            instruction.value = this.program.text.length;
+        }
+
+        for (const instruction of continues) {
+            instruction.value = updateStart;
+        }
     }
 
     private function(node: FunctionDeclaration) {
@@ -446,22 +535,25 @@ class Compiler {
 
         func.body.push(new Instruction(
             Opcode.RET,
+            node.lineNumber,
             0
         ));
 
         this.emitText(
             Opcode.DATA,
+            node.lineNumber,
             index
         );
 
-        this.declareVariable(node.name.value);
+        this.declareVariable(node.name.value, node);
     }
 
-    private loadVariable(name: string) {
+    private loadVariable(name: string, node:  ASTNode) {
         for (let i = this.locals.length - 1; i >= 0; i--) {
             if (this.locals[i].name === name) {
                 this.emitText(
                     Opcode.LOAD,
+                    node.lineNumber,
                     i
                 );
                 return;
@@ -472,16 +564,18 @@ class Compiler {
 
         this.emitText(
             Opcode.LOADGL,
+            node.lineNumber,
             this.program.data.length - 1
         );
     }
 
-    private declareVariable(name: string) {
+    private declareVariable(name: string, node: ASTNode) {
         if (this.depth === 0) {
             this.program.data.push(Value.string(name));
 
             this.emitText(
                 Opcode.DECLAREGL,
+                node.lineNumber,
                 this.program.data.length - 1
             );
         } else {
@@ -493,17 +587,18 @@ class Compiler {
                     depth: this.depth
                 });
             } else {
-                throw new VariableAlreadyDeclaredInScope(name);
+                throw new VariableAlreadyDeclaredInScope(node.lineNumber, name);
             }
         }
     }
 
-    private assignVariable(name: string) {
+    private assignVariable(name: string, node: ASTNode) {
         if (this.depth === 0) {
             this.program.data.push(Value.string(name));
 
             this.emitText(
                 Opcode.SETGL,
+                node.lineNumber,
                 this.program.data.length - 1
             );
         } else {
@@ -514,26 +609,25 @@ class Compiler {
 
                 this.emitText(
                     Opcode.SETGL,
+                    node.lineNumber,
                     this.program.data.length - 1
                 );
             } else {
                 this.emitText(
                     Opcode.STORE,
+                    node.lineNumber,
                     index
                 );
             }
         }
     }
 
-    private emitText(opcode: Opcode, value?: number) {
-        this.program.text.push(new Instruction(
-            opcode,
-            value
-        ));
-    }
+    private emitText(opcode: Opcode, lineNumber, value?: number) {
+        const instruction = new Instruction(opcode, lineNumber, value);
+        
+        this.program.text.push(instruction);
 
-    private emitData(value: Value) {
-        this.program.data.push(value);
+        return instruction;
     }
 }
 

@@ -227,7 +227,7 @@ const validTestCases: {
 const invalidTestCases: {
     program: Program;
     steps: number;
-    expected: typeof MelonError;
+    expected: any;
 }[] = [
         {
             program:

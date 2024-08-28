@@ -20,7 +20,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "declaration": true,
-    "types": ["reflect-metadata"],
+    "types": ["reflect-metadata", "node"],
     "paths": {
       "tslib": ["./node_modules/tslib/tslib.d.ts"]
     }
