@@ -657,11 +657,11 @@ export default class Parser {
 
         let expr: Expression = this.unary();
 
-        while (this.peek().type === TokenType.MUL || this.peek().type === TokenType.DIV) {
+        while (this.peek().type === TokenType.MUL || this.peek().type === TokenType.DIV || this.peek().type === TokenType.MOD) {
             const op = this.peek();
             this.advance();
             const rhs = this.unary();
-
+            
             expr = ASTNode.BinaryOperation(op, expr, rhs, lineNumber);
         }
 

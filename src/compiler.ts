@@ -367,6 +367,8 @@ class Compiler {
             opcode = Opcode.AND;
         else if (type === TokenType.OR)
             opcode = Opcode.OR;
+        else if (type === TokenType.MOD)
+            opcode = Opcode.MOD;
         else
             throw new CompilerBug(`Unknown binary operator ${type}`);
 

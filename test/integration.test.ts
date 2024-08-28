@@ -670,8 +670,106 @@ const validTestSourceCodes = [
             let result = x;
         `,
         expected: {type: ValueType.NUMBER, value: 47}
+    },
+    {
+        sourceCode: `
+            let x = 10;
+            let y = x % 3;
+
+            let result = y;
+        `,
+        expected: {type: ValueType.NUMBER, value: 1}
+    },
+    {
+        sourceCode: `
+            let x = 25;
+            let y = x % 5;
+
+            let result = y;
+        `,
+        expected: {type: ValueType.NUMBER, value: 0}
+    },
+    {
+        sourceCode: `
+            let x = 13;
+            let y = x % 4;
+
+            let result = y;
+        `,
+        expected: {type: ValueType.NUMBER, value: 1}
+    },
+    {
+        sourceCode: `
+            let x = 100;
+            let y = x % 7;
+
+            let result = y;
+        `,
+        expected: {type: ValueType.NUMBER, value: 2}
+    },
+    {
+        sourceCode: `
+            let x = 0;
+            let y = x % 5;
+
+            let result = y;
+        `,
+        expected: {type: ValueType.NUMBER, value: 0}
+    },
+    {
+        sourceCode: `
+            let x = 15;
+            let y = x % 6;
+
+            let result = y;
+        `,
+        expected: {type: ValueType.NUMBER, value: 3}
+    },
+    {
+        sourceCode: `
+            let x = 9;
+            let y = x % 2;
+
+            let result = y;
+        `,
+        expected: {type: ValueType.NUMBER, value: 1}
+    },
+    {
+        sourceCode: `
+            let x = 18;
+            let y = x % 7;
+
+            let result = y;
+        `,
+        expected: {type: ValueType.NUMBER, value: 4}
+    },
+    {
+        sourceCode: `
+            let x = 33;
+            let y = x % 10;
+
+            let result = y;
+        `,
+        expected: {type: ValueType.NUMBER, value: 3}
+    },
+    {
+        sourceCode: `
+            let x = 45;
+            let y = x % 4;
+
+            let result = y;
+        `,
+        expected: {type: ValueType.NUMBER, value: 1}
+    },
+    {
+        sourceCode: `
+            let x = 45/2;
+            let y = x % 4;
+
+            let result = y;
+        `,
+        expected: {type: ValueType.NUMBER, value: 2.5}
     }
-    
 ]
 
 const invalidTestSourceCodes = [

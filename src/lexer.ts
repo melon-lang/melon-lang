@@ -12,6 +12,7 @@ export enum TokenType {
     DIV = "DIV",
     LPAREN = "LPAREN",
     RPAREN = "RPAREN",
+    MOD = "MOD",
     EOF = "EOF",
     IF = "IF",
     ELSE = "ELSE",
@@ -117,6 +118,9 @@ class Lexer {
                 }
             } else if (c === "*") {
                 tokens.push({ type: TokenType.MUL, value: c, line: this.line });
+                this.advance();
+            } else if (c === "%") {
+                tokens.push({ type: TokenType.MOD, value: c, line: this.line });
                 this.advance();
             } else if (c === "/") {
                 tokens.push({ type: TokenType.DIV, value: c, line: this.line });

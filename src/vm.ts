@@ -51,7 +51,8 @@ export enum Opcode {
 
     NOP = "nop",
     PARSE_BOOL = "PARSE_BOOL",
-    TO_STRING = "TO_STRING"
+    TO_STRING = "TO_STRING",
+    MOD = "MOD"
 }
 
 export enum ValueType {
@@ -98,7 +99,7 @@ export class Value {
 }
 
 export class Stack extends Array<Value> {
-    
+
     constructor(values: Value[] = []) {
         super(...values);
     }
@@ -130,7 +131,7 @@ export class Instruction {
     value?: number;
     lineNumber?: number;
 
-    constructor(type: Opcode, lineNumber: number, value?: number, ) {
+    constructor(type: Opcode, lineNumber: number, value?: number,) {
         this.type = type;
         this.lineNumber = lineNumber;
         this.value = value;
@@ -311,10 +312,26 @@ export default class VM {
                     if (b.type !== ValueType.NUMBER)
                         throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot divide non-numbers");
 
-                    if(a.value === 0)
+                    if (a.value === 0)
                         throw new DivisionByZero(lineNumber);
 
                     this.stack.push(Value.number(b.value / a.value));
+                    break;
+                }
+            case Opcode.MOD:
+                {
+                    const a = this.stack.pop();
+                    const b = this.stack.pop();
+
+                    if (a.type !== ValueType.NUMBER)
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, "Cannot divide non-numbers");
+                    if (b.type !== ValueType.NUMBER)
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot divide non-numbers");
+
+                    if (a.value === 0)
+                        throw new DivisionByZero(lineNumber);
+
+                    this.stack.push(Value.number(b.value % a.value));
                     break;
                 }
             case Opcode.LT:
@@ -409,7 +426,7 @@ export default class VM {
                         if (func.value === `syscall`) {
                             if (args.length == 0)
                                 throw new NativeFunctionArgumentNumberMismatch(lineNumber, "syscall", 1, args.length);
-                            
+
                             this.syscall = {
                                 name: args[0].value,
                                 args: args.slice(1)
@@ -418,13 +435,13 @@ export default class VM {
                         break;
                     }
 
-                    if(func.value.args.length !== value)
+                    if (func.value.args.length !== value)
                         throw new FunctionArgumentNumberMismatch(lineNumber, func.value.name, func.value.args.length, value);
 
                     const args = [];
                     for (let i = 0; i < value; i++)
                         args.unshift(this.stack.pop());
-                    
+
                     args.unshift(func);
 
                     this.frames.push(new CallFrame(
@@ -456,7 +473,7 @@ export default class VM {
                 {
                     const id = this.data[value].value;
 
-                    if(this.globals.has(id))
+                    if (this.globals.has(id))
                         throw new VariableAlreadyDeclared(lineNumber, id);
 
                     this.globals.set(id, this.stack.pop());
@@ -466,7 +483,7 @@ export default class VM {
                 {
                     const id = this.data[value].value;
 
-                    if(!this.globals.has(id))
+                    if (!this.globals.has(id))
                         throw new VariableNotDeclared(lineNumber, id);
 
                     this.stack.push(this.globals.get(id));
@@ -476,7 +493,7 @@ export default class VM {
                 {
                     const id = this.data[value].value;
 
-                    if(!this.globals.has(id))
+                    if (!this.globals.has(id))
                         throw new VariableNotDeclared(lineNumber, id);
 
                     this.globals.set(id, this.stack.at(-1));
@@ -549,7 +566,7 @@ export default class VM {
                     const a = this.stack.pop();
 
                     if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber,  ValueType.NUMBER, a.type, `Cannot decrement non-number ${a.value}`);
+                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, `Cannot decrement non-number ${a.value}`);
 
                     this.stack.push(Value.number(a.value - 1));
                     break;
