@@ -3,7 +3,7 @@ import { SyntaxError } from './error';
 
 export type AST = (Declaration | Statement)[];
 export type Declaration = FunctionDeclaration | VariableDeclaration | Statement;
-export type Statement = Expression | Call | If | While | For | Return | VariableAssignment | Block | ExpressionStatement | ImportStatement | EmptyStatement;
+export type Statement = Expression | Call | If | While | For | Return | VariableAssignment | Block | ExpressionStatement | ImportStatement | BreakStatement | EmptyStatement;
 export type Expression = Literal | Identifier | Call | Block | BinaryOperation | UnaryOperation;
 
 export class ASTNode {
@@ -57,6 +57,13 @@ export class ASTNode {
     static Block(nodes: ASTNode[], lineNumber: number): Block {
         const res = new Block();
         res.nodes = nodes;
+        res.lineNumber = lineNumber;
+
+        return res;
+    }
+
+    static BreakStatement(lineNumber: number): BreakStatement {
+        const res = new BreakStatement();
         res.lineNumber = lineNumber;
 
         return res;
@@ -187,6 +194,8 @@ export class BinaryOperation extends ASTNode {
     rhs: Expression
 }
 
+export class BreakStatement extends ASTNode {}
+
 export class If extends ASTNode {
     condition: Expression
     then: Block
@@ -237,6 +246,7 @@ export default class Parser {
 
     private tokens: Token[];
     private pos = 0;
+    private loopDepth = 0;
 
     constructor(tokens: Token[]) {
         this.tokens = tokens;
@@ -295,22 +305,38 @@ export default class Parser {
                 return this.import();
             case TokenType.SEMICOLON:
                 return this.empty();
+            case TokenType.BREAK:
+                return this.break();
             default:
                 return this.expressionStatement();
         }
     }
 
-    private empty(): EmptyStatement {
-        this.advance();
+    private break(): BreakStatement {
+        if (this.loopDepth === 0)
+            this.error(this.peek().line, "Unexpected 'break' statement outside of loop");
+
         const lineNumber = this.peek().line;
+        this.advance();
+
+        if (this.peek().type !== TokenType.SEMICOLON)
+            this.error(lineNumber, "Expected ';' after 'break' statement");
+
+        this.advance();
+
+        return ASTNode.BreakStatement(lineNumber);
+    }
+
+    private empty(): EmptyStatement {
+        const lineNumber = this.peek().line;
+        this.advance();
 
         return ASTNode.EmptyStatement(lineNumber);
     }
 
     private import(): ImportStatement {
-        this.advance();
-        
         const lineNumber = this.peek().line;
+        this.advance();
         
         const path = this.peek();
         if (path.type !== TokenType.IDENTIFIER)
@@ -326,7 +352,6 @@ export default class Parser {
     }
 
     private expressionStatement(forceSemicolon = false): ExpressionStatement {
-        
         const lineNumber = this.peek().line;
         
         const expr = this.expression();
@@ -366,9 +391,11 @@ export default class Parser {
     }
 
     private while(): While {
-        this.advance();
-
         const lineNumber = this.peek().line;
+
+        this.loopDepth++;
+
+        this.advance();
 
         if (this.peek().type !== TokenType.LPAREN)
             this.error(lineNumber,"Expected '(' after 'while'");
@@ -382,11 +409,15 @@ export default class Parser {
         this.advance();
         const body = this.block();
 
+        this.loopDepth--;
+
         return ASTNode.While(condition, body, lineNumber);
     }
 
     private for(): For {
         const lineNumber = this.peek().line;
+
+        this.loopDepth++;
 
         this.advance();
 
@@ -428,6 +459,8 @@ export default class Parser {
         }
 
         const body = this.block();
+
+        this.loopDepth--;
 
         return ASTNode.For(init, condition, update, body, lineNumber);
     }

@@ -1,6 +1,6 @@
 import { CompilerBug, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclaredInScope } from './error';
 import { TokenType } from './lexer';
-import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement } from './parser';
+import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement, BreakStatement } from './parser';
 import { Program, Opcode, Value, Instruction } from './vm';
 
 interface Local {
@@ -49,6 +49,7 @@ class Compiler {
 
     private locals: Local[] = [];
     private depth: number = 0;
+    private breaks: Instruction[][] = [];
 
     constructor(ast: AST, locals?: Local[], data?: Value[]) {
         this.ast = ast;
@@ -99,9 +100,26 @@ class Compiler {
             this.expressionStatement(node);
         else if (node instanceof EmptyStatement)
             this.empty(node);
+        else if (node instanceof BreakStatement)
+            this.break(node);
         else {
             throw new CompilerBug(`Unknown node type ${node.constructor.name}`);
         }
+    }
+
+    private break(node: BreakStatement) {
+        if (this.breaks.length === 0) {
+            throw new CompilerBug('Break statement outside of loop');
+        }
+
+        const instruction = this.emitText(
+            Opcode.JUMP,
+            node.lineNumber
+        );
+
+        this.breaks[this.breaks.length - 1].push(
+            instruction
+        );
     }
 
     private empty(node: EmptyStatement) {
@@ -395,6 +413,8 @@ class Compiler {
     }
 
     private while(node: While) {
+        this.breaks.push([]);
+        
         const start = this.program.text.length;
         this.codegen(node.condition);
 
@@ -404,6 +424,7 @@ class Compiler {
         );
 
         this.program.text.push(jumpf);
+
         this.codegen(node.body);
 
         const jump: Instruction = new Instruction(
@@ -414,9 +435,17 @@ class Compiler {
 
         this.program.text.push(jump);
         jumpf.value = this.program.text.length;
+
+        const breaks = this.breaks.pop();
+
+        for (const instruction of breaks) {
+            instruction.value = this.program.text.length;
+        }
     }
 
     private for(node: For) {
+        this.breaks.push([]);
+
         this.codegen(node.init);
 
         const start = this.program.text.length;
@@ -440,6 +469,13 @@ class Compiler {
 
         this.program.text.push(jump);
         jumpf.value = this.program.text.length;
+
+
+        const breaks = this.breaks.pop();
+
+        for (const instruction of breaks) {
+            instruction.value = this.program.text.length;
+        }
     }
 
     private function(node: FunctionDeclaration) {
@@ -553,11 +589,11 @@ class Compiler {
     }
 
     private emitText(opcode: Opcode, lineNumber, value?: number) {
-        this.program.text.push(new Instruction(
-            opcode,
-            lineNumber,
-            value,
-        ));
+        const instruction = new Instruction(opcode, lineNumber, value);
+        
+        this.program.text.push(instruction);
+
+        return instruction;
     }
 }
 
