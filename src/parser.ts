@@ -69,6 +69,13 @@ export class ASTNode {
         return res;
     }
 
+    static ContinueStatement(lineNumber: number): ContinueStatement {
+        const res = new ContinueStatement();
+        res.lineNumber = lineNumber;
+
+        return res;
+    }
+
     static UnaryOperation(op: Token, rand: Expression, prefix: boolean, lineNumber: number): UnaryOperation {
         const res = new UnaryOperation();
         res.op = op;
@@ -196,6 +203,8 @@ export class BinaryOperation extends ASTNode {
 
 export class BreakStatement extends ASTNode {}
 
+export class ContinueStatement extends ASTNode {}
+
 export class If extends ASTNode {
     condition: Expression
     then: Block
@@ -307,9 +316,26 @@ export default class Parser {
                 return this.empty();
             case TokenType.BREAK:
                 return this.break();
+            case TokenType.CONTINUE:
+                return this.continue();
             default:
                 return this.expressionStatement();
         }
+    }
+
+    private continue(): ContinueStatement {
+        if (this.loopDepth === 0)
+            this.error(this.peek().line, "Unexpected 'continue' statement outside of loop");
+
+        const lineNumber = this.peek().line;
+        this.advance();
+
+        if (this.peek().type !== TokenType.SEMICOLON)
+            this.error(lineNumber, "Expected ';' after 'continue' statement");
+
+        this.advance();
+
+        return ASTNode.ContinueStatement(lineNumber);
     }
 
     private break(): BreakStatement {

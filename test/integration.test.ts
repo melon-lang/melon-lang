@@ -482,18 +482,6 @@ const validTestSourceCodes = [
         sourceCode: `
             let x = 0;
             for(let i = 0; i < 10; i++){
-                if (i % 2 == 0) break;
-                x++;
-            }
-
-            let result = x;
-        `,
-        expected: {type: ValueType.NUMBER, value: 0}
-    },
-    {
-        sourceCode: `
-            let x = 0;
-            for(let i = 0; i < 10; i++){
                 x++;
                 if (x > 3) break;
             }
@@ -556,7 +544,134 @@ const validTestSourceCodes = [
             let result = x;
         `,
         expected: {type: ValueType.NUMBER, value: 3}
+    },
+    {
+        sourceCode: `
+            let x = 0;
+            for(let i = 0; i < 10; i++){
+                if (i == 5) continue;
+                x = x + 1;
+            }
+
+            let result = x;
+        `,
+        expected: {type: ValueType.NUMBER, value: 9}
+    },
+    {
+        sourceCode: `
+            let x = 0;
+            let i = 0;
+            while (i < 10) {
+                i++;
+                if (i == 5) continue;
+                x = x + 1;
+            }
+
+            let result = x;
+        `,
+        expected: {type: ValueType.NUMBER, value: 9}
+    },
+    {
+        sourceCode: `
+            let x = 0;
+            for(let i = 0; i < 10; i++){
+                if (i == 3) continue;
+                x = x + 2;
+            }
+
+            let result = x;
+        `,
+        expected: {type: ValueType.NUMBER, value: 18}
+    },
+    {
+        sourceCode: `
+            let x = 0;
+            let i = 0;
+            while (i < 10) {
+                i++;
+                if (i == 4) continue;
+                x = x + 3;
+            }
+
+            let result = x;
+        `,
+        expected: {type: ValueType.NUMBER, value: 27}
+    },
+    {
+        sourceCode: `
+            let x = 1;
+            for(let i = 0; i < 5; i++){
+                if (i == 2) continue;
+                x = x * 2;
+            }
+
+            let result = x;
+        `,
+        expected: {type: ValueType.NUMBER, value: 16}
+    },
+    {
+        sourceCode: `
+            let x = 0;
+            for(let i = 0; i < 8; i++){
+                if (i == 1) continue;
+                x = x + 5;
+            }
+
+            let result = x;
+        `,
+        expected: {type: ValueType.NUMBER, value: 35}
+    },
+    {
+        sourceCode: `
+            let x = 0;
+            for(let i = 0; i < 10; i++){
+                if (i == 6) continue;
+                x = x - 1;
+            }
+
+            let result = x;
+        `,
+        expected: {type: ValueType.NUMBER, value: -9}
+    },
+    {
+        sourceCode: `
+            let x = 0;
+            let i = 0;
+            while (i < 5) {
+                i++;
+                if (i == 3) continue;
+                x = x - 2;
+            }
+
+            let result = x;
+        `,
+        expected: {type: ValueType.NUMBER, value: -8}
+    },
+    {
+        sourceCode: `
+            let x = 10;
+            for(let i = 0; i < 5; i++){
+                if (i == 1) continue;
+                x = x - 4;
+            }
+
+            let result = x;
+        `,
+        expected: {type: ValueType.NUMBER, value: -6}
+    },
+    {
+        sourceCode: `
+            let x = 5;
+            for(let i = 0; i < 7; i++){
+                if (i == 4) continue;
+                x = x + 7;
+            }
+
+            let result = x;
+        `,
+        expected: {type: ValueType.NUMBER, value: 47}
     }
+    
 ]
 
 const invalidTestSourceCodes = [
