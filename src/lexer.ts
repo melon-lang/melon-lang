@@ -152,6 +152,13 @@ class Lexer {
                         this.advance();
                     }
                 }
+                else if (this.peek(1) === "*") {
+                    this.advance(2);
+                    while (this.peek() !== "*" || this.peek(1) !== "/") {
+                        this.advance();
+                    }
+                    this.advance(2);
+                }
                 else if (this.peek(1) === "=") {
                     tokens.push({ type: TokenType.DIV_ASSIGN, value: "/=", line: this.line });
                     this.advance(2);

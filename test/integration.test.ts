@@ -3049,6 +3049,40 @@ const validTestSourceCodes = [
             let result = i;
             `,
         expected: { type: ValueType.NUMBER, value: 13245 }
+    },
+    {
+        sourceCode: `
+            // This is a comment
+            let x = 1;
+            let y = 2;
+
+            // This is another comment
+            let z = 3; // This is a comment at the end of the line
+
+            let result = x + y + z;
+            `,
+        expected: { type: ValueType.NUMBER, value: 6 }
+    },
+    {
+        sourceCode: `
+            /* This is a comment */
+            let x = 1;
+
+            /* 
+                This is another comment
+            /* 
+            
+                */
+            let y =2
+            /**************** 
+             * 
+             * *******/
+
+            let z = 3; /* This is a comment at the end of the line */
+
+            let result = x + y + z;
+            `,
+        expected: { type: ValueType.NUMBER, value: 6 }
     }
 ]
 
