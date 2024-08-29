@@ -2867,9 +2867,61 @@ const validTestSourceCodes = [
             '        let result = c;\n' +
             '    ',
         expected: { type: ValueType.NUMBER, value: 495 }
+    },
+    {
+        sourceCode: `
+            let x= 0.56;
+            let y = 0.56;
+            let z = 0.56 + 32;
+        
+            let result = x + y + z;
+        `,
+        expected: { type: ValueType.NUMBER, value: 33.68 }
+    },
+    {
+        sourceCode: `
+            let result = null;
+            if(0.1 == 0.05 + 0.05){
+                result = 0.95;
+            }else{
+                result = 0.76;
+            }
+        `,
+        expected: { type: ValueType.NUMBER, value: 0.95 }
+    },
+    {
+        sourceCode: `
+            let result = 234534543.999992
+        `,
+        expected: { type: ValueType.NUMBER, value: 234534543.999992 }
+    },
+    {
+        sourceCode: `
+            let result = 234534543.
+        `,
+        expected: { type: ValueType.NUMBER, value: 234534543 }
+    },
+    {
+        sourceCode: `
+            let result = .5
+        `,
+        expected: { type: ValueType.NUMBER, value: 0.5 }
+    },
+    {
+        sourceCode: `
+            let x = .54;
+
+            for (let i = 0; i < 10; i++){
+                x  += .05;
+            }
+
+            let result = .900;
+            if (x > 1){
+                result = .5;
+            }
+        `,
+        expected: { type: ValueType.NUMBER, value: 0.5 }
     }
-
-
 ]
 
 const invalidTestSourceCodes = [

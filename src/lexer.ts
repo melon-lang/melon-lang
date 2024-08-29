@@ -239,12 +239,33 @@ class Lexer {
                 }
                 this.advance();
                 tokens.push({ type: TokenType.STRING, value, line: this.line });
-            } else if (/[0-9]/.test(c)) {
+            } else if (c === '.') {
+                let value = c;
+                this.advance();
+                
+                while (/[0-9]/.test(this.peek())) {
+                    value += this.peek();
+                    this.advance();
+                }
+
+                tokens.push({ type: TokenType.NUMBER, value, line: this.line });
+            }
+            else if (/[0-9]/.test(c)) {
                 let value = "";
                 while (/[0-9]/.test(this.peek())) {
                     value += this.peek();
                     this.advance();
                 }
+
+                if (this.peek() === ".") {
+                    value += ".";
+                    this.advance();
+                    while (/[0-9]/.test(this.peek())) {
+                        value += this.peek();
+                        this.advance();
+                    }
+                }
+
                 tokens.push({ type: TokenType.NUMBER, value, line: this.line });
             } else if (/[a-zA-Z]/.test(c)) {
                 let value = "";
