@@ -2921,6 +2921,46 @@ const validTestSourceCodes = [
             }
         `,
         expected: { type: ValueType.NUMBER, value: 0.5 }
+    },
+    {
+        sourceCode: `
+            function a(){
+                function b(){
+                    return 0.5;
+                }
+
+                return b;
+            }
+
+            let result = a()();
+        `,
+        expected: { type: ValueType.NUMBER, value: 0.5 }
+    },
+    {
+        sourceCode: `
+            let a= 1;
+
+            function x(){
+                function y(){
+                    function z(){
+                        a += 5; 
+                    }
+
+                    return z;
+                }
+
+                return y;
+            }
+
+            let incrementor = x()();
+
+            for(let i = 0; i < 10; i++){
+                incrementor();
+            }
+            
+            let result = a;
+        `,
+        expected: { type: ValueType.NUMBER, value: 51 }
     }
 ]
 

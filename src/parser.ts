@@ -689,34 +689,57 @@ export default class Parser {
             return ASTNode.UnaryOperation(op, rand, true, lineNumber);
         }
 
-        const primary = this.primary();
+        return this.incrementDecrement();
+    }
 
-        op = this.peek();
+    private incrementDecrement(): Expression {
+        const call = this.call();
+
+        const op = this.peek();
+        const lineNumber = this.peek().line;
+
         if (op.type === TokenType.INC || op.type === TokenType.DEC) {
             this.advance();
 
-            if (!(primary instanceof Identifier))
+            if (!(call instanceof Identifier))
                 this.error(lineNumber, "Expected identifier before increment/decrement operator");
 
-            return ASTNode.UnaryOperation(op, primary, false, lineNumber);
-        } else if (op.type === TokenType.LPAREN) {
-            this.advance();
-            const args: Expression[] = [];
+            return ASTNode.UnaryOperation(op, call, false, lineNumber);
+        }
 
-            while (this.peek().type !== TokenType.RPAREN) {
-                args.push(this.expression());
+        return call;
+    }
 
-                if (this.peek().type !== TokenType.COMMA) {
-                    if (this.peek().type !== TokenType.RPAREN)
-                        this.error(lineNumber, "Expected ')' after argument list");
-                    break;
-                } else {
-                    this.advance();
+    private call(): Expression {
+        const primary = this.primary();
+
+        const op = this.peek();
+        const lineNumber = this.peek().line;
+        
+        let expr = primary;
+        if (op.type === TokenType.LPAREN) {
+            
+            while (this.peek().type === TokenType.LPAREN ){
+                this.advance();
+                const args: Expression[] = [];
+
+                while (this.peek().type !== TokenType.RPAREN) {
+                    args.push(this.expression());
+
+                    if (this.peek().type !== TokenType.COMMA) {
+                        if (this.peek().type !== TokenType.RPAREN)
+                            this.error(lineNumber, "Expected ')' after argument list");
+                        break;
+                    } else {
+                        this.advance();
+                    }
                 }
-            }
-            this.advance();
+                this.advance();
 
-            return ASTNode.Call(primary, args, lineNumber);
+                expr = ASTNode.Call(expr, args, lineNumber);
+            }
+            
+            return expr;
         }
 
         return primary;
