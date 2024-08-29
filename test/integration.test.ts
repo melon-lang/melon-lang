@@ -2961,6 +2961,94 @@ const validTestSourceCodes = [
             let result = a;
         `,
         expected: { type: ValueType.NUMBER, value: 51 }
+    },
+    {
+        sourceCode: `
+            let x = 100 * (24/6);
+            let steps = 0;
+            while(x-- > 0){steps++;}
+
+            let result = steps;
+            `,
+        expected: { type: ValueType.NUMBER, value: 400 }
+    },
+    {
+        sourceCode: `
+            {let x=1;{{{{{{{{let helloWorld = 1;x++;x--;--x;++x;}}let result = x*100;}}}let result = x;}}let result = x;}
+            let result = x;
+            }
+            
+            let result = 0;
+            `,
+        expected: { type: ValueType.NUMBER, value: 0 }
+    },
+    {
+        sourceCode: `
+            let x = 1;
+            let y = 2;
+            let z = 3;
+            let a = 4;
+            let b = 5;
+            let c = 6;
+            let d = 7;
+            let e = 8;
+            let f = 9;
+                
+            let result = x + y + z + a + b + c + d + e + f;
+            `,
+        expected: { type: ValueType.NUMBER, value: 45 }
+    },
+    {
+        sourceCode: `
+            function x(){
+                return 23423423423.32432;
+            }
+
+            let result = x() - x();
+
+            for(let i = 0; i < 10; i++){
+                function x(){
+                    return i;
+                }
+
+                result += x();
+            }
+            `,
+        expected: { type: ValueType.NUMBER, value: 45 }
+    },
+    {
+        sourceCode: `
+            for(let i = 0; i < 10; i++){
+                for(let j = 0; j < 10; j++){
+                    if (i == 5 && j == 5)
+                        break;
+                }
+                    
+                if (i == 5)
+                    break;
+            }
+            let result = i;
+            `,
+        expected: { type: ValueType.NUMBER, value: 5 }
+    },
+    {
+        sourceCode: `
+            while(true){
+                break;
+            }
+            for(let i = 0; i < 10; i++){
+                break;
+            }
+            
+            i = 0;
+            while(true){
+                if(i++ <= 13243.234) continue;
+                else break;
+            }
+
+            let result = i;
+            `,
+        expected: { type: ValueType.NUMBER, value: 13245 }
     }
 ]
 
