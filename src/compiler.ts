@@ -367,6 +367,8 @@ class Compiler {
             opcode = Opcode.AND;
         else if (type === TokenType.OR)
             opcode = Opcode.OR;
+        else if (type === TokenType.MOD)
+            opcode = Opcode.MOD;
         else
             throw new CompilerBug(`Unknown binary operator ${type}`);
 
@@ -374,10 +376,36 @@ class Compiler {
     }
 
     private variableAssignment(node: VariableAssignment) {
-        this.codegen(node.value);
-
         const name = node.name.value;
 
+        if (node.op.type !== TokenType.ASSIGN) {
+            this.loadVariable(name, node);
+        }
+
+        this.codegen(node.value);
+
+        if(node.op.type !== TokenType.ASSIGN){
+            switch (node.op.type) {
+                case TokenType.PLUS_ASSIGN:
+                    this.emitText(Opcode.ADD, node.lineNumber);
+                    break;
+                case TokenType.MINUS_ASSIGN:
+                    this.emitText(Opcode.SUB, node.lineNumber);
+                    break;
+                case TokenType.MUL_ASSIGN:
+                    this.emitText(Opcode.MUL, node.lineNumber);
+                    break;
+                case TokenType.DIV_ASSIGN:
+                    this.emitText(Opcode.DIV, node.lineNumber);
+                    break;
+                case TokenType.MOD_ASSIGN:
+                    this.emitText(Opcode.MOD, node.lineNumber);
+                    break;
+                default:
+                    throw new CompilerBug(`Unknown assignment operator ${node.op.type}`);
+            }
+        }
+        
         this.assignVariable(name, node);
     }
 

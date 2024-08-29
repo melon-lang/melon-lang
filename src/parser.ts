@@ -36,10 +36,11 @@ export class ASTNode {
         return res;
     }
 
-    static VariableAssignment(name: Token, value: Expression, lineNumber: number): VariableAssignment {
+    static VariableAssignment(name: Token, value: Expression, op: Token, lineNumber: number): VariableAssignment {
         const res = new VariableAssignment();
         res.name = name;
         res.value = value;
+        res.op = op;
         res.lineNumber = lineNumber;
 
         return res;
@@ -241,6 +242,7 @@ export class VariableDeclaration extends ASTNode {
 export class VariableAssignment extends ASTNode {
     name: Token
     value: Expression
+    op: Token
 }
 
 export class ExpressionStatement extends ASTNode {
@@ -657,11 +659,11 @@ export default class Parser {
 
         let expr: Expression = this.unary();
 
-        while (this.peek().type === TokenType.MUL || this.peek().type === TokenType.DIV) {
+        while (this.peek().type === TokenType.MUL || this.peek().type === TokenType.DIV || this.peek().type === TokenType.MOD) {
             const op = this.peek();
             this.advance();
             const rhs = this.unary();
-
+            
             expr = ASTNode.BinaryOperation(op, expr, rhs, lineNumber);
         }
 
@@ -687,34 +689,57 @@ export default class Parser {
             return ASTNode.UnaryOperation(op, rand, true, lineNumber);
         }
 
-        const primary = this.primary();
+        return this.incrementDecrement();
+    }
 
-        op = this.peek();
+    private incrementDecrement(): Expression {
+        const call = this.call();
+
+        const op = this.peek();
+        const lineNumber = this.peek().line;
+
         if (op.type === TokenType.INC || op.type === TokenType.DEC) {
             this.advance();
 
-            if (!(primary instanceof Identifier))
+            if (!(call instanceof Identifier))
                 this.error(lineNumber, "Expected identifier before increment/decrement operator");
 
-            return ASTNode.UnaryOperation(op, primary, false, lineNumber);
-        } else if (op.type === TokenType.LPAREN) {
-            this.advance();
-            const args: Expression[] = [];
+            return ASTNode.UnaryOperation(op, call, false, lineNumber);
+        }
 
-            while (this.peek().type !== TokenType.RPAREN) {
-                args.push(this.expression());
+        return call;
+    }
 
-                if (this.peek().type !== TokenType.COMMA) {
-                    if (this.peek().type !== TokenType.RPAREN)
-                        this.error(lineNumber, "Expected ')' after argument list");
-                    break;
-                } else {
-                    this.advance();
+    private call(): Expression {
+        const primary = this.primary();
+
+        const op = this.peek();
+        const lineNumber = this.peek().line;
+        
+        let expr = primary;
+        if (op.type === TokenType.LPAREN) {
+            
+            while (this.peek().type === TokenType.LPAREN ){
+                this.advance();
+                const args: Expression[] = [];
+
+                while (this.peek().type !== TokenType.RPAREN) {
+                    args.push(this.expression());
+
+                    if (this.peek().type !== TokenType.COMMA) {
+                        if (this.peek().type !== TokenType.RPAREN)
+                            this.error(lineNumber, "Expected ')' after argument list");
+                        break;
+                    } else {
+                        this.advance();
+                    }
                 }
-            }
-            this.advance();
+                this.advance();
 
-            return ASTNode.Call(primary, args, lineNumber);
+                expr = ASTNode.Call(expr, args, lineNumber);
+            }
+            
+            return expr;
         }
 
         return primary;
@@ -744,12 +769,15 @@ export default class Parser {
             case TokenType.IDENTIFIER:
                 this.advance();
 
-                if (this.peek().type === TokenType.ASSIGN) {
+                if (this.peek().type === TokenType.ASSIGN || this.peek().type === TokenType.PLUS_ASSIGN || this.peek().type === TokenType.MINUS_ASSIGN || this.peek().type === TokenType.MUL_ASSIGN || this.peek().type === TokenType.DIV_ASSIGN || this.peek().type === TokenType.MOD_ASSIGN) {
+                    const op = this.peek();
+                    
                     this.advance();
                     const rhs = this.expression();
 
-                    return ASTNode.VariableAssignment(t, rhs, lineNumber);
+                    return ASTNode.VariableAssignment(t, rhs, op, lineNumber);
                 }
+
                 return ASTNode.Identifier(t, lineNumber);
             case TokenType.LPAREN:
                 this.advance();

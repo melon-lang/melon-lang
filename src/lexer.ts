@@ -12,6 +12,7 @@ export enum TokenType {
     DIV = "DIV",
     LPAREN = "LPAREN",
     RPAREN = "RPAREN",
+    MOD = "MOD",
     EOF = "EOF",
     IF = "IF",
     ELSE = "ELSE",
@@ -26,6 +27,13 @@ export enum TokenType {
     LBRACKET = "LBRACKET",
     RBRACKET = "RBRACKET",
     ASSIGN = "ASSIGN",
+
+    PLUS_ASSIGN = "PLUS_ASSIGN",
+    MINUS_ASSIGN = "MINUS_ASSIGN",
+    MUL_ASSIGN = "MUL_ASSIGN",
+    DIV_ASSIGN = "DIV_ASSIGN",
+    MOD_ASSIGN = "MOD_ASSIGN",
+
     EQ = "EQ",
     NEQ = "NEQ",
     LT = "LT",
@@ -103,6 +111,9 @@ class Lexer {
                 if (this.peek(1) === "+") {
                     tokens.push({ type: TokenType.INC, value: "++", line: this.line });
                     this.advance(2);
+                } else if (this.peek(1) === "=") {
+                    tokens.push({ type: TokenType.PLUS_ASSIGN, value: "+=", line: this.line });
+                    this.advance(2);
                 } else {
                     tokens.push({ type: TokenType.PLUS, value: c, line: this.line });
                     this.advance();
@@ -111,16 +122,51 @@ class Lexer {
                 if (this.peek(1) === "-") {
                     tokens.push({ type: TokenType.DEC, value: "--", line: this.line });
                     this.advance(2);
+                } else if (this.peek(1) === "=") {
+                    tokens.push({ type: TokenType.MINUS_ASSIGN, value: "-=", line: this.line });
+                    this.advance(2);
                 } else {
                     tokens.push({ type: TokenType.MINUS, value: c, line: this.line });
                     this.advance();
                 }
             } else if (c === "*") {
-                tokens.push({ type: TokenType.MUL, value: c, line: this.line });
-                this.advance();
+                if (this.peek(1) === "=") {
+                    tokens.push({ type: TokenType.MUL_ASSIGN, value: "*=", line: this.line });
+                    this.advance(2);
+                }
+                else {
+                    tokens.push({ type: TokenType.MUL, value: c, line: this.line });
+                    this.advance();
+                }
+            } else if (c === "%") {
+                if (this.peek(1) === "=") {
+                    tokens.push({ type: TokenType.MOD_ASSIGN, value: "%=", line: this.line });
+                    this.advance(2);
+                } else {
+                    tokens.push({ type: TokenType.MOD, value: c, line: this.line });
+                    this.advance();
+                }
             } else if (c === "/") {
-                tokens.push({ type: TokenType.DIV, value: c, line: this.line });
-                this.advance();
+                if (this.peek(1) === "/") {
+                    while (this.peek() !== "\n") {
+                        this.advance();
+                    }
+                }
+                else if (this.peek(1) === "*") {
+                    this.advance(2);
+                    while (this.peek() !== "*" || this.peek(1) !== "/") {
+                        this.advance();
+                    }
+                    this.advance(2);
+                }
+                else if (this.peek(1) === "=") {
+                    tokens.push({ type: TokenType.DIV_ASSIGN, value: "/=", line: this.line });
+                    this.advance(2);
+                }
+                else {
+                    tokens.push({ type: TokenType.DIV, value: c, line: this.line });
+                    this.advance();
+                }
             } else if (c === "(") {
                 tokens.push({ type: TokenType.LPAREN, value: c, line: this.line });
                 this.advance();
@@ -200,12 +246,33 @@ class Lexer {
                 }
                 this.advance();
                 tokens.push({ type: TokenType.STRING, value, line: this.line });
-            } else if (/[0-9]/.test(c)) {
+            } else if (c === '.') {
+                let value = c;
+                this.advance();
+                
+                while (/[0-9]/.test(this.peek())) {
+                    value += this.peek();
+                    this.advance();
+                }
+
+                tokens.push({ type: TokenType.NUMBER, value, line: this.line });
+            }
+            else if (/[0-9]/.test(c)) {
                 let value = "";
                 while (/[0-9]/.test(this.peek())) {
                     value += this.peek();
                     this.advance();
                 }
+
+                if (this.peek() === ".") {
+                    value += ".";
+                    this.advance();
+                    while (/[0-9]/.test(this.peek())) {
+                        value += this.peek();
+                        this.advance();
+                    }
+                }
+
                 tokens.push({ type: TokenType.NUMBER, value, line: this.line });
             } else if (/[a-zA-Z]/.test(c)) {
                 let value = "";
