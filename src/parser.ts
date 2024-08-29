@@ -36,10 +36,11 @@ export class ASTNode {
         return res;
     }
 
-    static VariableAssignment(name: Token, value: Expression, lineNumber: number): VariableAssignment {
+    static VariableAssignment(name: Token, value: Expression, op: Token, lineNumber: number): VariableAssignment {
         const res = new VariableAssignment();
         res.name = name;
         res.value = value;
+        res.op = op;
         res.lineNumber = lineNumber;
 
         return res;
@@ -241,6 +242,7 @@ export class VariableDeclaration extends ASTNode {
 export class VariableAssignment extends ASTNode {
     name: Token
     value: Expression
+    op: Token
 }
 
 export class ExpressionStatement extends ASTNode {
@@ -744,12 +746,15 @@ export default class Parser {
             case TokenType.IDENTIFIER:
                 this.advance();
 
-                if (this.peek().type === TokenType.ASSIGN) {
+                if (this.peek().type === TokenType.ASSIGN || this.peek().type === TokenType.PLUS_ASSIGN || this.peek().type === TokenType.MINUS_ASSIGN || this.peek().type === TokenType.MUL_ASSIGN || this.peek().type === TokenType.DIV_ASSIGN || this.peek().type === TokenType.MOD_ASSIGN) {
+                    const op = this.peek();
+                    
                     this.advance();
                     const rhs = this.expression();
 
-                    return ASTNode.VariableAssignment(t, rhs, lineNumber);
+                    return ASTNode.VariableAssignment(t, rhs, op, lineNumber);
                 }
+
                 return ASTNode.Identifier(t, lineNumber);
             case TokenType.LPAREN:
                 this.advance();
