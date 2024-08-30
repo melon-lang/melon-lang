@@ -412,6 +412,10 @@ export default class VM {
                 break;
             case Opcode.CALL:
                 {
+                    const args = [];
+                    for (let i = 0; i < value; i++)
+                        args.unshift(this.stack.pop());
+
                     const func = this.stack.pop();
 
                     if (func.type === ValueType.NATIVE) {
@@ -423,20 +427,12 @@ export default class VM {
                         if (nativeInfo.args !== value)
                             throw new NativeFunctionArgumentNumberMismatch(lineNumber, func.value, nativeInfo.args, value);
 
-                        const args = [];
-                        for (let i = 0; i < value; i++)
-                            args.unshift(this.stack.pop());
-
                         const result = nativeInfo.function(lineNumber, args);
 
                         this.stack.push(result);
                     } else if (func.type === ValueType.FUNCTION) {
                         if (func.value.args.length !== value)
                             throw new FunctionArgumentNumberMismatch(lineNumber, func.value.name, func.value.args.length, value);
-    
-                        const args = [];
-                        for (let i = 0; i < value; i++)
-                            args.unshift(this.stack.pop());
     
                         args.unshift(func);
     
@@ -454,10 +450,6 @@ export default class VM {
 
                         if (syscallInfo.args !== value)
                             throw new NativeFunctionArgumentNumberMismatch(lineNumber, syscallId, syscallInfo.args, value);
-
-                        const args = [];
-                        for (let i = 0; i < value; i++)
-                            args.unshift(this.stack.pop());
 
                         // Special case for `syscall()`, the syscall name is the first argument
                         if(syscallId === 'syscall'){

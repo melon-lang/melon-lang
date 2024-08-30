@@ -138,11 +138,11 @@ class Compiler {
     }
 
     private call(node: Call) {
+        this.codegen(node.func);
+        
         for (const arg of node.args) {
             this.codegen(arg);
         }
-
-        this.codegen(node.func);
 
         this.emitText(
             Opcode.CALL,

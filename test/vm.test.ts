@@ -1,6 +1,5 @@
 import { expect, test } from '@jest/globals';
 import VM, { Opcode, Program, ValueType, VMImage, VMStatus } from '../src/vm';
-import exp from 'constants';
 import { CompilerBug,  } from '../src/error';
 
 const decodeString = (str: string) => (JSON.parse(atob(str)));
@@ -204,9 +203,9 @@ const validTestCases: {
             program:
                 new Program(
                     [
-                        { type: Opcode.DATA, value: 0 },
-                        { type: Opcode.DATA, value: 2 },
-                        { type: Opcode.DATA, value: 1 },
+                        { type: Opcode.DATA, value: 1 }, // function
+                        { type: Opcode.DATA, value: 0 }, // arg 0
+                        { type: Opcode.DATA, value: 2 }, // arg 1
                         { type: Opcode.CALL, value: 2 },
                     ],
                     [
@@ -224,6 +223,34 @@ const validTestCases: {
                 syscall: { name: 'dummy-syscall', args: [
                     { type: ValueType.NUMBER, value: 5.453 }
                 ] }
+            }
+        },
+        // div
+        {
+            program:
+                new Program(
+                    [
+                        { type: Opcode.DATA, value: 0 },
+                        { type: Opcode.DATA, value: 1 },
+                        { type: Opcode.DIV },
+                        { type: Opcode.NOP },
+                    ],
+                    [
+                        { type: ValueType.NUMBER, value: 33 },
+                        { type: ValueType.NUMBER, value: 3 },
+                    ]
+                ),
+            steps: 3,
+            expected: {
+                state: {
+                    "frames": [
+                        {
+                            ip: 3,
+                            stack: [{ type: ValueType.NUMBER, value: 11 }],
+                        }
+                    ],
+                },
+                status: VMStatus.RUNNING,
             }
         },
     ]
