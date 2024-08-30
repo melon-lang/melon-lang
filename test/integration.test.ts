@@ -3094,7 +3094,45 @@ const validTestSourceCodes = [
             y("dummy", result);
         `,
         expected: { type: ValueType.SYSCALL, value: "syscall" }
-    }
+    },
+    {
+        sourceCode: `
+            function add(a, b){
+                return a + b;
+            }
+
+            function addOne(a){
+                return add(a, 1);
+            }
+
+            function subTwo(a){
+                return add(a, - 2);
+            }
+
+            function zero(a){
+                return add(a, -a);
+            }
+
+            function mul(a, b){return a * b;}
+
+            function zeroer(){
+               
+                function zero(a, shouldZero){
+                    if (shouldZero){
+                        return mul(a, 0);
+                    }
+                    else {
+                        return a;
+                    }
+                }
+
+                return zero;
+            }
+
+            let result = zero(addOne(subTwo(0))) + zeroer()(addOne(subTwo(0)), true);
+        `,
+        expected: { type: ValueType.NUMBER, value: 0 }
+    },
 ]
 
 const invalidTestSourceCodes = [
@@ -3217,6 +3255,20 @@ const invalidTestSourceCodes = [
             '        let result = c;\n' +
             '    ',
         expected: DivisionByZero
+    },
+    {
+        sourceCode:
+        `
+        x;
+        `,
+        expected: VariableNotDeclared
+    },
+    {
+        sourceCode:
+        `
+        x()()();
+        `,
+        expected: VariableNotDeclared
     },
 ];
 
