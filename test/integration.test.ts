@@ -3133,6 +3133,34 @@ const validTestSourceCodes = [
         `,
         expected: { type: ValueType.NUMBER, value: 0 }
     },
+    // numbers in identifiers, underscores in identifiers
+    {
+        sourceCode: `
+            let xX_23423432_asdasdsa = 1;
+            let _ = 2;
+            let __ = 3;
+            let ___ = 4;
+
+            let result = xX_23423432_asdasdsa + _ + __ + ___;
+            `
+        ,
+        expected: { type: ValueType.NUMBER, value: 10 }
+    },
+    {
+        sourceCode: `
+            let came_case_is_my_life    = 1.23432;
+            if (came_case_is_my_life > 2.23432){
+                let result = 1;
+            }
+            else{
+                let result = 0;
+            }
+
+            let result = 0;
+            `
+        ,
+        expected: { type: ValueType.NUMBER, value: 0 }
+    }
 ]
 
 const invalidTestSourceCodes = [
@@ -3269,6 +3297,20 @@ const invalidTestSourceCodes = [
         x()()();
         `,
         expected: VariableNotDeclared
+    },
+    {
+        sourceCode:
+        `
+         let 0xxx = 1; // variable name cannot start with a number
+        `,
+        expected: SyntaxError
+    },
+    {
+        sourceCode:
+        `
+         let 23423432432423_ = 1; // variable name cannot start with a number
+        `,
+        expected: SyntaxError
     },
 ];
 
