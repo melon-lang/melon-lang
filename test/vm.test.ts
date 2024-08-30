@@ -283,7 +283,7 @@ const invalidTestCases: {
 test.each(validTestCases)('.eval($program)',
     ({ program, steps, expected }) => {
 
-        const vm = VM.create(program);
+        const vm = new VM(program);
         const image = vm.run(steps);
 
         const decodedState = decodeString(image.state);
@@ -300,7 +300,7 @@ test.each(invalidTestCases)('.eval($program)',
     ({ program, steps, expected }) => {
 
         expect(() => {
-            const vm = VM.create(program);
+            const vm = new VM(program);
             vm.run(steps);
         }).toThrow(expected);
     }

@@ -180,6 +180,7 @@ export interface Syscall {
 }
 
 export default class VM {
+
     @Type(() => Value)
     private data: Value[];
 
@@ -190,6 +191,14 @@ export default class VM {
     private globals: Map<string, Value>;
 
     private syscall?: Syscall = undefined;
+
+    constructor(program: Program) {
+        this.data = program.data;
+        this.frames = [new CallFrame(0, [], program.text)];
+        this.globals = new Map();
+        this.defineNatives();
+        this.defineSyscalls();
+    }
 
     public get halted() {
         return this.frames.length === 0;
@@ -590,18 +599,6 @@ export default class VM {
             vm.frames.at(-1).stack.push(arg);
 
         vm.syscall = undefined;
-
-        return vm;
-    }
-
-    public static create(program: Program): VM {
-        const vm = new VM();
-
-        vm.data = program.data;
-        vm.frames = [new CallFrame(0, [], program.text)];
-        vm.globals = new Map();
-        vm.defineNatives();
-        vm.defineSyscalls();
 
         return vm;
     }

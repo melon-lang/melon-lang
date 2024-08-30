@@ -4,7 +4,7 @@ import VM, { VMImage } from '../src/vm';
 const interpret = (source: string): VMImage => {
 	const program = compile(source);
 
-	const vm = VM.create(program);
+	const vm = new VM(program);
 
 	const res = vm.run();
 
