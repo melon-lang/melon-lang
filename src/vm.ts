@@ -43,7 +43,9 @@ export enum Opcode {
     LOADGL = "loadgl",
     NATIVE = "native",
     NOP = "nop",
-    MOD = "MOD"
+    MOD = "MOD",
+    MAKE_TUPLE = "make_tuple",
+    SUBSCRIPT = "subscript",
 }
 
 export enum ValueType {
@@ -52,7 +54,8 @@ export enum ValueType {
     BOOLEAN = "boolean",
     FUNCTION = "function",
     NATIVE = 'native',
-    SYSCALL = "syscall",    
+    SYSCALL = "syscall",
+    TUPLE = "tuple",
     NULL = "null",
 }
 
@@ -87,6 +90,10 @@ export class Value {
 
     static syscall(value: string) {
         return new Value(ValueType.SYSCALL, value);
+    }
+
+    static tuple(value: Value[]) {
+        return new Value(ValueType.TUPLE, value);
     }
 
     static null() {
@@ -420,7 +427,6 @@ export default class VM {
 
                     if (func.type === ValueType.NATIVE) {
                         const nativeInfo = natives[func.value];
-                        
                         if (nativeInfo === undefined)
                             throw new CompilerBug(`Native function ${func.value} is not defined`);
 
@@ -433,9 +439,7 @@ export default class VM {
                     } else if (func.type === ValueType.FUNCTION) {
                         if (func.value.args.length !== value)
                             throw new FunctionArgumentNumberMismatch(lineNumber, func.value.name, func.value.args.length, value);
-    
                         args.unshift(func);
-    
                         this.frames.push(new CallFrame(
                             -1,
                             args,
@@ -452,7 +456,7 @@ export default class VM {
                             throw new NativeFunctionArgumentNumberMismatch(lineNumber, syscallId, syscallInfo.args, value);
 
                         // Special case for `syscall()`, the syscall name is the first argument
-                        if(syscallId === 'syscall'){
+                        if (syscallId === 'syscall') {
                             if (args[0].type !== ValueType.STRING)
                                 throw new InvalidType(lineNumber, ValueType.STRING, args[0].type, `Syscall name must be a string`);
 
@@ -555,6 +559,38 @@ export default class VM {
                     this.stack.push(a);
                     break;
                 }
+            case Opcode.MAKE_TUPLE:
+                {
+                    const elements = [];
+
+                    for (let i = 0; i < value; i++)
+                        elements.unshift(this.stack.pop());
+
+                    this.stack.push(Value.tuple(elements));
+                    break;
+                }
+            case Opcode.SUBSCRIPT: {
+                const key = this.stack.pop();
+                const container = this.stack.pop();
+
+                if (container.type !== ValueType.TUPLE)
+                    throw new InvalidType(lineNumber, ValueType.TUPLE, container.type, `Cannot subscript non-tuple ${container.value}`);
+                if (key.type !== ValueType.NUMBER)
+                    throw new InvalidType(lineNumber, ValueType.NUMBER, key.type, `Cannot subscript with non-number ${key.value}`);
+
+                this.stack.push(container.value[key.value]);
+
+                break;
+            }
+            case Opcode.NOT:{
+                const a = this.stack.pop();
+
+                if (a.type !== ValueType.BOOLEAN)
+                    throw new InvalidType(lineNumber, ValueType.BOOLEAN, a.type, `Cannot negate non-boolean ${a.value}`);
+
+                this.stack.push(Value.boolean(!a.value));
+                break;
+            }
             case Opcode.NOP:
                 break;
 
@@ -564,13 +600,13 @@ export default class VM {
     }
 
     private defineNatives() {
-       for(const [name, _] of Object.entries(natives)){
-           this.globals.set(name, Value.native(name));
-       }
+        for (const [name, _] of Object.entries(natives)) {
+            this.globals.set(name, Value.native(name));
+        }
     }
 
     private defineSyscalls() {
-        for(const [name, _] of Object.entries(syscalls)){
+        for (const [name, _] of Object.entries(syscalls)) {
             this.globals.set(name, Value.syscall(name));
         }
     }
@@ -594,7 +630,7 @@ export default class VM {
         return vm;
     }
 
-    public static create(program: Program): VM {
+        public static create(program: Program): VM {
         const vm = new VM();
 
         vm.data = program.data;

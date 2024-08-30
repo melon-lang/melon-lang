@@ -3160,7 +3160,96 @@ const validTestSourceCodes = [
             `
         ,
         expected: { type: ValueType.NUMBER, value: 0 }
-    }
+    },
+    {
+        sourceCode: `
+            let my_tuple = (1.,);
+            
+            let result = my_tuple[0];
+            `
+        ,
+        expected: { type: ValueType.NUMBER, value: 1 }
+    },
+    {
+        sourceCode: `
+            let result = (1,2);
+        `,
+        expected: {
+            type: ValueType.TUPLE,
+            value: [{
+                type: ValueType.NUMBER,
+                value: 1
+            }, {
+                type: ValueType.NUMBER,
+                value: 2
+            }]
+        }
+    },
+    {
+        sourceCode: `
+            let result = (1,2,4,);
+        `,
+        expected: {
+            type: ValueType.TUPLE, value: [{
+                type: ValueType.NUMBER, value: 1
+            }, {
+                type: ValueType.NUMBER, value: 2
+            }, {
+                type: ValueType.NUMBER, value: 4
+            }]
+        }
+    },
+    {
+        sourceCode: `
+            let result = (1,(1,true));
+        `,
+        expected: { type: ValueType.TUPLE, value: [
+            { type: ValueType.NUMBER, value: 1 },
+            { type: ValueType.TUPLE, value: [
+                { type: ValueType.NUMBER, value: 1 },
+                { type: ValueType.BOOLEAN, value: true }
+            ]}
+        ]}
+    },
+    {
+        sourceCode: `
+            function xyz(a){
+                return (1 + a) / 100;
+            }
+
+            function abc(a){
+                return xyz(a);
+            }
+
+            let my_functions = (
+                xyz,
+                abc
+            );
+
+            let result = my_functions[0](1) + my_functions[1](1);
+        `,
+        expected: { type: ValueType.NUMBER, value: 0.04 }
+    },
+    {
+        sourceCode: `
+
+            let result = !!!!true;
+        `,
+        expected: { type: ValueType.BOOLEAN, value: true }
+    },
+    {
+        sourceCode: `
+            function x(){
+                function y(){
+                    return (-100,);
+                }
+                return (y,2,3,4,5,6,7,8,9,10);
+            }
+            
+            let result = x()[0]()[0];
+        `,
+        expected: { type: ValueType.NUMBER, value: -100 }
+    },
 ]
 
 const invalidTestSourceCodes = [
@@ -3286,29 +3375,29 @@ const invalidTestSourceCodes = [
     },
     {
         sourceCode:
-        `
+            `
         x;
         `,
         expected: VariableNotDeclared
     },
     {
         sourceCode:
-        `
+            `
         x()()();
         `,
         expected: VariableNotDeclared
     },
     {
         sourceCode:
-        `
+            `
          let 0xxx = 1; // variable name cannot start with a number
         `,
         expected: SyntaxError
     },
     {
         sourceCode:
-        `
-         let 23423432432423_ = 1; // variable name cannot start with a number
+            `
+         let 23423432432423_ = 1;
         `,
         expected: SyntaxError
     },

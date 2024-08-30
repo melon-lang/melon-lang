@@ -4,7 +4,7 @@ import { SyntaxError } from './error';
 export type AST = (Declaration | Statement)[];
 export type Declaration = FunctionDeclaration | VariableDeclaration | Statement;
 export type Statement = Expression | Call | If | While | For | Return | VariableAssignment | Block | ExpressionStatement | ImportStatement | BreakStatement | EmptyStatement;
-export type Expression = Literal | Identifier | Call | Block | BinaryOperation | UnaryOperation;
+export type Expression = Literal | Identifier | Call | Block | BinaryOperation | UnaryOperation | Tuple;
 
 export class ASTNode {
 
@@ -161,6 +161,14 @@ export class ASTNode {
         return res;
     }
 
+    static Tuple(elements: Expression[], lineNumber: number): Tuple {
+        const res = new Tuple();
+        res.elements = elements;
+        res.lineNumber = lineNumber;
+
+        return res;
+    }
+
     static EmptyStatement(lineNumber: number): EmptyStatement {
         const res = new EmptyStatement();
         res.lineNumber = lineNumber;
@@ -247,6 +255,10 @@ export class VariableAssignment extends ASTNode {
 
 export class ExpressionStatement extends ASTNode {
     expression: Expression
+}
+
+export class Tuple extends ASTNode {
+    elements: Expression[]
 }
 
 export class EmptyStatement extends ASTNode {
@@ -674,18 +686,9 @@ export default class Parser {
         let op = this.peek();
         const lineNumber = this.peek().line;
 
-        if (op.type === TokenType.MINUS || op.type === TokenType.NOT) {
+        if (op.type === TokenType.MINUS || op.type === TokenType.NOT || op.type === TokenType.INC || op.type === TokenType.DEC) {
             this.advance();
-            const rand = this.primary();
-
-            return ASTNode.UnaryOperation(op, rand, true, lineNumber);
-        } else if (op.type === TokenType.INC || op.type === TokenType.DEC) {
-            this.advance();
-            const rand = this.primary();
-
-            if (!(rand instanceof Identifier))
-                this.error(lineNumber, "Expected identifier after increment/decrement operator");
-
+            const rand = this.unary();
             return ASTNode.UnaryOperation(op, rand, true, lineNumber);
         }
 
@@ -693,7 +696,7 @@ export default class Parser {
     }
 
     private incrementDecrement(): Expression {
-        const call = this.call();
+        const subscript = this.subscript();
 
         const op = this.peek();
         const lineNumber = this.peek().line;
@@ -701,48 +704,54 @@ export default class Parser {
         if (op.type === TokenType.INC || op.type === TokenType.DEC) {
             this.advance();
 
-            if (!(call instanceof Identifier))
+            if (!(subscript instanceof Identifier))
                 this.error(lineNumber, "Expected identifier before increment/decrement operator");
 
-            return ASTNode.UnaryOperation(op, call, false, lineNumber);
+            return ASTNode.UnaryOperation(op, subscript, false, lineNumber);
         }
 
-        return call;
+        return subscript;
     }
 
-    private call(): Expression {
-        const primary = this.primary();
-
-        const op = this.peek();
+    private subscript(): Expression {
+        let expr = this.primary();
         const lineNumber = this.peek().line;
-        
-        let expr = primary;
-        if (op.type === TokenType.LPAREN) {
-            
-            while (this.peek().type === TokenType.LPAREN ){
+
+        while (this.peek().type === TokenType.LBRACKET || this.peek().type === TokenType.LPAREN) {
+            if (this.peek().type === TokenType.LBRACKET) {
                 this.advance();
-                const args: Expression[] = [];
+                const index = this.expression();
 
-                while (this.peek().type !== TokenType.RPAREN) {
-                    args.push(this.expression());
+                if (this.peek().type !== TokenType.RBRACKET)
+                    this.error(lineNumber, "Expected ']' after index");
 
-                    if (this.peek().type !== TokenType.COMMA) {
-                        if (this.peek().type !== TokenType.RPAREN)
-                            this.error(lineNumber, "Expected ')' after argument list");
-                        break;
-                    } else {
-                        this.advance();
+                this.advance();
+
+                expr = ASTNode.BinaryOperation({ type: TokenType.LBRACKET, value: '[]', line: lineNumber }, expr, index, lineNumber);
+            } else if (this.peek().type === TokenType.LPAREN) {
+                while (this.peek().type === TokenType.LPAREN ){
+                    this.advance();
+                    const args: Expression[] = [];
+
+                    while (this.peek().type !== TokenType.RPAREN) {
+                        args.push(this.expression());
+
+                        if (this.peek().type !== TokenType.COMMA) {
+                            if (this.peek().type !== TokenType.RPAREN)
+                                this.error(lineNumber, "Expected ')' after argument list");
+                            break;
+                        } else {
+                            this.advance();
+                        }
                     }
-                }
-                this.advance();
+                    this.advance();
 
-                expr = ASTNode.Call(expr, args, lineNumber);
+                    expr = ASTNode.Call(expr, args, lineNumber);
+                }
             }
-            
-            return expr;
         }
 
-        return primary;
+        return expr;
     }
 
     private primary(): Expression {
@@ -781,7 +790,20 @@ export default class Parser {
                 return ASTNode.Identifier(t, lineNumber);
             case TokenType.LPAREN:
                 this.advance();
-                const expr = this.expression();
+                let expr = this.expression();
+
+                if (this.peek().type === TokenType.COMMA) {
+                    const nodes = [expr];
+                    
+                    while (this.peek().type === TokenType.COMMA) {
+                        this.advance();
+                        
+                        if (this.peek().type !== TokenType.RPAREN)
+                            nodes.push(this.expression());
+                    }
+
+                    expr = ASTNode.Tuple(nodes, lineNumber);
+                }
 
                 if (this.peek().type !== TokenType.RPAREN)
                     this.error(lineNumber, "Expected ')' after expression");

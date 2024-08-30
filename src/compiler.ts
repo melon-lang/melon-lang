@@ -1,6 +1,6 @@
 import { CompilerBug, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclaredInScope } from './error';
 import { TokenType } from './lexer';
-import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement, BreakStatement, ContinueStatement } from './parser';
+import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement, BreakStatement, ContinueStatement, Tuple } from './parser';
 import { Program, Opcode, Value, Instruction } from './vm';
 
 interface Local {
@@ -72,9 +72,23 @@ class Compiler {
             this.break(node);
         else if (node instanceof ContinueStatement)
             this.continue(node);
+        else if (node instanceof Tuple) 
+            this.tuple(node);
         else {
             throw new CompilerBug(`Unknown node type ${node.constructor.name}`);
         }
+    }
+
+    private tuple(node: Tuple) {
+        for (const element of node.elements) {
+            this.codegen(element);
+        }
+
+        this.emitText(
+            Opcode.MAKE_TUPLE,
+            node.lineNumber,
+            node.elements.length
+        );
     }
 
     private continue(node: ContinueStatement) {
@@ -261,6 +275,8 @@ class Compiler {
             opcode = Opcode.OR;
         else if (type === TokenType.MOD)
             opcode = Opcode.MOD;
+        else if (type === TokenType.LBRACKET)
+            opcode = Opcode.SUBSCRIPT;
         else
             throw new CompilerBug(`Unknown binary operator ${type}`);
 
