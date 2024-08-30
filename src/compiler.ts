@@ -1,7 +1,7 @@
 import { CompilerBug, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclaredInScope } from './error';
 import { TokenType } from './lexer';
 import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement, BreakStatement, ContinueStatement } from './parser';
-import { Program, Opcode, Value, Instruction } from './vm';
+import { Program, Opcode, Value, Instruction, Function } from './vm';
 
 interface Local {
     name: string;
@@ -433,9 +433,9 @@ class Compiler {
     }
 
     private function(node: FunctionDeclaration) {
-        const func = {
+        const func : Function = {
             body: [],
-            args: node.params.map(arg => arg.value),
+            signature: node.signature,
             name: node.name.value
         };
 
@@ -444,8 +444,8 @@ class Compiler {
 
         const locals = [{ name: node.name.value, depth: 0 }]
 
-        if (node.params.length > 0) {
-            locals.push(...node.params.map(arg => ({ name: arg.value, depth: 1 })));
+        if (node.signature.arguments.length > 0) {
+            locals.push(...node.signature.arguments.map(arg => ({ name: arg.name, depth: 1 })));
         }
 
         const compiler = new Compiler([node.body], locals, this.program.data);

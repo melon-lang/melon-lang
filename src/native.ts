@@ -1,4 +1,5 @@
 import { CompilerBug, InvalidFormat, InvalidType } from "./error";
+import { FunctionSignature } from "./util";
 import { Value, ValueType } from "./vm";
 
 const number = (lineNumber, args: Value[]) => {
@@ -42,21 +43,48 @@ const str = (lineNumber, args: Value[]) => {
         throw new CompilerBug(`Invalid type for a value: ${a.type}`);
 }
 
-export default {
+interface NativeMap {
+    [name: string]: {
+        function: Function;
+        signature: FunctionSignature;
+    }
+}
+
+const natives : NativeMap = {
     'number': {
         function: number,
-        args: 1
+        signature: {
+            allowStarArgs: false,
+            arguments: [
+                { name: 'str', optional: false }
+            ]
+        }
     },
     'random': {
         function: random,
-        args: 0
+        signature: {
+            allowStarArgs: false,
+            arguments: []
+        }
     },
     'bool': {
         function: bool,
-        args: 1
+        signature: {
+            allowStarArgs: false,
+            arguments: [
+                { name: 'str', optional: false }
+            ]
+        }
     },
     'str': {
         function: str,
-        args: 1
+        signature: {
+            allowStarArgs: false,
+            arguments: [
+                { name: 'value', optional: false }
+            ]
+        }
     },
-};
+}
+
+export default natives;

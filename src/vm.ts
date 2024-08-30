@@ -3,6 +3,7 @@ import { Type, serialize, deserialize } from 'class-transformer';
 import { CompilerBug, DivisionByZero, FunctionArgumentNumberMismatch, InvalidFormat, InvalidType, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclared, VariableNotDeclared } from './error';
 import natives from './native';
 import syscalls from './syscall';
+import { FunctionSignature } from "./parser";
 
 export enum Opcode {
     PUSH = "push",
@@ -110,14 +111,14 @@ export class Stack extends Array<Value> {
 
 export class Function {
     name: string;
-    args: string[];
+    signature: FunctionSignature;
 
     @Type(() => Instruction)
     body: Instruction[];
 
-    constructor(name: string, args: string[], body: Instruction[]) {
+    constructor(name: string, signature: FunctionSignature, body: Instruction[]) {
         this.name = name;
-        this.args = args;
+        this.signature = signature;
         this.body = body;
     }
 }

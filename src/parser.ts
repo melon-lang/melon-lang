@@ -1,5 +1,6 @@
 import { Token, TokenType } from './lexer';
 import { SyntaxError } from './error';
+import { FunctionSignature } from './util';
 
 export type AST = (Declaration | Statement)[];
 export type Declaration = FunctionDeclaration | VariableDeclaration | Statement;
@@ -127,10 +128,10 @@ export class ASTNode {
         return res;
     }
 
-    static FunctionDeclaration(name: Token, params: Token[], body: Block, lineNumber: number): FunctionDeclaration {
+    static FunctionDeclaration(name: Token, signature: FunctionSignature, body: Block, lineNumber: number): FunctionDeclaration {
         const res = new FunctionDeclaration();
         res.name = name;
-        res.params = params;
+        res.signature = signature;
         res.body = body;
         res.lineNumber = lineNumber;
 
@@ -224,9 +225,21 @@ export class For extends ASTNode {
     body: Block
 }
 
+export interface FunctionArgument {
+    name: string;
+    optional: boolean;
+    defaultValue?: Expression;
+}
+
+export interface FunctionSignature {
+    allowStarArgs: boolean;
+    starArgsName?: string;
+    arguments: FunctionArgument[];
+}
+
 export class FunctionDeclaration extends ASTNode {
     name: Token
-    params: Token[]
+    signature: FunctionSignature
     body: Block
 }
 
@@ -537,7 +550,7 @@ export default class Parser {
 
     private function(): FunctionDeclaration {
         const lineNumber = this.peek().line;
-
+        
         this.advance();
         const name = this.peek();
         this.advance();
@@ -546,28 +559,53 @@ export default class Parser {
             this.error(lineNumber,"Expected '(' after function name");
 
         this.advance();
-        const params: Token[] = [];
 
-        while (this.peek().type !== TokenType.RPAREN) {
-            if (this.peek().type !== TokenType.IDENTIFIER)
-                this.error(lineNumber,"Expected identifier in parameter list");
+        const signature: FunctionSignature = {
+            allowStarArgs: false,
+            arguments: []
+        };
 
-            params.push(this.peek());
+        while(this.peek().type === TokenType.IDENTIFIER) {
+            if(this.peek(1).type === TokenType.ASSIGN || this.peek(1).type === TokenType.MUL) {
+                this.break;
+            }
+
+            const argumentName = this.peek();
+            signature.arguments.push({ name: argumentName.value, optional: false });
+
             this.advance();
-
             if (this.peek().type !== TokenType.COMMA) {
-                if (this.peek().type !== TokenType.RPAREN)
-                    this.error(lineNumber,"Expected ')' after parameter list");
                 break;
-            } else {
-                this.advance();
             }
         }
-        this.advance();
+
+        while(this.peek().type === TokenType.IDENTIFIER && this.peek(1).type === TokenType.ASSIGN) {
+            const argumentName = this.peek();
+            this.advance();
+            const defaultValue = this.expression();
+
+            signature.arguments.push({ name: argumentName.value, optional: true, defaultValue });
+
+            if (this.peek().type !== TokenType.COMMA) {
+                break;
+            }
+        }
+
+        if (this.peek(1).type === TokenType.MUL && this.peek().type === TokenType.IDENTIFIER) {
+            this.advance();
+            const argumentName = this.peek();
+            this.advance();
+
+            signature.allowStarArgs = true;
+            signature.starArgsName = argumentName.value;
+        }
+
+        if (this.peek().type !== TokenType.RPAREN)
+            this.error(lineNumber,"Expected ')' after parameter list");
 
         const body = this.block();
 
-        return ASTNode.FunctionDeclaration(name, params, body, lineNumber);
+        return ASTNode.FunctionDeclaration(name, signature, body, lineNumber);
     }
 
     private block(): Block {
