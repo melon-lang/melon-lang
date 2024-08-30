@@ -8,40 +8,6 @@ interface Local {
     depth: number;
 }
 
-const nativesWithSyscall = {
-    'print': {
-        syscallId: 'is.workflow.actions.showresult',
-        args: 1
-    },
-    'input': {
-        syscallId: 'is.workflow.actions.prompt',
-        args: 1
-    },
-    'exit': {
-        syscallId: 'is.workflow.actions.stop',
-        args: 0
-    },
-}
-
-const nativesWithOpcode = {
-    'number': {
-        opcode: Opcode.PARSE_NUMBER,
-        args: 1
-    },
-    'random': {
-        opcode: Opcode.RANDOM,
-        args: 0
-    },
-    'bool': {
-        opcode: Opcode.PARSE_BOOL,
-        args: 1
-    },
-    'str': {
-        opcode: Opcode.TO_STRING,
-        args: 1
-    }
-}
-
 class Compiler {
 
     private ast: AST;
@@ -172,80 +138,6 @@ class Compiler {
     }
 
     private call(node: Call) {
-        if (node.func instanceof Identifier) {
-            const name = node.func.name.value;
-
-            if (name in nativesWithSyscall) {
-                const { syscallId, args } = nativesWithSyscall[name];
-
-                if (node.args.length > args) {
-                    throw new NativeFunctionArgumentNumberMismatch(node.lineNumber, name, args, node.args.length);
-                }
-
-                this.program.data.push(Value.string(syscallId));
-
-                this.emitText(
-                    Opcode.DATA,
-                    node.lineNumber,
-                    this.program.data.length - 1
-                );
-
-                for (const arg of node.args) {
-                    this.codegen(arg);
-                }
-
-                this.program.data.push(Value.native("syscall"));
-
-                this.emitText(
-                    Opcode.DATA,
-                    node.lineNumber,
-                    this.program.data.length - 1
-                );
-
-                this.emitText(
-                    Opcode.CALL,
-                    node.lineNumber,
-                    node.args.length + 1
-                );
-
-                return;
-            } else if (name in nativesWithOpcode) {
-                const { opcode, args } = nativesWithOpcode[name];
-
-                if (node.args.length > args) {
-                    throw new NativeFunctionArgumentNumberMismatch(node.lineNumber,name, args, node.args.length);
-                }
-
-                for (const arg of node.args) {
-                    this.codegen(arg);
-                }
-
-                this.emitText(opcode, node.lineNumber);
-
-                return;
-            } else if (node.func.name.value === "syscall") {
-                for (const arg of node.args) {
-                    this.codegen(arg);
-                }
-
-                this.program.data.push(Value.native("syscall"));
-
-                this.emitText(
-                    Opcode.DATA,
-                    node.lineNumber,
-                    this.program.data.length - 1
-                );
-
-                this.emitText(
-                    Opcode.CALL,
-                    node.lineNumber,
-                    node.args.length
-                );
-
-                return;
-            }
-        }
-
         for (const arg of node.args) {
             this.codegen(arg);
         }

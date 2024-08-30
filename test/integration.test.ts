@@ -3083,6 +3083,17 @@ const validTestSourceCodes = [
             let result = x + y + z;
             `,
         expected: { type: ValueType.NUMBER, value: 6 }
+    },
+    {
+        sourceCode: `
+            let y = syscall;
+
+            let result = y;
+
+            // Premature syscall
+            y("dummy", result);
+        `,
+        expected: { type: ValueType.SYSCALL, value: "syscall" }
     }
 ]
 

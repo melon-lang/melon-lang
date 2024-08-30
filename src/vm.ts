@@ -1,6 +1,8 @@
 import "reflect-metadata";
 import { Type, serialize, deserialize } from 'class-transformer';
 import { CompilerBug, DivisionByZero, FunctionArgumentNumberMismatch, InvalidFormat, InvalidType, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclared, VariableNotDeclared } from './error';
+import natives from './native';
+import syscalls from './syscall';
 
 export enum Opcode {
     PUSH = "push",
@@ -29,29 +31,18 @@ export enum Opcode {
     RET = "ret",
     HALT = "halt",
     PRINT = "print",
-    PRINTLN = "println",
     INPUT = "input",
-    INPUTLN = "inputln",
     SYSCALL = "syscall",
     DATA = "data",
     INC = "inc",
     DEC = "dec",
     NEG = "neg",
     COPY = "copy",
-
     SETGL = "setgl",
     DECLAREGL = "declaregl",
     LOADGL = "loadgl",
-
     NATIVE = "native",
-
-    PARSE_NUMBER = "parse_number",
-
-    RANDOM = "random",
-
     NOP = "nop",
-    PARSE_BOOL = "PARSE_BOOL",
-    TO_STRING = "TO_STRING",
     MOD = "MOD"
 }
 
@@ -61,7 +52,8 @@ export enum ValueType {
     BOOLEAN = "boolean",
     FUNCTION = "function",
     NATIVE = 'native',
-    NULL = "null"
+    SYSCALL = "syscall",    
+    NULL = "null",
 }
 
 export class Value {
@@ -91,6 +83,10 @@ export class Value {
 
     static native(value: string) {
         return new Value(ValueType.NATIVE, value);
+    }
+
+    static syscall(value: string) {
+        return new Value(ValueType.SYSCALL, value);
     }
 
     static null() {
@@ -419,36 +415,66 @@ export default class VM {
                     const func = this.stack.pop();
 
                     if (func.type === ValueType.NATIVE) {
+                        const nativeInfo = natives[func.value];
+                        
+                        if (nativeInfo === undefined)
+                            throw new CompilerBug(`Native function ${func.value} is not defined`);
+
+                        if (nativeInfo.args !== value)
+                            throw new NativeFunctionArgumentNumberMismatch(lineNumber, func.value, nativeInfo.args, value);
+
                         const args = [];
                         for (let i = 0; i < value; i++)
                             args.unshift(this.stack.pop());
 
-                        if (func.value === `syscall`) {
-                            if (args.length == 0)
-                                throw new NativeFunctionArgumentNumberMismatch(lineNumber, "syscall", 1, args.length);
+                        const result = nativeInfo.function(lineNumber, args);
 
-                            this.syscall = {
-                                name: args[0].value,
-                                args: args.slice(1)
-                            };
+                        this.stack.push(result);
+                    } else if (func.type === ValueType.FUNCTION) {
+                        if (func.value.args.length !== value)
+                            throw new FunctionArgumentNumberMismatch(lineNumber, func.value.name, func.value.args.length, value);
+    
+                        const args = [];
+                        for (let i = 0; i < value; i++)
+                            args.unshift(this.stack.pop());
+    
+                        args.unshift(func);
+    
+                        this.frames.push(new CallFrame(
+                            -1,
+                            args,
+                            func.value.body
+                        ));
+                    } else if (func.type === ValueType.SYSCALL) {
+                        let syscallId = func.value;
+                        const syscallInfo = syscalls[syscallId];
+
+                        if (syscallInfo === undefined)
+                            throw new CompilerBug(`Syscall ${syscallId} is not defined`);
+
+                        if (syscallInfo.args !== value)
+                            throw new NativeFunctionArgumentNumberMismatch(lineNumber, syscallId, syscallInfo.args, value);
+
+                        const args = [];
+                        for (let i = 0; i < value; i++)
+                            args.unshift(this.stack.pop());
+
+                        // Special case for `syscall()`, the syscall name is the first argument
+                        if(syscallId === 'syscall'){
+                            if (args[0].type !== ValueType.STRING)
+                                throw new InvalidType(lineNumber, ValueType.STRING, args[0].type, `Syscall name must be a string`);
+
+                            syscallId = args.shift().value;
                         }
-                        break;
+
+                        this.syscall = {
+                            name: syscallId,
+                            args
+                        };
                     }
-
-                    if (func.value.args.length !== value)
-                        throw new FunctionArgumentNumberMismatch(lineNumber, func.value.name, func.value.args.length, value);
-
-                    const args = [];
-                    for (let i = 0; i < value; i++)
-                        args.unshift(this.stack.pop());
-
-                    args.unshift(func);
-
-                    this.frames.push(new CallFrame(
-                        -1,
-                        args,
-                        func.value.body
-                    ));
+                    else {
+                        throw new InvalidType(lineNumber, ValueType.FUNCTION, func.type, `Cannot call non-function ${func.value}`);
+                    }
 
                     break;
                 }
@@ -499,48 +525,6 @@ export default class VM {
                     this.globals.set(id, this.stack.at(-1));
                     break;
                 }
-            case Opcode.PARSE_NUMBER:
-                {
-                    const str = this.stack.pop().value;
-
-                    if (isNaN(Number(str)))
-                        throw new InvalidFormat(lineNumber, `Cannot parse ${str} as number`);
-
-                    this.stack.push(Value.number(Number(str)));
-                    break;
-                }
-            case Opcode.PARSE_BOOL:
-                {
-                    const a = this.stack.pop();
-                    const str = a.value;
-
-                    if (str !== "true" && str !== "false" && str !== "1" && str !== "0" && str !== 1 && str !== 0)
-                        throw new InvalidType(lineNumber, ValueType.BOOLEAN, a.type);
-
-                    this.stack.push(Value.boolean(str === "true" || str === "1" || str === 1));
-                    break;
-                }
-            case Opcode.TO_STRING:
-                {
-                    const a = this.stack.pop();
-
-                    if (a.type == ValueType.STRING)
-                        this.stack.push(Value.string(a.value));
-                    else if (a.type == ValueType.BOOLEAN)
-                        this.stack.push(Value.string(a.value));
-                    else if (a.type == ValueType.NUMBER)
-                        this.stack.push(Value.string(a.value.toString()));
-                    else if (a.type == ValueType.NULL)
-                        this.stack.push(Value.string(a.value));
-                    else if (a.type == ValueType.NATIVE)
-                        this.stack.push(Value.string(`<melon.native.${a.value}()>`));
-                    else if (a.type == ValueType.FUNCTION)
-                        this.stack.push(Value.string(`<${a.value.name}()>`))
-                    else
-                        throw Error(`Invalid type for a value: ${a.type}`);
-
-                    break;
-                }
             case Opcode.NEG:
                 {
                     const a = this.stack.pop();
@@ -579,17 +563,23 @@ export default class VM {
                     this.stack.push(a);
                     break;
                 }
-            case Opcode.RANDOM:
-                {
-                    this.stack.push(Value.number(Math.random()));
-
-                    break;
-                }
             case Opcode.NOP:
                 break;
 
             default:
                 throw new CompilerBug(`Unknown opcode ${type}`);
+        }
+    }
+
+    private defineNatives() {
+       for(const [name, _] of Object.entries(natives)){
+           this.globals.set(name, Value.native(name));
+       }
+    }
+
+    private defineSyscalls() {
+        for(const [name, _] of Object.entries(syscalls)){
+            this.globals.set(name, Value.syscall(name));
         }
     }
 
@@ -618,6 +608,8 @@ export default class VM {
         vm.data = program.data;
         vm.frames = [new CallFrame(0, [], program.text)];
         vm.globals = new Map();
+        vm.defineNatives();
+        vm.defineSyscalls();
 
         return vm;
     }
