@@ -3324,6 +3324,12 @@ const validTestSourceCodes = [
         `,
         expected: { type: ValueType.NUMBER, value: 6 }
     },
+    {
+        sourceCode: `
+            let result = true || false && false;
+        `,
+        expected: { type: ValueType.BOOLEAN, value: true }
+    },
 ]
 
 const invalidTestSourceCodes = [

@@ -630,7 +630,7 @@ export default class Parser {
     }
 
     private assignment(){
-        let expr = this.andor();
+        let expr = this.or();
         
         while (this.peek().type === TokenType.ASSIGN || 
                 this.peek().type === TokenType.PLUS_ASSIGN || 
@@ -643,7 +643,7 @@ export default class Parser {
 
             this.advance();
 
-            const to = this.andor();
+            const to = this.or();
 
             expr = ASTNode.VariableAssignment(expr, to, op, op.line);
         }
@@ -652,11 +652,26 @@ export default class Parser {
     }
 
 
-    private andor(): Expression {
+    private or(): Expression {
+        const lineNumber = this.peek().line;
+        let expr = this.and();
+
+        while (this.peek().type === TokenType.OR) {
+            const op = this.peek();
+            this.advance();
+            const rhs = this.and();
+
+            expr = ASTNode.BinaryOperation(op, expr, rhs, lineNumber);
+        }
+
+        return expr;
+    }
+
+    private and(): Expression {
         const lineNumber = this.peek().line;
         let expr = this.equality();
 
-        while (this.peek().type === TokenType.AND || this.peek().type === TokenType.OR) {
+        while (this.peek().type === TokenType.AND ) {
             const op = this.peek();
             this.advance();
             const rhs = this.equality();
