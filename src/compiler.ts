@@ -1,6 +1,6 @@
 import { CompilerBug, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclaredInScope } from './error';
 import { TokenType } from './lexer';
-import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement, BreakStatement, ContinueStatement, Tuple } from './parser';
+import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement, BreakStatement, ContinueStatement, Tuple, List, Subscript } from './parser';
 import { Program, Opcode, Value, Instruction } from './vm';
 
 interface Local {
@@ -74,9 +74,25 @@ class Compiler {
             this.continue(node);
         else if (node instanceof Tuple) 
             this.tuple(node);
+        else if (node instanceof List)
+            this.list(node);
+        else if (node instanceof Subscript)
+            this.subscript(node);
         else {
             throw new CompilerBug(`Unknown node type ${node.constructor.name}`);
         }
+    }
+
+    private list(node: List) {
+        for (const element of node.elements) {
+            this.codegen(element);
+        }
+
+        this.emitText(
+            Opcode.MAKE_LIST,
+            node.lineNumber,
+            node.elements.length
+        );
     }
 
     private tuple(node: Tuple) {
@@ -275,19 +291,23 @@ class Compiler {
             opcode = Opcode.OR;
         else if (type === TokenType.MOD)
             opcode = Opcode.MOD;
-        else if (type === TokenType.LBRACKET)
-            opcode = Opcode.SUBSCRIPT;
         else
             throw new CompilerBug(`Unknown binary operator ${type}`);
 
         this.emitText(opcode, node.lineNumber);
     }
 
+    private subscript(node: Subscript) { 
+        this.codegen(node.name)
+        this.codegen(node.key)
+
+        this.emitText(Opcode.SUBSCRIPT, node.lineNumber )
+    }
+
     private variableAssignment(node: VariableAssignment) {
-        const name = node.name.value;
 
         if (node.op.type !== TokenType.ASSIGN) {
-            this.loadVariable(name, node);
+            this.codegen(node.name);
         }
 
         this.codegen(node.value);
@@ -314,7 +334,16 @@ class Compiler {
             }
         }
         
-        this.assignVariable(name, node);
+        if(node.name instanceof Identifier)
+            this.assignVariable(node.name.name.value, node);
+        else if(node.name instanceof Subscript) {
+            this.codegen(node.name.name);
+            this.codegen(node.name.key);
+
+            this.emitText(Opcode.STORE_SUBSCRIPT, node.name.lineNumber);
+        } else {
+            throw new SyntaxError(`Cannot assign to ${node.name}`)
+        }
     }
 
     private variableDeclaration(node: VariableDeclaration) {

@@ -3284,6 +3284,46 @@ const validTestSourceCodes = [
         `,
         expected: { type: ValueType.NUMBER, value: -100 }
     },
+    {
+        sourceCode: `
+            let a = [1];
+
+            let result = a[0];
+        `,
+        expected: { type: ValueType.NUMBER, value: 1 }
+    },
+    {
+        sourceCode: `
+            let a = [1, [2, [3, [4, [5, [6, [7, [8, [9, [10]]]]]]]]]];
+
+            let result = a[1][1][1][1][1][1][1][1][1][0];
+        `,
+        expected: { type: ValueType.NUMBER, value: 10 }
+    },
+    {
+        sourceCode: `
+            let a = [4.5,6,89];
+            a[0] = 2;
+
+            let result = a[0];
+        `,
+        expected: { type: ValueType.NUMBER, value: 2 }
+    },
+    {
+        sourceCode: `
+            let a = [4.5,6,89];
+            a += [1,2,3];
+
+            let result = a[5] + a[5-1*1*0+1-2];
+        `,
+        expected: { type: ValueType.NUMBER, value: 5 }
+    },
+    {
+        sourceCode: `
+            let result = ([1,2,3] + [4,5,6,])[5];
+        `,
+        expected: { type: ValueType.NUMBER, value: 6 }
+    },
 ]
 
 const invalidTestSourceCodes = [

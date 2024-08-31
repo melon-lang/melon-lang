@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { Type, serialize, deserialize } from 'class-transformer';
-import { CompilerBug, DivisionByZero, FunctionArgumentNumberMismatch, InvalidFormat, InvalidType, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclared, VariableNotDeclared } from './error';
+import { CompilerBug, DivisionByZero, FunctionArgumentNumberMismatch, IndexError, InvalidFormat, InvalidType, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclared, VariableNotDeclared } from './error';
 import natives from './native';
 import syscalls from './syscall';
 
@@ -45,7 +45,9 @@ export enum Opcode {
     NOP = "nop",
     MOD = "MOD",
     MAKE_TUPLE = "make_tuple",
+    MAKE_LIST = "make_list",
     SUBSCRIPT = "subscript",
+    STORE_SUBSCRIPT = "store_subscript"
 }
 
 export enum ValueType {
@@ -56,6 +58,7 @@ export enum ValueType {
     NATIVE = 'native',
     SYSCALL = "syscall",
     TUPLE = "tuple",
+    LIST = "list",
     NULL = "null",
 }
 
@@ -94,6 +97,10 @@ export class Value {
 
     static tuple(value: Value[]) {
         return new Value(ValueType.TUPLE, value);
+    }
+
+    static list(value: Value[]) {
+        return new Value(ValueType.LIST, value);
     }
 
     static null() {
@@ -240,6 +247,7 @@ export default class VM {
 
     private execute(instruction: Instruction) {
         const { type, value, lineNumber } = instruction;
+
         switch (type) {
             case Opcode.PUSH:
                 this.stack.push(this.data[value]);
@@ -278,6 +286,8 @@ export default class VM {
                         this.stack.push(Value.number(b.value + a.value));
                     else if (a.type === ValueType.STRING && b.type === ValueType.STRING)
                         this.stack.push(Value.string(b.value + a.value));
+                    else if (a.type === ValueType.LIST && b.type === ValueType.LIST)
+                        this.stack.push(Value.list(b.value.concat(a.value)));
                     else
                         throw new InvalidType(lineNumber, a.type, b.type, `Cannot add ${a.type} ${a.value} with ${b.type} ${b.value}`);
                     break;
@@ -569,16 +579,46 @@ export default class VM {
                     this.stack.push(Value.tuple(elements));
                     break;
                 }
+            case Opcode.MAKE_LIST:
+                {
+                    const elements = [];
+
+                    for (let i = 0; i < value; i++)
+                        elements.unshift(this.stack.pop());
+
+                    this.stack.push(Value.list(elements));
+                    break;
+                }
             case Opcode.SUBSCRIPT: {
                 const key = this.stack.pop();
                 const container = this.stack.pop();
 
-                if (container.type !== ValueType.TUPLE)
-                    throw new InvalidType(lineNumber, ValueType.TUPLE, container.type, `Cannot subscript non-tuple ${container.value}`);
+                if (container.type !== ValueType.TUPLE && container.type !== ValueType.LIST)
+                    throw new InvalidType(lineNumber, ValueType.TUPLE, container.type, `Cannot subscript this type.`);
                 if (key.type !== ValueType.NUMBER)
                     throw new InvalidType(lineNumber, ValueType.NUMBER, key.type, `Cannot subscript with non-number ${key.value}`);
 
+                if(container.value.length < key.value)
+                    throw new IndexError(lineNumber);
+
                 this.stack.push(container.value[key.value]);
+
+                break;
+            }
+            case Opcode.STORE_SUBSCRIPT: {
+                const key = this.stack.pop();
+                const name = this.stack.pop();
+
+                if (name.type !== ValueType.LIST)
+                    throw new InvalidType(lineNumber, ValueType.LIST, name.type, "Cannot set an element of non-list.")
+                if (key.type !== ValueType.NUMBER)
+                    throw new InvalidType(lineNumber, ValueType.NUMBER, name.type, "Cannot use non-number to index a list.")
+
+                const value =  this.stack.pop();
+
+                name.value[key.value] = value;
+
+                this.stack.push(value);
 
                 break;
             }

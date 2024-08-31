@@ -77,3 +77,9 @@ export class InvalidFormat extends RuntimeError {
         super(lineNumber, message);
     }
 }
+
+export class IndexError extends RuntimeError {
+    constructor(lineNumber: number){
+        super(lineNumber, "List index out of range");
+    }
+}
