@@ -456,17 +456,19 @@ export default class VM {
                             func.value.body
                         ));
                     } else if (func.type === ValueType.SYSCALL) {
-                        let syscallId = func.value;
-                        const syscallInfo = syscalls[syscallId];
+                        let syscallName = func.value;
+                        const syscallInfo = syscalls[syscallName];
 
                         if (syscallInfo === undefined)
-                            throw new CompilerBug(`Syscall ${syscallId} is not defined`);
+                            throw new CompilerBug(`Syscall ${syscallName} is not defined`);
 
                         if (syscallInfo.args !== value)
-                            throw new NativeFunctionArgumentNumberMismatch(lineNumber, syscallId, syscallInfo.args, value);
+                            throw new NativeFunctionArgumentNumberMismatch(lineNumber, syscallName, syscallInfo.args, value);
+
+                        let syscallId = syscallInfo.syscallId;
 
                         // Special case for `syscall()`, the syscall name is the first argument
-                        if (syscallId === 'syscall') {
+                        if (syscallName === 'syscall') {
                             if (args[0].type !== ValueType.STRING)
                                 throw new InvalidType(lineNumber, ValueType.STRING, args[0].type, `Syscall name must be a string`);
 
