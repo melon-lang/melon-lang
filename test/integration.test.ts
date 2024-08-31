@@ -2938,6 +2938,40 @@ const validTestSourceCodes = [
     },
     {
         sourceCode: `
+            function a(){
+                function b(){
+                    return (random(), 56);
+                }
+
+                return b;
+            }
+
+            while(a()()[0] == a()()[0]); // this is a really low chance of happening
+
+            let result = "done" + str(a()()[1]);
+        `,
+        expected: { type: ValueType.STRING, value: "done56" }
+    },
+    {
+        sourceCode: `
+            function a(){
+                function b(){
+                    return (random(), 93, (0, 1.9));
+                }
+
+                let c = random();
+
+                return (b, c);
+            }
+
+            while(a()[0]()[0] == a()[1]); // this is a really low chance of happening
+
+            let result = (a()[0]()[2][1]);
+        `,
+        expected: { type: ValueType.NUMBER, value: 1.9 }
+    },
+    {
+        sourceCode: `
             let a= 1;
 
             function x(){
@@ -3083,7 +3117,213 @@ const validTestSourceCodes = [
             let result = x + y + z;
             `,
         expected: { type: ValueType.NUMBER, value: 6 }
-    }
+    },
+    {
+        sourceCode: `
+            let y = syscall;
+
+            let result = y;
+
+            // Premature syscall
+            y("dummy", result);
+        `,
+        expected: { type: ValueType.SYSCALL, value: "syscall" }
+    },
+    {
+        sourceCode: `
+            function add(a, b){
+                return a + b;
+            }
+
+            function addOne(a){
+                return add(a, 1);
+            }
+
+            function subTwo(a){
+                return add(a, - 2);
+            }
+
+            function zero(a){
+                return add(a, -a);
+            }
+
+            function mul(a, b){return a * b;}
+
+            function zeroer(){
+               
+                function zero(a, shouldZero){
+                    if (shouldZero){
+                        return mul(a, 0);
+                    }
+                    else {
+                        return a;
+                    }
+                }
+
+                return zero;
+            }
+
+            let result = zero(addOne(subTwo(0))) + zeroer()(addOne(subTwo(0)), true);
+        `,
+        expected: { type: ValueType.NUMBER, value: 0 }
+    },
+    // numbers in identifiers, underscores in identifiers
+    {
+        sourceCode: `
+            let xX_23423432_asdasdsa = 1;
+            let _ = 2;
+            let __ = 3;
+            let ___ = 4;
+
+            let result = xX_23423432_asdasdsa + _ + __ + ___;
+            `
+        ,
+        expected: { type: ValueType.NUMBER, value: 10 }
+    },
+    {
+        sourceCode: `
+            let came_case_is_my_life    = 1.23432;
+            if (came_case_is_my_life > 2.23432){
+                let result = 1;
+            }
+            else{
+                let result = 0;
+            }
+
+            let result = 0;
+            `
+        ,
+        expected: { type: ValueType.NUMBER, value: 0 }
+    },
+    {
+        sourceCode: `
+            let my_tuple = (1.,);
+            
+            let result = my_tuple[0];
+            `
+        ,
+        expected: { type: ValueType.NUMBER, value: 1 }
+    },
+    {
+        sourceCode: `
+            let result = (1,2);
+        `,
+        expected: {
+            type: ValueType.TUPLE,
+            value: [{
+                type: ValueType.NUMBER,
+                value: 1
+            }, {
+                type: ValueType.NUMBER,
+                value: 2
+            }]
+        }
+    },
+    {
+        sourceCode: `
+            let result = (1,2,4,);
+        `,
+        expected: {
+            type: ValueType.TUPLE, value: [{
+                type: ValueType.NUMBER, value: 1
+            }, {
+                type: ValueType.NUMBER, value: 2
+            }, {
+                type: ValueType.NUMBER, value: 4
+            }]
+        }
+    },
+    {
+        sourceCode: `
+            let result = (1,(1,true));
+        `,
+        expected: { type: ValueType.TUPLE, value: [
+            { type: ValueType.NUMBER, value: 1 },
+            { type: ValueType.TUPLE, value: [
+                { type: ValueType.NUMBER, value: 1 },
+                { type: ValueType.BOOLEAN, value: true }
+            ]}
+        ]}
+    },
+    {
+        sourceCode: `
+            function xyz(a){
+                return (1 + a) / 100;
+            }
+
+            function abc(a){
+                return xyz(a);
+            }
+
+            let my_functions = (
+                xyz,
+                abc
+            );
+
+            let result = my_functions[0](1) + my_functions[1](1);
+        `,
+        expected: { type: ValueType.NUMBER, value: 0.04 }
+    },
+    {
+        sourceCode: `
+
+            let result = !!!!true;
+        `,
+        expected: { type: ValueType.BOOLEAN, value: true }
+    },
+    {
+        sourceCode: `
+            function x(){
+                function y(){
+                    return (-100,);
+                }
+                return (y,2,3,4,5,6,7,8,9,10);
+            }
+            
+            let result = x()[0]()[0];
+        `,
+        expected: { type: ValueType.NUMBER, value: -100 }
+    },
+    {
+        sourceCode: `
+            let a = [1];
+
+            let result = a[0];
+        `,
+        expected: { type: ValueType.NUMBER, value: 1 }
+    },
+    {
+        sourceCode: `
+            let a = [1, [2, [3, [4, [5, [6, [7, [8, [9, [10]]]]]]]]]];
+
+            let result = a[1][1][1][1][1][1][1][1][1][0];
+        `,
+        expected: { type: ValueType.NUMBER, value: 10 }
+    },
+    {
+        sourceCode: `
+            let a = [4.5,6,89];
+            a[0] = 2;
+
+            let result = a[0];
+        `,
+        expected: { type: ValueType.NUMBER, value: 2 }
+    },
+    {
+        sourceCode: `
+            let a = [4.5,6,89];
+            a += [1,2,3];
+
+            let result = a[5] + a[5-1*1*0+1-2];
+        `,
+        expected: { type: ValueType.NUMBER, value: 5 }
+    },
+    {
+        sourceCode: `
+            let result = ([1,2,3] + [4,5,6,])[5];
+        `,
+        expected: { type: ValueType.NUMBER, value: 6 }
+    },
 ]
 
 const invalidTestSourceCodes = [
@@ -3206,6 +3446,34 @@ const invalidTestSourceCodes = [
             '        let result = c;\n' +
             '    ',
         expected: DivisionByZero
+    },
+    {
+        sourceCode:
+            `
+        x;
+        `,
+        expected: VariableNotDeclared
+    },
+    {
+        sourceCode:
+            `
+        x()()();
+        `,
+        expected: VariableNotDeclared
+    },
+    {
+        sourceCode:
+            `
+         let 0xxx = 1; // variable name cannot start with a number
+        `,
+        expected: SyntaxError
+    },
+    {
+        sourceCode:
+            `
+         let 23423432432423_ = 1;
+        `,
+        expected: SyntaxError
     },
 ];
 

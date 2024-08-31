@@ -274,9 +274,9 @@ class Lexer {
                 }
 
                 tokens.push({ type: TokenType.NUMBER, value, line: this.line });
-            } else if (/[a-zA-Z]/.test(c)) {
+            } else if (/[a-zA-Z_]/.test(c)) {
                 let value = "";
-                while (/[a-zA-Z]/.test(this.peek())) {
+                while (/[a-zA-Z_0-9]/.test(this.peek())) {
                     value += this.peek();
                     this.advance();
                 }

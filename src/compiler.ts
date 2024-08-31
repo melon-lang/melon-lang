@@ -1,45 +1,11 @@
 import { CompilerBug, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclaredInScope } from './error';
 import { TokenType } from './lexer';
-import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement, BreakStatement, ContinueStatement } from './parser';
+import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement, BreakStatement, ContinueStatement, Tuple, List, Subscript } from './parser';
 import { Program, Opcode, Value, Instruction } from './vm';
 
 interface Local {
     name: string;
     depth: number;
-}
-
-const nativesWithSyscall = {
-    'print': {
-        syscallId: 'is.workflow.actions.showresult',
-        args: 1
-    },
-    'input': {
-        syscallId: 'is.workflow.actions.prompt',
-        args: 1
-    },
-    'exit': {
-        syscallId: 'is.workflow.actions.stop',
-        args: 0
-    },
-}
-
-const nativesWithOpcode = {
-    'number': {
-        opcode: Opcode.PARSE_NUMBER,
-        args: 1
-    },
-    'random': {
-        opcode: Opcode.RANDOM,
-        args: 0
-    },
-    'bool': {
-        opcode: Opcode.PARSE_BOOL,
-        args: 1
-    },
-    'str': {
-        opcode: Opcode.TO_STRING,
-        args: 1
-    }
 }
 
 class Compiler {
@@ -106,9 +72,39 @@ class Compiler {
             this.break(node);
         else if (node instanceof ContinueStatement)
             this.continue(node);
+        else if (node instanceof Tuple) 
+            this.tuple(node);
+        else if (node instanceof List)
+            this.list(node);
+        else if (node instanceof Subscript)
+            this.subscript(node);
         else {
             throw new CompilerBug(`Unknown node type ${node.constructor.name}`);
         }
+    }
+
+    private list(node: List) {
+        for (const element of node.elements) {
+            this.codegen(element);
+        }
+
+        this.emitText(
+            Opcode.MAKE_LIST,
+            node.lineNumber,
+            node.elements.length
+        );
+    }
+
+    private tuple(node: Tuple) {
+        for (const element of node.elements) {
+            this.codegen(element);
+        }
+
+        this.emitText(
+            Opcode.MAKE_TUPLE,
+            node.lineNumber,
+            node.elements.length
+        );
     }
 
     private continue(node: ContinueStatement) {
@@ -172,85 +168,11 @@ class Compiler {
     }
 
     private call(node: Call) {
-        if (node.func instanceof Identifier) {
-            const name = node.func.name.value;
-
-            if (name in nativesWithSyscall) {
-                const { syscallId, args } = nativesWithSyscall[name];
-
-                if (node.args.length > args) {
-                    throw new NativeFunctionArgumentNumberMismatch(node.lineNumber, name, args, node.args.length);
-                }
-
-                this.program.data.push(Value.string(syscallId));
-
-                this.emitText(
-                    Opcode.DATA,
-                    node.lineNumber,
-                    this.program.data.length - 1
-                );
-
-                for (const arg of node.args) {
-                    this.codegen(arg);
-                }
-
-                this.program.data.push(Value.native("syscall"));
-
-                this.emitText(
-                    Opcode.DATA,
-                    node.lineNumber,
-                    this.program.data.length - 1
-                );
-
-                this.emitText(
-                    Opcode.CALL,
-                    node.lineNumber,
-                    node.args.length + 1
-                );
-
-                return;
-            } else if (name in nativesWithOpcode) {
-                const { opcode, args } = nativesWithOpcode[name];
-
-                if (node.args.length > args) {
-                    throw new NativeFunctionArgumentNumberMismatch(node.lineNumber,name, args, node.args.length);
-                }
-
-                for (const arg of node.args) {
-                    this.codegen(arg);
-                }
-
-                this.emitText(opcode, node.lineNumber);
-
-                return;
-            } else if (node.func.name.value === "syscall") {
-                for (const arg of node.args) {
-                    this.codegen(arg);
-                }
-
-                this.program.data.push(Value.native("syscall"));
-
-                this.emitText(
-                    Opcode.DATA,
-                    node.lineNumber,
-                    this.program.data.length - 1
-                );
-
-                this.emitText(
-                    Opcode.CALL,
-                    node.lineNumber,
-                    node.args.length
-                );
-
-                return;
-            }
-        }
-
+        this.codegen(node.func);
+        
         for (const arg of node.args) {
             this.codegen(arg);
         }
-
-        this.codegen(node.func);
 
         this.emitText(
             Opcode.CALL,
@@ -375,11 +297,17 @@ class Compiler {
         this.emitText(opcode, node.lineNumber);
     }
 
+    private subscript(node: Subscript) { 
+        this.codegen(node.name)
+        this.codegen(node.key)
+
+        this.emitText(Opcode.SUBSCRIPT, node.lineNumber )
+    }
+
     private variableAssignment(node: VariableAssignment) {
-        const name = node.name.value;
 
         if (node.op.type !== TokenType.ASSIGN) {
-            this.loadVariable(name, node);
+            this.codegen(node.name);
         }
 
         this.codegen(node.value);
@@ -406,7 +334,16 @@ class Compiler {
             }
         }
         
-        this.assignVariable(name, node);
+        if(node.name instanceof Identifier)
+            this.assignVariable(node.name.name.value, node);
+        else if(node.name instanceof Subscript) {
+            this.codegen(node.name.name);
+            this.codegen(node.name.key);
+
+            this.emitText(Opcode.STORE_SUBSCRIPT, node.name.lineNumber);
+        } else {
+            throw new SyntaxError(`Cannot assign to ${node.name}`)
+        }
     }
 
     private variableDeclaration(node: VariableDeclaration) {

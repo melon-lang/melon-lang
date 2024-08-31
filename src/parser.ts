@@ -3,8 +3,8 @@ import { SyntaxError } from './error';
 
 export type AST = (Declaration | Statement)[];
 export type Declaration = FunctionDeclaration | VariableDeclaration | Statement;
-export type Statement = Expression | Call | If | While | For | Return | VariableAssignment | Block | ExpressionStatement | ImportStatement | BreakStatement | EmptyStatement;
-export type Expression = Literal | Identifier | Call | Block | BinaryOperation | UnaryOperation;
+export type Statement = Expression | Call | If | While | For | Return | Block | ExpressionStatement | ImportStatement | BreakStatement | EmptyStatement;
+export type Expression = Literal | Identifier | Call | Block | BinaryOperation | UnaryOperation | Tuple | List | VariableAssignment | Subscript;
 
 export class ASTNode {
 
@@ -36,7 +36,7 @@ export class ASTNode {
         return res;
     }
 
-    static VariableAssignment(name: Token, value: Expression, op: Token, lineNumber: number): VariableAssignment {
+    static VariableAssignment(name: Expression, value: Expression, op: Token, lineNumber: number): VariableAssignment {
         const res = new VariableAssignment();
         res.name = name;
         res.value = value;
@@ -161,6 +161,31 @@ export class ASTNode {
         return res;
     }
 
+    static Tuple(elements: Expression[], lineNumber: number): Tuple {
+        const res = new Tuple();
+        res.elements = elements;
+        res.lineNumber = lineNumber;
+
+        return res;
+    }
+
+    static List(elements: Expression[], lineNumber: number): List {
+        const res = new List();
+        res.elements = elements;
+        res.lineNumber = lineNumber;
+
+        return res;
+    }
+
+    static Subscript(name : Expression, key : Expression, lineNumber : number){
+        const res = new Subscript();
+        res.name = name;
+        res.key = key;
+        res.lineNumber = lineNumber;
+
+        return res;
+    }
+
     static EmptyStatement(lineNumber: number): EmptyStatement {
         const res = new EmptyStatement();
         res.lineNumber = lineNumber;
@@ -240,13 +265,26 @@ export class VariableDeclaration extends ASTNode {
 }
 
 export class VariableAssignment extends ASTNode {
-    name: Token
+    name: Expression
     value: Expression
     op: Token
 }
 
 export class ExpressionStatement extends ASTNode {
     expression: Expression
+}
+
+export class Tuple extends ASTNode {
+    elements: Expression[]
+}
+
+export class List extends ASTNode {
+    elements: Expression[]
+}
+
+export class Subscript extends ASTNode {
+    name: Expression
+    key: Expression
 }
 
 export class EmptyStatement extends ASTNode {
@@ -588,10 +626,33 @@ export default class Parser {
     }
 
     private expression(): Expression {
-        return this.andOr();
+        return this.assignment();
     }
 
-    private andOr(): Expression {
+    private assignment(){
+        let expr = this.andor();
+        
+        while (this.peek().type === TokenType.ASSIGN || 
+                this.peek().type === TokenType.PLUS_ASSIGN || 
+                this.peek().type === TokenType.MINUS_ASSIGN || 
+                this.peek().type === TokenType.MOD_ASSIGN || 
+                this.peek().type === TokenType.DIV_ASSIGN || 
+                this.peek().type === TokenType.MUL_ASSIGN
+            ){
+            let op = this.peek();
+
+            this.advance();
+
+            const to = this.andor();
+
+            expr = ASTNode.VariableAssignment(expr, to, op, op.line);
+        }
+
+        return expr;
+    }
+
+
+    private andor(): Expression {
         const lineNumber = this.peek().line;
         let expr = this.equality();
 
@@ -657,12 +718,12 @@ export default class Parser {
     private factor(): Expression {
         const lineNumber = this.peek().line;
 
-        let expr: Expression = this.unary();
+        let expr: Expression = this.prefixunary();
 
         while (this.peek().type === TokenType.MUL || this.peek().type === TokenType.DIV || this.peek().type === TokenType.MOD) {
             const op = this.peek();
             this.advance();
-            const rhs = this.unary();
+            const rhs = this.prefixunary();
             
             expr = ASTNode.BinaryOperation(op, expr, rhs, lineNumber);
         }
@@ -670,30 +731,21 @@ export default class Parser {
         return expr;
     }
 
-    private unary(): Expression {
+    private prefixunary(): Expression {
         let op = this.peek();
         const lineNumber = this.peek().line;
 
-        if (op.type === TokenType.MINUS || op.type === TokenType.NOT) {
+        if (op.type === TokenType.MINUS || op.type === TokenType.NOT || op.type === TokenType.INC || op.type === TokenType.DEC) {
             this.advance();
-            const rand = this.primary();
-
-            return ASTNode.UnaryOperation(op, rand, true, lineNumber);
-        } else if (op.type === TokenType.INC || op.type === TokenType.DEC) {
-            this.advance();
-            const rand = this.primary();
-
-            if (!(rand instanceof Identifier))
-                this.error(lineNumber, "Expected identifier after increment/decrement operator");
-
+            const rand = this.prefixunary();
             return ASTNode.UnaryOperation(op, rand, true, lineNumber);
         }
 
-        return this.incrementDecrement();
+        return this.suffixunary();
     }
 
-    private incrementDecrement(): Expression {
-        const call = this.call();
+    private suffixunary(): Expression {
+        const subscriptcall = this.subscriptcall();
 
         const op = this.peek();
         const lineNumber = this.peek().line;
@@ -701,48 +753,51 @@ export default class Parser {
         if (op.type === TokenType.INC || op.type === TokenType.DEC) {
             this.advance();
 
-            if (!(call instanceof Identifier))
+            if (!(subscriptcall instanceof Identifier))
                 this.error(lineNumber, "Expected identifier before increment/decrement operator");
 
-            return ASTNode.UnaryOperation(op, call, false, lineNumber);
+            return ASTNode.UnaryOperation(op, subscriptcall, false, lineNumber);
         }
 
-        return call;
+        return subscriptcall;
     }
 
-    private call(): Expression {
-        const primary = this.primary();
-
-        const op = this.peek();
+    private subscriptcall(): Expression {
+        let expr = this.primary();
         const lineNumber = this.peek().line;
-        
-        let expr = primary;
-        if (op.type === TokenType.LPAREN) {
-            
-            while (this.peek().type === TokenType.LPAREN ){
+
+        while (true) {
+            if (this.peek().type === TokenType.LBRACKET) {
+                this.advance();
+                const index = this.expression();
+
+                if (this.peek().type !== TokenType.RBRACKET)
+                    this.error(lineNumber, "Expected ']' after index");
+
+                this.advance();
+
+                expr = ASTNode.Subscript(expr, index, lineNumber);
+            } else if (this.peek().type === TokenType.LPAREN) {
                 this.advance();
                 const args: Expression[] = [];
 
                 while (this.peek().type !== TokenType.RPAREN) {
                     args.push(this.expression());
 
-                    if (this.peek().type !== TokenType.COMMA) {
-                        if (this.peek().type !== TokenType.RPAREN)
-                            this.error(lineNumber, "Expected ')' after argument list");
-                        break;
-                    } else {
+                    if (this.peek().type !== TokenType.COMMA && this.peek().type !== TokenType.RPAREN)
+                        this.error(lineNumber, "Expected ')' after argument list");
+                    else if (this.peek().type === TokenType.COMMA)
                         this.advance();
-                    }
                 }
                 this.advance();
 
                 expr = ASTNode.Call(expr, args, lineNumber);
+            } else {
+                break;
             }
-            
-            return expr;
         }
 
-        return primary;
+        return expr;
     }
 
     private primary(): Expression {
@@ -769,26 +824,44 @@ export default class Parser {
             case TokenType.IDENTIFIER:
                 this.advance();
 
-                if (this.peek().type === TokenType.ASSIGN || this.peek().type === TokenType.PLUS_ASSIGN || this.peek().type === TokenType.MINUS_ASSIGN || this.peek().type === TokenType.MUL_ASSIGN || this.peek().type === TokenType.DIV_ASSIGN || this.peek().type === TokenType.MOD_ASSIGN) {
-                    const op = this.peek();
-                    
-                    this.advance();
-                    const rhs = this.expression();
-
-                    return ASTNode.VariableAssignment(t, rhs, op, lineNumber);
-                }
-
                 return ASTNode.Identifier(t, lineNumber);
             case TokenType.LPAREN:
                 this.advance();
-                const expr = this.expression();
+                let expr = this.expression();
+
+                if (this.peek().type === TokenType.COMMA) {
+                    const nodes = [expr];
+                    
+                    while (this.peek().type === TokenType.COMMA) {
+                        this.advance();
+                        
+                        if (this.peek().type !== TokenType.RPAREN)
+                            nodes.push(this.expression());
+                    }
+
+                    expr = ASTNode.Tuple(nodes, lineNumber);
+                }
 
                 if (this.peek().type !== TokenType.RPAREN)
                     this.error(lineNumber, "Expected ')' after expression");
 
                 this.advance();
                 return expr;
+            case TokenType.LBRACKET:
+                this.advance();
+                const elements: Expression[] = [];
 
+                while (this.peek().type !== TokenType.RBRACKET) {
+                    elements.push(this.expression());
+
+                    if (this.peek().type !== TokenType.COMMA && this.peek().type !== TokenType.RBRACKET)
+                        this.error(lineNumber, "Expected ']' after element list");
+                    else if (this.peek().type === TokenType.COMMA)
+                        this.advance();
+                }
+
+                this.advance();
+                return ASTNode.List(elements, lineNumber);
             default:
                 this.error(lineNumber, "Unexpected token in expression: " + t.type);
 
