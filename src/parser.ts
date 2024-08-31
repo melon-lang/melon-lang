@@ -600,10 +600,10 @@ export default class Parser {
     }
 
     private expression(): Expression {
-        return this.andOr();
+        return this.andor();
     }
 
-    private andOr(): Expression {
+    private andor(): Expression {
         const lineNumber = this.peek().line;
         let expr = this.equality();
 
@@ -669,12 +669,12 @@ export default class Parser {
     private factor(): Expression {
         const lineNumber = this.peek().line;
 
-        let expr: Expression = this.unary();
+        let expr: Expression = this.prefixunary();
 
         while (this.peek().type === TokenType.MUL || this.peek().type === TokenType.DIV || this.peek().type === TokenType.MOD) {
             const op = this.peek();
             this.advance();
-            const rhs = this.unary();
+            const rhs = this.prefixunary();
             
             expr = ASTNode.BinaryOperation(op, expr, rhs, lineNumber);
         }
@@ -682,21 +682,21 @@ export default class Parser {
         return expr;
     }
 
-    private unary(): Expression {
+    private prefixunary(): Expression {
         let op = this.peek();
         const lineNumber = this.peek().line;
 
         if (op.type === TokenType.MINUS || op.type === TokenType.NOT || op.type === TokenType.INC || op.type === TokenType.DEC) {
             this.advance();
-            const rand = this.unary();
+            const rand = this.prefixunary();
             return ASTNode.UnaryOperation(op, rand, true, lineNumber);
         }
 
-        return this.incrementDecrement();
+        return this.suffixunary();
     }
 
-    private incrementDecrement(): Expression {
-        const subscript = this.subscript();
+    private suffixunary(): Expression {
+        const subscriptcall = this.subscriptcall();
 
         const op = this.peek();
         const lineNumber = this.peek().line;
@@ -704,20 +704,20 @@ export default class Parser {
         if (op.type === TokenType.INC || op.type === TokenType.DEC) {
             this.advance();
 
-            if (!(subscript instanceof Identifier))
+            if (!(subscriptcall instanceof Identifier))
                 this.error(lineNumber, "Expected identifier before increment/decrement operator");
 
-            return ASTNode.UnaryOperation(op, subscript, false, lineNumber);
+            return ASTNode.UnaryOperation(op, subscriptcall, false, lineNumber);
         }
 
-        return subscript;
+        return subscriptcall;
     }
 
-    private subscript(): Expression {
+    private subscriptcall(): Expression {
         let expr = this.primary();
         const lineNumber = this.peek().line;
 
-        while (this.peek().type === TokenType.LBRACKET || this.peek().type === TokenType.LPAREN) {
+        while (true) {
             if (this.peek().type === TokenType.LBRACKET) {
                 this.advance();
                 const index = this.expression();
@@ -729,25 +729,22 @@ export default class Parser {
 
                 expr = ASTNode.BinaryOperation({ type: TokenType.LBRACKET, value: '[]', line: lineNumber }, expr, index, lineNumber);
             } else if (this.peek().type === TokenType.LPAREN) {
-                while (this.peek().type === TokenType.LPAREN ){
-                    this.advance();
-                    const args: Expression[] = [];
+                this.advance();
+                const args: Expression[] = [];
 
-                    while (this.peek().type !== TokenType.RPAREN) {
-                        args.push(this.expression());
+                while (this.peek().type !== TokenType.RPAREN) {
+                    args.push(this.expression());
 
-                        if (this.peek().type !== TokenType.COMMA) {
-                            if (this.peek().type !== TokenType.RPAREN)
-                                this.error(lineNumber, "Expected ')' after argument list");
-                            break;
-                        } else {
-                            this.advance();
-                        }
-                    }
-                    this.advance();
-
-                    expr = ASTNode.Call(expr, args, lineNumber);
+                    if (this.peek().type !== TokenType.COMMA && this.peek().type !== TokenType.RPAREN)
+                        this.error(lineNumber, "Expected ')' after argument list");
+                    else if (this.peek().type === TokenType.COMMA)
+                        this.advance();
                 }
+                this.advance();
+
+                expr = ASTNode.Call(expr, args, lineNumber);
+            } else {
+                break;
             }
         }
 

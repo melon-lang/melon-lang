@@ -2938,6 +2938,40 @@ const validTestSourceCodes = [
     },
     {
         sourceCode: `
+            function a(){
+                function b(){
+                    return (random(), 56);
+                }
+
+                return b;
+            }
+
+            while(a()()[0] == a()()[0]); // this is a really low chance of happening
+
+            let result = "done" + str(a()()[1]);
+        `,
+        expected: { type: ValueType.STRING, value: "done56" }
+    },
+    {
+        sourceCode: `
+            function a(){
+                function b(){
+                    return (random(), 93, (0, 1.9));
+                }
+
+                let c = random();
+
+                return (b, c);
+            }
+
+            while(a()[0]()[0] == a()[1]); // this is a really low chance of happening
+
+            let result = (a()[0]()[2][1]);
+        `,
+        expected: { type: ValueType.NUMBER, value: 1.9 }
+    },
+    {
+        sourceCode: `
             let a= 1;
 
             function x(){
