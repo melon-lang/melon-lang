@@ -722,7 +722,6 @@ print("This message will be shown.");
 exit(); // Terminates the program
 print("This message will not be shown."); // This line will not be executed
 ```
-
 ## Functions
 
 Functions in Melon allow you to encapsulate reusable blocks of code, making your programs more organized and modular. Functions can take parameters, execute code, and return values. Here's a comprehensive look at how functions work in Melon:
@@ -803,3 +802,4 @@ print(result); // Outputs: 20
 ```
 
 In this example, the `multiply` function takes two parameters, `x` and `y`, and returns their product. The returned value is stored in the variable `result`, which is then printed.
+
