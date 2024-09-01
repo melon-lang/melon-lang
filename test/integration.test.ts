@@ -3481,6 +3481,22 @@ const invalidTestSourceCodes = [
         `,
         expected: SyntaxError
     },
+    {
+        sourceCode: `
+            // define a closure
+
+            while(true){
+                function x(){
+                    break;
+                }
+
+                x();
+            }
+        
+            let result = null;
+        `,
+        expected: SyntaxError
+    },
 ];
 
 test.each(validTestSourceCodes)('.eval($sourceCode)',
