@@ -33,7 +33,7 @@ const validTestSourceCodes = [
             let result = 2 + number(a);
         `
         ,
-        valueToFeed: { type: ValueType.NUMBER, value: 3 },
+        valueToFeed: Value.number(3),
         expected: { type: ValueType.NUMBER, value: 5 }
     },
 ]

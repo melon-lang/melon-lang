@@ -54,6 +54,12 @@ export class FunctionArgumentNumberMismatch extends RuntimeError {
     }
 }
 
+export class SycallArgumentNumberMismatch extends RuntimeError {
+    constructor(lineNumber: number, syscallName: string, expected: number, got: number){
+        super(lineNumber, `Function ${syscallName} expects ${expected} argument(s), got ${got}`)
+    }
+}
+
 export class NativeFunctionArgumentNumberMismatch extends CompilationError {
     constructor(lineNumber: number, functionName: string, expected: number, got: number){
         super(lineNumber, `Native function ${functionName} expects ${expected} argument(s), got ${got}`)

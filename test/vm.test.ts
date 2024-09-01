@@ -1,5 +1,5 @@
 import { expect, test } from '@jest/globals';
-import VM, { Opcode, Program, ValueType, VMImage, VMStatus } from '../src/vm';
+import VM, { Opcode, Program, Value, ValueType, VMImage, VMStatus } from '../src/vm';
 import { CompilerBug,  } from '../src/error';
 
 const decodeString = (str: string) => (JSON.parse(atob(str)));
@@ -20,8 +20,8 @@ const validTestCases: {
                         { type: Opcode.NOP },
                     ],
                     [
-                        { type: ValueType.NUMBER, value: 1 },
-                        { type: ValueType.NUMBER, value: 2 },
+                        Value.number(1),
+                        Value.number(2),
                     ]
                 ),
             steps: 3,
@@ -49,9 +49,9 @@ const validTestCases: {
                         { type: Opcode.NOP },
                     ],
                     [
-                        { type: ValueType.NUMBER, value: 56 },
-                        { type: ValueType.NUMBER, value: -2 },
-                    ]
+                        Value.number(56),
+                        Value.number(-2),
+                   ]
                 ),
             steps: 3,
             expected: {
@@ -78,7 +78,7 @@ const validTestCases: {
                         { type: Opcode.NOP },
                     ],
                     [
-                        { type: ValueType.NUMBER, value: 100000 },
+                        Value.number(100000),
                     ]
                 ),
             steps: 3,
@@ -105,7 +105,8 @@ const validTestCases: {
                         { type: Opcode.NOP },
                     ],
                     [
-                        { type: ValueType.NUMBER, value: 3 }, { type: ValueType.NUMBER, value: 2 },
+                        Value.number(3),
+                        Value.number(2),
                     ]
                 ),
             steps: 3,
@@ -133,8 +134,8 @@ const validTestCases: {
                         { type: Opcode.NOP },
                     ],
                     [
-                        { type: ValueType.NUMBER, value: 3 },
-                        { type: ValueType.NUMBER, value: 2 },
+                        Value.number(3),
+                        Value.number(2),
                     ]
                 ),
             steps: 3,
@@ -162,8 +163,8 @@ const validTestCases: {
                         { type: Opcode.NOP },
                     ],
                     [
-                        { type: ValueType.NUMBER, value: 6 },
-                        { type: ValueType.NUMBER, value: 2 },
+                        Value.number(6),
+                        Value.number(2),
                     ]
                 ),
             steps: 3,
@@ -209,9 +210,9 @@ const validTestCases: {
                         { type: Opcode.CALL, value: 2 },
                     ],
                     [
-                        { type: ValueType.STRING, value: "dummy-syscall" },
-                        { type: ValueType.SYSCALL, value: "syscall" },
-                        { type: ValueType.NUMBER, value: 5.453 },
+                        Value.string("dummy-syscall"),
+                        Value.syscall("syscall"),
+                        Value.number(5.453),
                     ]
                 ),
             steps: 4,
@@ -236,8 +237,8 @@ const validTestCases: {
                         { type: Opcode.NOP },
                     ],
                     [
-                        { type: ValueType.NUMBER, value: 33 },
-                        { type: ValueType.NUMBER, value: 3 },
+                        Value.number(33),
+                        Value.number(3),
                     ]
                 ),
             steps: 3,
@@ -269,9 +270,9 @@ const invalidTestCases: {
                         { type: Opcode.CALL, value: 2 },
                     ],
                     [
-                        { type: ValueType.STRING, value: "dum" },
-                        { type: ValueType.NUMBER, value: "5" },
-                        { type: ValueType.SYSCALL, value: "syscall" },
+                        Value.string("dum"),
+                        Value.number(5),
+                        Value.syscall("syscall"),
                     ]
                 ),
             steps: 3,

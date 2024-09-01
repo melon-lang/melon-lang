@@ -72,7 +72,7 @@ class Lexer {
     }
 
     private peek(n = 0): string {
-        if (this.pos + n == this.text.length)
+        if (this.pos + n >= this.text.length)
             return "\0";
 
         return this.text[this.pos + n];
@@ -95,7 +95,7 @@ class Lexer {
 
     private error(msg?: string): void {
         throw new SyntaxError(`Invalid character at ${this.line}:${this.column}`
-            + ` "${this.peek()}"`
+            + ` '${this.peek() === "\0" ? "EOF" : this.peek()}'` + (msg ? `: ${msg}` : "")
         );
     }
 

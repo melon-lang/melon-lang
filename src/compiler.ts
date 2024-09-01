@@ -1,4 +1,4 @@
-import { CompilerBug, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclaredInScope } from './error';
+import { CompilerBug, SyntaxError, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclaredInScope } from './error';
 import { TokenType } from './lexer';
 import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement, BreakStatement, ContinueStatement, Tuple, List, Subscript } from './parser';
 import { Program, Opcode, Value, Instruction } from './vm';
@@ -109,7 +109,7 @@ class Compiler {
 
     private continue(node: ContinueStatement) {
         if (this.continues.length === 0) {
-            throw new CompilerBug('Continue statement outside of loop');
+            throw new SyntaxError(node.lineNumber, 'Continue statement outside of loop');
         }
 
         const instruction = this.emitText(
@@ -124,7 +124,7 @@ class Compiler {
 
     private break(node: BreakStatement) {
         if (this.breaks.length === 0) {
-            throw new CompilerBug('Break statement outside of loop');
+            throw new SyntaxError(node.lineNumber, 'Break statement outside of loop');
         }
 
         const instruction = this.emitText(
@@ -224,7 +224,7 @@ class Compiler {
 
         if (opcode === Opcode.INC || opcode === Opcode.DEC) {
             if (!(node.rand instanceof Identifier))
-                throw new SyntaxError(`Invalid operand ${node.rand} for ${type}`);
+                throw new SyntaxError(node.lineNumber, `Invalid operand ${node.rand} for ${type}`);
 
             this.loadVariable(node.rand.name.value, node);
 
@@ -342,7 +342,7 @@ class Compiler {
 
             this.emitText(Opcode.STORE_SUBSCRIPT, node.name.lineNumber);
         } else {
-            throw new SyntaxError(`Cannot assign to ${node.name}`)
+            throw new SyntaxError(node.lineNumber, `Cannot assign to ${node.name}`)
         }
     }
 

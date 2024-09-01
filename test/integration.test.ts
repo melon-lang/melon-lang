@@ -1,7 +1,7 @@
 import { expect, test } from '@jest/globals';
 import { compile, evaluate } from '../src/index';
-import { ValueType } from '../src/vm';
-import { DivisionByZero, FunctionArgumentNumberMismatch, InvalidType, NativeFunctionArgumentNumberMismatch, SyntaxError, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
+import { ValueType, Syscall } from '../src/vm';
+import { DivisionByZero, FunctionArgumentNumberMismatch, InvalidType, NativeFunctionArgumentNumberMismatch, SycallArgumentNumberMismatch, SyntaxError, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
 import exp from 'constants';
 
 const evalValidSourceCode = (sourceCode: string) => {
@@ -3324,6 +3324,12 @@ const validTestSourceCodes = [
         `,
         expected: { type: ValueType.NUMBER, value: 6 }
     },
+    {
+        sourceCode: `
+            let result = true || false && false;
+        `,
+        expected: { type: ValueType.BOOLEAN, value: true }
+    },
 ]
 
 const invalidTestSourceCodes = [
@@ -3409,9 +3415,9 @@ const invalidTestSourceCodes = [
     },
     {
         sourceCode: `
-        print(1,2);
+        input("sdfasdas", "asdasdas");
         `,
-        expected: NativeFunctionArgumentNumberMismatch
+        expected: SycallArgumentNumberMismatch
     },
     {
         sourceCode: `
@@ -3474,6 +3480,32 @@ const invalidTestSourceCodes = [
          let 23423432432423_ = 1;
         `,
         expected: SyntaxError
+    },
+    {
+        sourceCode: `
+            // define a closure
+
+            while(true){
+                function x(){
+                    break;
+                }
+
+                x();
+            }
+        
+            let result = null;
+        `,
+        expected: SyntaxError
+    },
+    {
+        sourceCode: `
+            // define a closure
+
+            function result(){return 0}
+        
+            let result = null;
+        `,
+        expected: VariableAlreadyDeclared
     },
 ];
 
