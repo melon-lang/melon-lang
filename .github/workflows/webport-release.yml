@@ -5,6 +5,9 @@ permissions: write-all
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
 
 jobs:
   tagged-release:
