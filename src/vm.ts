@@ -106,6 +106,56 @@ export class Value {
     static null() {
         return new Value(ValueType.NULL, null);
     }
+
+    get repr(): string {
+        switch (this.type) {
+            case ValueType.BOOLEAN:
+                return this.value ? "true" : "false";
+            case ValueType.STRING:
+                return `"${this.value}"`;
+            case ValueType.NUMBER:
+                return this.value.toString();
+            case ValueType.FUNCTION:
+                return `<function ${this.value.name}>`;
+            case ValueType.NATIVE:
+                return `<native ${this.value}>`;
+            case ValueType.SYSCALL:
+                return `<syscall ${this.value}>`;
+            case ValueType.TUPLE:
+                return `(${this.value.map(v => v.repr).join(", ")})`;
+            case ValueType.LIST:
+                return `[${this.value.map(v => v.repr).join(", ")}]`;
+            case ValueType.NULL:
+                return "null";
+            default:
+                throw new CompilerBug(`Unknown value type ${this.type}`);
+        }
+    }
+
+    get str(): string {
+        switch (this.type) {
+            case ValueType.BOOLEAN:
+                return this.value ? "true" : "false";
+            case ValueType.STRING:
+                return this.value;
+            case ValueType.NUMBER:
+                return this.value.toString();
+            case ValueType.FUNCTION:
+                return `<function ${this.value.name}>`;
+            case ValueType.NATIVE:
+                return `<native ${this.value}>`;
+            case ValueType.SYSCALL:
+                return `<syscall ${this.value}>`;
+            case ValueType.TUPLE:
+                return `(${this.value.map(v => v.repr).join(", ")})`;
+            case ValueType.LIST:
+                return `[${this.value.map(v => v.repr).join(", ")}]`;
+            case ValueType.NULL:
+                return "null";
+            default:
+                throw new CompilerBug(`Unknown value type ${this.type}`);
+        }
+    }
 }
 
 export class Stack extends Array<Value> {
@@ -462,12 +512,11 @@ export default class VM {
                         if (syscallInfo === undefined)
                             throw new CompilerBug(`Syscall ${syscallName} is not defined`);
 
-                        if (syscallInfo.args !== value)
-                            throw new NativeFunctionArgumentNumberMismatch(lineNumber, syscallName, syscallInfo.args, value);
-
                         let syscallId = syscallInfo.syscallId;
+                        
+                        syscallInfo.preprocessor(args, lineNumber);
 
-                        // Special case for `syscall()`, the syscall name is the first argument
+                        // Special case for `syscall()`, the syscall id is the first argument
                         if (syscallName === 'syscall') {
                             if (args[0].type !== ValueType.STRING)
                                 throw new InvalidType(lineNumber, ValueType.STRING, args[0].type, `Syscall name must be a string`);
@@ -672,7 +721,7 @@ export default class VM {
         return vm;
     }
 
-        public static create(program: Program): VM {
+    public static create(program: Program): VM {
         const vm = new VM();
 
         vm.data = program.data;

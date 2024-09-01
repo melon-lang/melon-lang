@@ -1,7 +1,7 @@
 import { expect, test } from '@jest/globals';
 import { compile, evaluate } from '../src/index';
-import { ValueType } from '../src/vm';
-import { DivisionByZero, FunctionArgumentNumberMismatch, InvalidType, NativeFunctionArgumentNumberMismatch, SyntaxError, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
+import { ValueType, Syscall } from '../src/vm';
+import { DivisionByZero, FunctionArgumentNumberMismatch, InvalidType, NativeFunctionArgumentNumberMismatch, SycallArgumentNumberMismatch, SyntaxError, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
 import exp from 'constants';
 
 const evalValidSourceCode = (sourceCode: string) => {
@@ -3415,9 +3415,9 @@ const invalidTestSourceCodes = [
     },
     {
         sourceCode: `
-        print(1,2);
+        input("sdfasdas", "asdasdas");
         `,
-        expected: NativeFunctionArgumentNumberMismatch
+        expected: SycallArgumentNumberMismatch
     },
     {
         sourceCode: `
@@ -3496,6 +3496,16 @@ const invalidTestSourceCodes = [
             let result = null;
         `,
         expected: SyntaxError
+    },
+    {
+        sourceCode: `
+            // define a closure
+
+            function result(){return 0}
+        
+            let result = null;
+        `,
+        expected: VariableAlreadyDeclared
     },
 ];
 
