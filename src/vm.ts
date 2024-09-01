@@ -514,19 +514,19 @@ export default class VM {
 
                         let syscallId = syscallInfo.syscallId;
                         
-                        syscallInfo.preprocessor(args, lineNumber);
+                        const processedArgs = syscallInfo.preprocessor(args, lineNumber);
 
                         // Special case for `syscall()`, the syscall id is the first argument
                         if (syscallName === 'syscall') {
-                            if (args[0].type !== ValueType.STRING)
-                                throw new InvalidType(lineNumber, ValueType.STRING, args[0].type, `Syscall name must be a string`);
+                            if (processedArgs[0].type !== ValueType.STRING)
+                                throw new InvalidType(lineNumber, ValueType.STRING, processedArgs[0].type, `Syscall name must be a string`);
 
-                            syscallId = args.shift().value;
+                            syscallId = processedArgs.shift().value;
                         }
 
                         this.syscall = {
                             name: syscallId,
-                            args
+                            args: processedArgs
                         };
                     }
                     else {

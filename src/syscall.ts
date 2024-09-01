@@ -17,7 +17,7 @@ export default {
     'print': {
         syscallId: 'is.workflow.actions.showresult',
         preprocessor : (args: Value[], lineNumber: number) => {
-            return Value.string(args.map(arg => arg.repr).join(' '));
+            return [ Value.string(args.map(arg => arg.str).join(' ')) ];
         }
     },
     'input': {

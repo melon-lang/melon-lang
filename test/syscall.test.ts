@@ -29,13 +29,22 @@ const validTestSourceCodes = [
     {
         sourceCode: `
             let a = input("enter a number");
-
-            let result = 2 + number(a);
+            print(["2", "4"], "hello");
         `
         ,
         valueToFeed: Value.number(3),
-        expected: { type: ValueType.NUMBER, value: 5 }
+        expected: { type: ValueType.STRING, value: '["2", "4"] hello' }
     },
+    {
+        sourceCode: `
+            let a = input("enter a number");
+
+            let result = 4 + a;
+        `
+        ,
+        valueToFeed: Value.number(3),
+        expected: { type: ValueType.NUMBER, value: 7 }
+    }
 ]
 
 test.each(validTestSourceCodes)('.eval($sourceCode)',
