@@ -1,6 +1,7 @@
 import path from 'path';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin';
+import HtmlMinimizerPlugin from "html-minimizer-webpack-plugin";
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
@@ -10,7 +11,7 @@ export default {
     context: path.resolve(__dirname),
     devtool: 'inline-source-map',
     entry: './index.ts',
-    mode: 'development',
+    mode: 'production',
     module: {
         rules: [{
             test: /\.tsx?$/,
@@ -37,4 +38,10 @@ export default {
         }),
         new HtmlInlineScriptPlugin(),
     ],
+    optimization: {
+        minimize: true,
+        minimizer: [
+          new HtmlMinimizerPlugin(),
+        ],
+      },
 };
