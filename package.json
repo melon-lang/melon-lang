@@ -2,7 +2,7 @@
   "name": "melon-lang",
   "version": "1.0.10",
   "scripts": {
-    "test": "jest",
+    "test": "jest --verbose",
     "dev": "tsc --watch",
     "build:webport": "webpack --config webport/webpack.config.js",
     "start": "ts-node dist/src/index.js"
@@ -33,6 +33,7 @@
     "@types/jest": "^29.5.4",
     "@types/node": "^20.16.1",
     "@types/webpack": "^5.28.5",
+    "html-minimizer-webpack-plugin": "^5.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
     "webpack-cli": "^5.1.4"
