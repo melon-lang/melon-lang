@@ -880,6 +880,7 @@ export default class Parser {
             default:
                 this.error(lineNumber, "Unexpected token in expression: " + t.type);
 
+                return ASTNode.Literal(t, lineNumber);
         }
     }
 
