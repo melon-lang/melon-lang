@@ -337,7 +337,17 @@ export default class VM {
                     else if (a.type === ValueType.STRING && b.type === ValueType.STRING)
                         this.stack.push(Value.string(b.value + a.value));
                     else if (a.type === ValueType.LIST && b.type === ValueType.LIST)
-                        this.stack.push(Value.list(b.value.concat(a.value)));
+                    {
+                        //  Append to a list
+                        if(value && value === 1) {
+                            b.value.push(...a.value);
+                            this.stack.push(b);
+                        }
+                        // Concatenate two lists
+                        else {
+                            this.stack.push(Value.list(b.value.concat(a.value)));
+                        }
+                    }
                     else
                         throw new InvalidType(lineNumber, a.type, b.type, `Cannot add ${a.type} ${a.value} with ${b.type} ${b.value}`);
                     break;

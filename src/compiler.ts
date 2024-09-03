@@ -315,7 +315,7 @@ class Compiler {
         if(node.op.type !== TokenType.ASSIGN){
             switch (node.op.type) {
                 case TokenType.PLUS_ASSIGN:
-                    this.emitText(Opcode.ADD, node.lineNumber);
+                    this.emitText(Opcode.ADD, node.lineNumber, 1);
                     break;
                 case TokenType.MINUS_ASSIGN:
                     this.emitText(Opcode.SUB, node.lineNumber);
