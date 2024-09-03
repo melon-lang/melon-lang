@@ -20,7 +20,7 @@ You can go to the [web playground](https://melon-lang.github.io/playground/) to 
 Or, if you want to use melon within your own Shortcut, just input your code as text to `Run Shortcut (melon)` action in your shortcut as down below.
 
 <div align="center">
-    <img src="/how-to-use.png" />
+    <img src="how-to-use.png" />
 </div>
 
 ### Hello world program
@@ -34,3 +34,4 @@ print("Hello world!");
 In melon, you use native `print` function to display text or other types of data. melon uses `Show Result` action to achieve this.
 
 Also, lines in melon must end with a semicolon.
+
