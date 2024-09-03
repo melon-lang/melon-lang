@@ -7,7 +7,7 @@ const number = (lineNumber, args: Value[]) => {
     if (isNaN(Number(str)))
         throw new InvalidFormat(lineNumber, `Cannot parse ${str} as number`);
 
-   return { type: ValueType.NUMBER, value: parseFloat(str) };
+   return Value.number(parseFloat(str));
 }
 
 const bool = (lineNumber, args: Value[]) => {
@@ -20,7 +20,7 @@ const bool = (lineNumber, args: Value[]) => {
 }
 
 const random = (lineNumber) => {
-    return { type: ValueType.NUMBER, value: Math.random() };
+    return Value.number(Math.random());
 }
 
 const str = (lineNumber, args: Value[]) => {
