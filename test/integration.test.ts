@@ -3330,6 +3330,47 @@ const validTestSourceCodes = [
         `,
         expected: { type: ValueType.BOOLEAN, value: true }
     },
+    {
+        sourceCode: `
+            let a = [1,2,3];
+            let b = a;
+            b[0] = 2;
+
+            let result = a[0];
+        `,
+        expected: { type: ValueType.NUMBER, value: 2 }
+    },
+    {
+        sourceCode: `
+            let a = [1,2,3];
+            let b = a;
+            
+            a += [4,5,6];
+
+            let result = b[3];
+        `,
+        expected: { type: ValueType.NUMBER, value: 4 }
+    },
+    {
+        sourceCode: `
+            let a = [1,2,3];
+            let b = a;
+            
+            a = a + [4,5,6];
+
+            let result = b == a;
+        `,
+        expected: { type: ValueType.BOOLEAN, value: false }
+    },
+    {
+        sourceCode: `
+            let a = [1];
+            let b = a;
+            
+            let result = b == a;
+        `,
+        expected: { type: ValueType.BOOLEAN, value: true }
+    },
 ]
 
 const invalidTestSourceCodes = [
