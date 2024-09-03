@@ -26,20 +26,7 @@ const random = (lineNumber) => {
 const str = (lineNumber, args: Value[]) => {
     const a = args[0];
 
-    if (a.type == ValueType.STRING)
-       return (Value.string(a.value));
-    else if (a.type == ValueType.BOOLEAN)
-        return (Value.string(a.value));
-    else if (a.type == ValueType.NUMBER)
-        return (Value.string(a.value.toString()));
-    else if (a.type == ValueType.NULL)
-        return (Value.string(a.value));
-    else if (a.type == ValueType.NATIVE)
-        return (Value.string(`<melon.native.${a.value}()>`));
-    else if (a.type == ValueType.FUNCTION)
-        return (Value.string(`<${a.value.name}()>`))
-    else
-        throw new CompilerBug(`Invalid type for a value: ${a.type}`);
+    return (Value.string(a.str));
 }
 
 export default {

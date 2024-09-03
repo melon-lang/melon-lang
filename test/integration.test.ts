@@ -3371,6 +3371,22 @@ const validTestSourceCodes = [
         `,
         expected: { type: ValueType.BOOLEAN, value: true }
     },
+    {
+        sourceCode: `
+            let a = 3.44;
+            
+            let result = str(a);
+        `,
+        expected: { type: ValueType.STRING, value: "3.44" }
+    },
+    {
+        sourceCode: `
+            let a = 3.44;
+            
+            print(a);
+        `,
+        expected: { type: ValueType.STRING, value: "3.44" }
+    },
 ]
 
 const invalidTestSourceCodes = [
