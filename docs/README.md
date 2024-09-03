@@ -34,7 +34,3 @@ print("Hello world!");
 In melon, you use native `print` function to display text or other types of data. melon uses `Show Result` action to achieve this.
 
 Also, lines in melon must end with a semicolon.
-
-
-
-
