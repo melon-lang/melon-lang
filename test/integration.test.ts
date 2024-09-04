@@ -3403,6 +3403,21 @@ const validTestSourceCodes = [
             // line ends with comment`,
         expected: { type: ValueType.STRING, value: "3.44" }
     },
+    {
+        sourceCode: `
+            let a = [3.44];
+            
+            exit(a)
+            // line ends with comment`,
+        expected: { type: ValueType.STRING, value: "[3.44]" }
+    },
+    {
+        sourceCode: `
+            exit(true)    ;
+            
+        `,
+        expected: { type: ValueType.STRING, value: "true" }
+    },
 ]
 
 const invalidTestSourceCodes = [
