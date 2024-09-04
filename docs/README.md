@@ -7,7 +7,7 @@ It is similar to Scriptable, but it is **open source** and **built only using Si
 
 ## Installation
 
-Start by installing `melon` Shortcut to your device from [here](https://www.icloud.com/shortcuts/861be6b5aa794498a8b1b543262be817). 
+Start by installing `melon` Shortcut to your device from [here](https://www.icloud.com/shortcuts/0752d222cc764d1b959d5a27c5784491). 
 
 This shortcut will serve as our interpreter. 
 
