@@ -69,16 +69,18 @@ The `random` function generates and returns a random number between 0 and 1.
 
 ### `exit`
 
-The `exit` function terminates the program immediately. Unlike some languages, Melon's `exit` function does not support status codes; it simply ends the program.
+The `exit` function terminates the program immediately. Unlike some languages, Melon's `exit` function does not support status codes; it simply ends the program. 
+
+You can also return back a value to Shortcut using `exit`. 
 
 **Syntax:**
 ```melon
-exit();
+exit(optional_return_value?);
 ```
 
 **Example:**
 ```melon
 print("This message will be shown.");
-exit(); // Terminates the program
+exit("I love you"); // Terminates the program. 'I love you' is returned to the shortcut.
 print("This message will not be shown."); // This line will not be executed
 ```
