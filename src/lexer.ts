@@ -148,7 +148,7 @@ class Lexer {
                 }
             } else if (c === "/") {
                 if (this.peek(1) === "/") {
-                    while (this.peek() !== "\n") {
+                    while (this.peek() !== "\n" && this.peek() !== "\0") {
                         this.advance();
                     }
                 }
