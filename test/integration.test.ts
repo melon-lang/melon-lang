@@ -3400,8 +3400,7 @@ const validTestSourceCodes = [
             let a = 3.44;
             
             print(a);
-            // line ends with comment
-        `,
+            // line ends with comment`,
         expected: { type: ValueType.STRING, value: "3.44" }
     },
 ]
