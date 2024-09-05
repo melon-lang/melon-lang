@@ -1,0 +1,40 @@
+name: "tagged-release"
+
+permissions: write-all
+
+on:
+  push:
+    branches: [ "dev" ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+
+jobs:
+  tagged-release:
+    name: "Tagged Release"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build:webport
+      - run: mv dist/webport/index.html dist/webport/build.html
+      - name: Generate checksum
+        uses: jmgilman/actions-generate-checksum@v1
+        with:
+          patterns: |
+            dist/webport/*.html
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          title: "Melon v${{ steps.bump_version.outputs.next-version }}"
+          automatic_release_tag: "${{ steps.bump_version.outputs.next-version }}"
+          prerelease: true
+          files: |
+            dist/webport/build.html
+            checksum.txt
