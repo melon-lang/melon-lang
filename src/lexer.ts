@@ -241,8 +241,30 @@ class Lexer {
                 let value = "";
                 this.advance();
                 while (this.peek() !== '"') {
-                    value += this.peek();
-                    this.advance();
+                    if (this.peek() === "\\")
+                    {
+                        this.advance();
+                        if (this.peek() === "n") {
+                            value += "\n";
+                        } else if (this.peek() === "t") {
+                            value += "\t";
+                        } else if (this.peek() === "r") {
+                            value += "\r";
+                        } else if (this.peek() === "0") {
+                            value += "\0";
+                        } else if (this.peek() === "\\") {
+                            value += "\\";
+                        } else if (this.peek() === '"') {
+                            value += '"';
+                        } else {
+                            this.error("Invalid escape character");
+                        }
+
+                        this.advance();
+                    } else {
+                        value += this.peek();
+                        this.advance();
+                    }
                 }
                 this.advance();
                 tokens.push({ type: TokenType.STRING, value, line: this.line });

@@ -15,6 +15,8 @@ let c = "Hello, World!";    // A string with special characters
 
 Common operations with strings include concatenation, substring extraction, and checking for inclusion of other strings.
 
+Also, there are espace characters that you can use: `\n`, `\"`, `\\`, `\0`, `\r`, `\t`
+
 ### Numbers
 
 Numbers in Melon represent numeric values. They can be integers or floating-point numbers. Unlike strings, numbers are not enclosed in quotes.
