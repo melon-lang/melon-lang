@@ -3413,10 +3413,23 @@ const validTestSourceCodes = [
     },
     {
         sourceCode: `
-            exit(true)    ;
-            
+            exit(true);
         `,
         expected: { type: ValueType.STRING, value: "true" }
+             
+    },
+    {
+         sourceCode: `
+            print("\\\" Hello my man!");
+        `,
+        expected: { type: ValueType.STRING, value: "\" Hello my man!" }
+    },
+    {
+        sourceCode: `
+             print("{\\\"name\\\":\\\"John\\\"}");
+            
+        `,
+        expected: { type: ValueType.STRING, value: "{\"name\":\"John\"}" }
     },
 ]
 
