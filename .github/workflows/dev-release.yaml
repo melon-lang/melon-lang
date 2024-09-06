@@ -32,7 +32,7 @@ jobs:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          title: "Melon v${{ steps.bump_version.outputs.next-version }}"
+          title: "Melon Development Build"
           automatic_release_tag: "dev"
           prerelease: true
           files: |
