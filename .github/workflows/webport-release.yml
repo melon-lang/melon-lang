@@ -31,6 +31,7 @@ jobs:
         with:
           myToken: "${{ secrets.GITHUB_TOKEN }}"
           view_top: 1
+          exclude_types: "prerelease"
       
       - name: Bump release version
         id: bump_version
