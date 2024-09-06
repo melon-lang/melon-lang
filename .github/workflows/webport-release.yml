@@ -42,7 +42,13 @@ jobs:
       - name: Do something with your bumped release version
         run: echo ${{ steps.bump_version.outputs.next-version }}
         # will print 2.12.0
-      
+     
+      - name: Generate checksum
+        uses: jmgilman/actions-generate-checksum@v1
+        with:
+          patterns: |
+            dist/webport/*.html
+
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -51,3 +57,4 @@ jobs:
           prerelease: false
           files: |
             dist/webport/build.html
+            checksum.txt
