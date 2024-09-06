@@ -1,7 +1,7 @@
 import { expect, test } from '@jest/globals';
 import { compile, evaluate } from '../src/index';
 import { ValueType, Syscall } from '../src/vm';
-import { DivisionByZero, FunctionArgumentNumberMismatch, InvalidType, NativeFunctionArgumentNumberMismatch, SycallArgumentNumberMismatch, SyntaxError, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
+import { DivisionByZero, FunctionArgumentNumberMismatch, InvalidType, InvalidTypeMultiple, NativeFunctionArgumentNumberMismatch, SycallArgumentNumberMismatch, SyntaxError, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
 import exp from 'constants';
 
 const evalValidSourceCode = (sourceCode: string) => {
@@ -3431,6 +3431,52 @@ const validTestSourceCodes = [
         `,
         expected: { type: ValueType.STRING, value: "{\"name\":\"John\"}" }
     },
+    {
+        sourceCode: `
+            let result = len([1,2,3,4,5]);
+            
+        `,
+        expected: { type: ValueType.NUMBER, value: 5 }
+    },
+    {
+        sourceCode: `
+            let result = len("Hello World!");
+            
+        `,
+        expected: { type: ValueType.NUMBER, value: 12 }
+    },
+    {
+        sourceCode: `
+            let result = len((1,2,));
+            
+        `,
+        expected: { type: ValueType.NUMBER, value: 2 }
+    },
+    {
+        sourceCode: `
+            let result = len([1,[1,2]]);
+            
+        `,
+        expected: { type: ValueType.NUMBER, value: 2 }
+    },
+    {
+        sourceCode: `
+            let people = ["john", "doe"];
+            let message = "Welcome to ";
+
+            for (let i = 0; i < len(people); i++){
+                let person = people[i];
+                
+                if(i > 0)
+                    message += " and ";
+
+                message += person;
+            }
+
+            let result = message;
+        `,
+        expected: { type: ValueType.STRING, value: "Welcome to john and doe" }
+    },
 ]
 
 const invalidTestSourceCodes = [
@@ -3607,6 +3653,13 @@ const invalidTestSourceCodes = [
             let result = null;
         `,
         expected: VariableAlreadyDeclared
+    },
+    {
+        sourceCode: `
+            let result = len(1);
+            
+        `,
+        expected: InvalidTypeMultiple
     },
 ];
 

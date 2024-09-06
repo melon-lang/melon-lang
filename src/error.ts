@@ -72,6 +72,12 @@ export class InvalidType extends RuntimeError {
     }
 }
 
+export class InvalidTypeMultiple extends RuntimeError {
+    constructor(lineNumber: number, expected: ValueType[], got: ValueType, message: string = ''){
+          super(lineNumber, `${message} Expected ${expected.join("or")} got ${got}`)
+     }
+ }
+
 export class DivisionByZero extends RuntimeError {
     constructor(lineNumber: number){
         super(lineNumber, `Division by zero`)

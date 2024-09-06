@@ -37,11 +37,11 @@ let slice2 = text[6:17]; // Expected to be "Programming"
 let slice3 = text[18:];  // Expected to be "Language"
 ```
 
-#### 3. Length (Planned)
+#### 3. Length
 
-The `len` function is planned to determine the number of characters in a string.
+The `len` function can be used to determine the number of characters in a string.
 
-**Planned Example:**
+**Example:**
 ```melon
 let phrase = "Count me in!";
 let length = len(phrase); // Expected to be 12
@@ -341,11 +341,11 @@ let start_slice = my_list[:3]; // start_slice is [1, 2, 3]
 let end_slice = my_list[3:];   // end_slice is [4, 5]
 ```
 
-#### 6. Length (Planned)
+#### 6. Length
 
-The `len` function is planned to determine the number of elements in a list.
+The `len` function can be used to determine the number of elements in a list.
 
-**Planned Example:**
+**Example:**
 ```melon
 let list = [1,2,3];
 let length = len(list); // Expected to be 3
@@ -380,3 +380,12 @@ let third_element = my_tuple[2]; // third_element is 30
 ```
 
 Tuples, being immutable, do not support operations that alter their contents. You can only read and access the data stored in them. This immutability ensures that tuples are a reliable and consistent way to group related values that should not change throughout the program.
+
+#### 2. Length
+
+The `len` function can be used to determine the number of elements in a tuple.
+
+**Example:**
+```melon
+let tuple = (1,2,3);
+let length = len(tuple); // Expected to be 3

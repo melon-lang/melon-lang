@@ -1,4 +1,4 @@
-import { CompilerBug, InvalidFormat, InvalidType } from "./error";
+import { CompilerBug, InvalidFormat, InvalidType, InvalidTypeMultiple } from "./error";
 import { Value, ValueType } from "./vm";
 
 const number = (lineNumber, args: Value[]) => {
@@ -29,6 +29,15 @@ const str = (lineNumber, args: Value[]) => {
     return (Value.string(a.str));
 }
 
+const len = (lineNumber, args: Value[]) => {
+    const a = args[0];
+
+    if (a.type !== ValueType.STRING && a.type !== ValueType.LIST && a.type !== ValueType.TUPLE)
+        throw new InvalidTypeMultiple(lineNumber, [ValueType.STRING, ValueType.LIST, ValueType.TUPLE], a.type);
+
+    return Value.number(a.value.length);
+}
+
 export default {
     'number': {
         function: number,
@@ -44,6 +53,10 @@ export default {
     },
     'str': {
         function: str,
+        args: 1
+    },
+    'len': {
+        function: len,
         args: 1
     },
 };
