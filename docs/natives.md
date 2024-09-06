@@ -63,6 +63,10 @@ The `number` function accepts a string, and parses it as a number.
 
 The `str` function accepts a value, and converts it into a string.
 
+### `len`
+
+It returns the length of a given string, list or tuple.
+
 ### `random`
 
 The `random` function generates and returns a random number between 0 and 1.
