@@ -33,7 +33,7 @@ jobs:
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           title: "Melon v${{ steps.bump_version.outputs.next-version }}"
-          automatic_release_tag: "${{ steps.bump_version.outputs.next-version }}"
+          automatic_release_tag: "dev"
           prerelease: true
           files: |
             dist/webport/build.html
