@@ -1,7 +1,8 @@
 import 'es6-shim';
 import 'reflect-metadata';
 import interpret from './interpret';
-import VM, { VMImage, Value } from '../src/vm';
+import VM, { VMImage } from '../src/vm';
+import {StringValue, Value} from '../src/value';
 
 const getParams = () => {
 	const data = window.location.href;
@@ -38,7 +39,7 @@ const begin = (sourceCode: string): void => {
 
 const resume = (save: string, value): void => {
 	const image = JSON.parse(atob(save)) as VMImage;
-	const vm = VM.deserialize(image, Value.string(atob(value)));
+	const vm = VM.deserialize(image, new StringValue(atob(value)));
 	const result = vm.run();
 
 	document.write(btoa(JSON.stringify(result)));
