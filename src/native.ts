@@ -38,15 +38,6 @@ const len = (lineNumber, args: Value[]) => {
     return result;
 }
 
-const len = (lineNumber, args: Value[]) => {
-    const a = args[0];
-
-    if (a.type !== ValueType.STRING && a.type !== ValueType.LIST && a.type !== ValueType.TUPLE)
-        throw new InvalidTypeMultiple(lineNumber, [ValueType.STRING, ValueType.LIST, ValueType.TUPLE], a.type);
-
-    return Value.number(a.value.length);
-}
-
 export default {
     'number': {
         function: number,
