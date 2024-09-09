@@ -101,3 +101,9 @@ export class IndexError extends RuntimeError {
         super(lineNumber, "List index out of range");
     }
 }
+
+export class NoSuchMemberMethod extends RuntimeError {
+    constructor(lineNumber: number, object: string, name: string){
+        super(lineNumber, `${object} has no such member ${name}`);
+    }
+}

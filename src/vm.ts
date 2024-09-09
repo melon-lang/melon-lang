@@ -1,9 +1,9 @@
 import "reflect-metadata";
 import { Type, serialize, deserialize, Transform } from 'class-transformer';
-import { CompilerBug, DivisionByZero, FunctionArgumentNumberMismatch, IndexError, InvalidFormat, InvalidType, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclared, VariableNotDeclared } from './error';
+import { CompilerBug, DivisionByZero, FunctionArgumentNumberMismatch, IndexError, InvalidFormat, InvalidType, NativeFunctionArgumentNumberMismatch, NoSuchMemberMethod, VariableAlreadyDeclared, VariableNotDeclared } from './error';
 import natives from './native';
 import syscalls from './syscall';
-import { BooleanValue, Function, FunctionValue, NativeValue, ListValue, NullValue, NumberValue, StringValue, SyscallValue, TupleValue, Value, ValueTransform, ValueOptions, AnyValueType } from './value';
+import { BooleanValue, Function, FunctionValue, NativeValue, ListValue, NullValue, NumberValue, StringValue, SyscallValue, TupleValue, Value, ValueTransform, MemberMethodValue } from './value';
 
 export enum Opcode {
     PUSH = "push",
@@ -53,7 +53,6 @@ export enum Opcode {
 }
 
 export class Stack extends Array<Value> {
-
     pop() {
         if (this.length === 0)
             throw new CompilerBug("Stack underflow. There is nothing to pop from the VM stack.");
@@ -76,12 +75,15 @@ export class Instruction {
 
 export class Program {
     text: Instruction[];
+    @ValueTransform()
     @Type(()=>Value)
-    data: AnyValueType[];
+    data: Value[];
+    names: string[];
 
-    constructor(text: Instruction[], data: Value[]) {
+    constructor(text: Instruction[], data: Value[], names: string[] = []) {
         this.text = text;
         this.data = data;
+        this.names = names;
     }
 }
 
@@ -121,22 +123,31 @@ export interface VMImage {
     syscall?: Syscall;
 }
 
-export interface Syscall {
+export class Syscall {
     name: string;
+    @ValueTransform()
+    @Type(()=>Value)
     args: Value[];
+
+    constructor(name = "", args = []){
+        this.name = name;
+        this.args = args;
+    }
 }
 
 export default class VM {
     @ValueTransform()
     @Type(()=>Value)
-    private data: AnyValueType[];
+    private data: Value[];
+
+    private names: string[];
 
     @Type(() => CallFrame)
     private frames: CallFrame[];
 
     @ValueTransform()
     @Type(()=>Value)
-    private globals: Map<string, AnyValueType>;
+    private globals: Map<string, Value>;
 
     private syscall?: Syscall = undefined;
 
@@ -363,6 +374,7 @@ export default class VM {
                             func.value.body
                         ));
                     } else if (func instanceof SyscallValue) {
+
                         let syscallName = func.value;
                         const syscallInfo = syscalls[syscallName];
 
@@ -381,10 +393,16 @@ export default class VM {
                             syscallId = processedArgs.shift().value;
                         }
 
-                        this.syscall = {
-                            name: syscallId,
-                            args: processedArgs
-                        };
+                        this.syscall = new Syscall(
+                            syscallId,
+                            processedArgs
+                        );
+                    } else if (func instanceof MemberMethodValue){
+                        const [obj, method] = func.resolve();
+
+                        const result = obj[method](lineNumber, ...args);
+
+                        this.stack.push(result);
                     }
                     else {
                         throw new InvalidType(lineNumber, FunctionValue.typeName, func.typeName, `Cannot call non-function ${func.value}`);
@@ -497,7 +515,6 @@ export default class VM {
             case Opcode.SUBSCRIPT: {
                 const key = this.stack.pop();
                 const container = this.stack.pop();
-
                 const result = container.__getitem__(lineNumber, key);
 
                 this.stack.push(result);
@@ -523,9 +540,15 @@ export default class VM {
             }
             case Opcode.MEMBER_ACCESS:
                 {
-                    const name = this.stack.pop();
                     const object = this.stack.pop();
-
+                    const name = this.names.at(value);
+                    
+                    const result = object.getMemberMethodValue(name);
+                    
+                    if(!result)
+                        throw new NoSuchMemberMethod(lineNumber, object.repr, name)
+                    
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.NOP:
@@ -571,6 +594,7 @@ export default class VM {
         const vm = new VM();
 
         vm.data = program.data;
+        vm.names = program.names;
         vm.frames = [new CallFrame(0, [], program.text)];
         vm.globals = new Map();
         vm.defineNatives();

@@ -45,7 +45,27 @@ const validTestSourceCodesWithSyscalls = [
         ,
         valueToFeed: new StringValue("3"),
         expected: new NumberValue(7)
-    }
+    }, 
+    {
+        sourceCode: `
+            let a = [1,2,3];
+            let b = a;
+            print(b[0])
+            syscall("dummy", b[0])
+        `,
+        valueToFeed: new NullValue(),
+        expected: new NumberValue(1)
+    },
+    {
+        sourceCode: `
+            let a = [1,2,3];
+            let b = a;
+            print(b[0])
+            print(b[0])
+        `,
+        valueToFeed: new NullValue(),
+        expected: new StringValue("1")
+    },
 ]
 
 test.each(validTestSourceCodesWithSyscalls)('.eval($sourceCode)',

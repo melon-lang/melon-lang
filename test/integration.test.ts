@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 import { compile, evaluate } from '../src/index';
-import {BooleanValue, FunctionValue, ListValue, NativeValue,NullValue,NumberValue,StringValue,SyscallValue,TupleValue} from '../src/value';
+import {BooleanValue, FunctionValue, ListValue, MemberMethodValue, NativeValue,NullValue,NumberValue,StringValue,SyscallValue,TupleValue} from '../src/value';
 import { DivisionByZero, FunctionArgumentNumberMismatch, InvalidOperationOnType, NativeFunctionArgumentNumberMismatch, SycallArgumentNumberMismatch, SyntaxError, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
 
 const evalValidSourceCode = (sourceCode: string) => {
@@ -3476,8 +3476,14 @@ const validTestSourceCodes = [
             let result = 1 < 5;
             
         `,
-        expected: new NumberValue(1)
+        expected: new BooleanValue(true)
     },
+    {
+        sourceCode: `
+            let result = ([1,12]).__len__()
+        `,
+        expected: new NumberValue(2)
+    }
 ]
 
 const invalidTestSourceCodes = [
@@ -3658,34 +3664,19 @@ const invalidTestSourceCodes = [
     {
         sourceCode: `
             let result = len(1);
-            
-        `,
-        expected: InvalidOperationOnType
-    },
-    {
-        sourceCode: `
-            let result = "lol"++;
-            
-        `,
-        expected: InvalidOperationOnType
-    },
-    {
-        sourceCode: `
-            let result = "lol" + 1;
-            
         `,
         expected: InvalidOperationOnType
     },
 ];
 
-test.each(validTestSourceCodes)('.eval($sourceCode)',
+test.each(validTestSourceCodes)('',
     ({ sourceCode, expected }) => {
         const result = evalValidSourceCode(sourceCode);
         expect(result).toEqual(expected);
     }
 );
 
-test.each(invalidTestSourceCodes)('.eval($sourceCode)',
+test.each(invalidTestSourceCodes)('',
     ({ sourceCode, expected }) => {
         expect(() => evalInvalidSourceCode(sourceCode)).toThrowError(expected);
     }

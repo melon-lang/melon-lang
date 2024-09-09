@@ -2,7 +2,48 @@ import "reflect-metadata";
 import 'es6-shim';
 import { Type, Expose, Transform } from "class-transformer";
 import { Instruction } from "./vm";
-import { CompilerBug, DivisionByZero, IndexError, InvalidOperationOnType, InvalidType } from './error';
+import { CompilerBug, DivisionByZero, IndexError, InvalidOperationOnType, InvalidType, NativeFunctionArgumentNumberMismatch } from './error';
+
+const getAsValue = (value) => {
+    switch (value.__type__) {
+        case BooleanValue.typeName:
+            return new BooleanValue(value.value);
+        case StringValue.typeName:
+            return new StringValue(value.value);
+        case NativeValue.typeName:
+            return new NativeValue(value.value);
+        case NullValue.typeName:
+            return new NullValue();
+        case NumberValue.typeName:
+            return new NumberValue(value.value);
+        case ListValue.typeName:
+            return new ListValue(value.value.map(v => getAsValue(v)));
+        case TupleValue.typeName:
+            return new TupleValue(value.value.map(v => getAsValue(v)));
+        case SyscallValue.typeName:
+            return new SyscallValue(value.value);
+        case FunctionValue.typeName:
+            return new FunctionValue(value.value)
+        case MemberMethodValue.typeName:
+            return new MemberMethodValue(value.value, value.obj)
+        default:
+            throw new CompilerBug(`No such value type: ${value.__type__}`);
+    }
+}
+
+export const ValueTransform = () => (Transform(({ value, obj }) => {
+    
+    if (Array.isArray(value)) {
+        return value.map((val) => getAsValue(val))
+    } else if (value instanceof Map) {
+        const newEntries = Array.from(value, (([key, val]) => {
+            return [key, getAsValue(val)]
+        })) as [any, any];
+        return new Map(newEntries);
+    } else {
+        throw new CompilerBug(`Cannot transform such type: ${typeof value}`);
+    }
+}, { toClassOnly: true }))
 
 export class Function {
     name: string;
@@ -25,14 +66,15 @@ interface NativeFunctionSignature {
 }
 
 // Decorator for member functions
-const ValueMethod = (signature: NativeFunctionSignature) => {
+function ValueMethod(signature: NativeFunctionSignature) {
+
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         const method = descriptor.value;
         const methodName = ValueMethodAsString[propertyKey] || propertyKey;
 
         descriptor.value = function (...args) {
             if (args.length == 0) {
-                throw new CompilerBug('Method must at least one argument.');
+                throw new CompilerBug('Method must at least one argument in ' + methodName);
             }
 
             const lineNumber = args[0];
@@ -56,6 +98,9 @@ const ValueMethod = (signature: NativeFunctionSignature) => {
 
             if (signature.optionals) {
                 for (let i = 0; i < signature.optionals.length; i++) {
+                    if (currentMethodArgumentIndex >= methodArguments.length)
+                        break;
+
                     if (!(methodArguments[currentMethodArgumentIndex] instanceof signature.optionals[i])) {
                         throw new InvalidType(lineNumber, signature.optionals[i].typeName, methodArguments[currentMethodArgumentIndex].typeName, `${methodName} used with an invalid type.`);
                     }
@@ -67,13 +112,32 @@ const ValueMethod = (signature: NativeFunctionSignature) => {
             if (signature.infinite) {
                 for (let i = currentMethodArgumentIndex; i < methodArguments.length; i++) {
                     if (!(methodArguments[i] instanceof signature.infinite)) {
-                        throw new InvalidType(lineNumber, signature.infinite.typeName, methodArguments[i],  `${methodName} used with an invalid type.`);
+                        throw new InvalidType(lineNumber, signature.infinite.typeName, methodArguments[i], `${methodName} used with an invalid type.`);
                     }
                 }
             }
 
+            if (currentMethodArgumentIndex < methodArguments.length)
+                throw new NativeFunctionArgumentNumberMismatch(lineNumber, methodName, currentMethodArgumentIndex, methodArguments.length);
+
             return method.apply(this, arguments);
         };
+
+        Reflect.defineMetadata(
+            // this here is to reference the data later when we retrieve it.
+            "method",
+            {
+                // we put this spread operator in case you have decorated already, so
+                // we dont want to lose the old data
+                ...Reflect.getMetadata(propertyKey, target),
+                // then we append whatever else we need
+                isMemberMethod: true,
+            },
+            target,
+            propertyKey,
+        );
+
+        return descriptor;
     }
 }
 
@@ -87,13 +151,13 @@ const ValueMethodAsString = {
     "__lt__": "<",
     "__lte__": "<=",
     "__gt__": ">",
-    "__gte__" : ">=",
+    "__gte__": ">=",
     "__neg__": "-",
     "__not__": "!",
     "__len__": "len",
     "__and__": "&&",
     "__or__": "||",
-    "__inc__" : "++",
+    "__inc__": "++",
     "__dec__": "--",
     "__getitem__": "__getitem__",
     "__setitem__": "__setitem__",
@@ -104,9 +168,22 @@ export abstract class Value {
     public value: any;
     public static readonly typeName: string = 'value';
 
-    @Expose()
     get typeName(): string { return this.constructor['typeName'] }
     public __type__: string;
+
+    getMemberMethodValue(name: string): MemberMethodValue {
+        const method = this[name];
+
+        if (!method)
+            return undefined;
+
+        const isMember = Reflect.getMetadata("method", this.constructor.prototype, name).isMemberMethod || false;
+
+        if (!isMember)
+            return undefined;
+
+        return new MemberMethodValue(name, this);
+    }
 
     constructor(value: any) {
         this.value = value;
@@ -146,7 +223,7 @@ export abstract class Value {
 
     @ValueMethod({ args: [] })
     __str__(lineNumber: number, ...args: Value[]): Value {
-        return new StringValue(this.repr);
+        return new StringValue(this.str);
     }
 
     @ValueMethod({ args: [Value] })
@@ -160,9 +237,40 @@ export abstract class Value {
     }
 }
 
+export class MemberMethodValue extends Value {
+
+    public static readonly typeName = 'member_method';
+    @ValueTransform()
+    @Type(()=>Value)
+    public obj: Value;
+
+    constructor(value: string, obj: Value) {
+        super(value);
+        this.obj = obj;
+    }
+
+    resolve(){
+        return [this.obj, this.value];
+    }
+
+    get repr(): string {
+        return `<member_function ${this.obj.typeName}::${this.value}>`;
+    }
+
+    get str(): string {
+        return this.repr;
+    }
+
+    equals(other: Value): boolean {
+        return other instanceof MemberMethodValue && this.value === other.value;
+    }
+}
+
 export class BooleanValue extends Value {
 
     public static readonly typeName = 'boolean';
+    private static _methods = new Map<string, any>;
+    public get methods() { return this.constructor["_methods"] }
 
     constructor(value: boolean) {
         super(value);
@@ -288,6 +396,8 @@ export class NumberValue extends Value {
 export class StringValue extends Value {
 
     public static readonly typeName = 'string';
+    private static _methods = new Map<string, any>;
+    public get methods() { return this.constructor["_methods"] }
 
     constructor(value: string) {
         super(value);
@@ -392,9 +502,8 @@ export class ListValue extends Value {
         return new ListValue(this.value.concat(args[0].value));
     }
 
-    @ValueMethod({ args: [Value] })
+    @ValueMethod({ args: [NumberValue] })
     __getitem__(lineNumber: number, ...args: Value[]): Value {
-
         if (args[0].value < 0 || args[0].value >= this.value.length)
             throw new IndexError(lineNumber);
 
@@ -412,7 +521,7 @@ export class ListValue extends Value {
 
     @ValueMethod({ args: [Value] })
     __contains__(lineNumber: number, ...args: Value[]): Value {
-        return new BooleanValue(this.value.any(v => v.__eq__(lineNumber, [args[0]])));
+        return new BooleanValue(this.value.some(v => v.__eq__(lineNumber, args[0])));
     }
 
     @ValueMethod({ args: [] })
@@ -424,6 +533,8 @@ export class ListValue extends Value {
 export class TupleValue extends Value {
 
     public static readonly typeName = 'tuple';
+    private static _methods = new Map<string, any>;
+    public get methods() { return this.constructor["_methods"] }
 
     constructor(value: Value[]) {
         super(value);
@@ -455,6 +566,8 @@ export class TupleValue extends Value {
 export class FunctionValue extends Value {
 
     public static readonly typeName = 'function';
+    private static _methods = new Map<string, any>;
+    public get methods() { return this.constructor["_methods"] }
 
     constructor(value: Function) {
         super(value);
@@ -476,6 +589,8 @@ export class FunctionValue extends Value {
 export class NativeValue extends Value {
 
     public static readonly typeName = 'native_function';
+    private static _methods = new Map<string, any>;
+    public get methods() { return this.constructor["_methods"] }
 
     constructor(value: string) {
         super(value);
@@ -497,6 +612,8 @@ export class NativeValue extends Value {
 export class SyscallValue extends Value {
 
     public static readonly typeName = 'syscall';
+    private static _methods = new Map<string, any>;
+    public get methods() { return this.constructor["_methods"] }
 
     constructor(value: string) {
         super(value);
@@ -518,6 +635,8 @@ export class SyscallValue extends Value {
 export class NullValue extends Value {
 
     public static readonly typeName = 'null';
+    private static _methods = new Map<string, any>;
+    public get methods() { return this.constructor["_methods"] }
 
     constructor() {
         super(null);
@@ -536,79 +655,5 @@ export class NullValue extends Value {
     }
 }
 
-export const ValueOptions = {
-    discriminator: {
-        property: '__type__',
-        subTypes: [
-            { value: BooleanValue, name: "boolean" },
-            { value: StringValue, name: "string" },
-            { value: NullValue, name: "null" },
-            { value: NumberValue, name: "number" },
-            { value: ListValue, name: "list" },
-            { value: TupleValue, name: "tuple" },
-            { value: SyscallValue, name: "syscall" },
-            { value: NativeValue, name: "native_function" },
-            { value: FunctionValue, name: "function" },
-        ],
-    },
-}
-
-
 export type AnyValueType = BooleanValue | StringValue | NullValue | NumberValue | ListValue | TupleValue | SyscallValue | NativeValue | FunctionValue;
 
-export const ValueTransform = () => (Transform(({ value, obj }) => {
-        if(Array.isArray(value)) {  
-        return value.map((val) => {
-            switch (val.__type__) {
-                case BooleanValue.typeName:
-                    return new BooleanValue(val.value);
-                case StringValue.typeName:
-                    return new StringValue(val.value);
-                case NativeValue.typeName:
-                    return new NativeValue(val.value);
-                case NullValue.typeName:
-                    return new NullValue();
-                case NumberValue.typeName:
-                    return new NumberValue(val.value);
-                case ListValue.typeName:
-                    return new ListValue(val.value);
-                case TupleValue.typeName:
-                    return new TupleValue(val.value);
-                case SyscallValue.typeName:
-                    return new SyscallValue(val.value);
-                case FunctionValue.typeName:
-                    return new FunctionValue(val.value)
-                default:
-                    throw new CompilerBug(`No such value type: ${val.__type__}`);
-            }
-        })
-    } else if(value instanceof Map) {
-        const newEntries = Array.from(value, (([key, val]) => {
-            switch (val.__type__) {
-                case BooleanValue.typeName:
-                    return [key, new BooleanValue(val.value)];
-                case StringValue.typeName:
-                    return [key, new StringValue(val.value)];
-                case NativeValue.typeName:
-                    return [key, new NativeValue(val.value)];
-                case NullValue.typeName:
-                    return [key, new NullValue()];
-                case NumberValue.typeName:
-                    return [key, new NumberValue(val.value)];
-                case ListValue.typeName:
-                    return [key, new ListValue(val.value)];
-                case TupleValue.typeName:
-                    return [key, new TupleValue(val.value)];
-                case SyscallValue.typeName:
-                    return [key, new SyscallValue(val.value)];
-                case FunctionValue.typeName:
-                    return [key, new FunctionValue(val.value)]
-                default:
-                    throw new CompilerBug(`No such value type: ${val.__type__}`);
-            }
-        })) as [any, any];
-        return new Map(newEntries);
-    } else {
-        throw new CompilerBug(`Cannot transform such type: ${typeof value}`);
-    }
-}, { toClassOnly: true }))

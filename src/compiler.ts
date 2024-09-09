@@ -20,11 +20,12 @@ class Compiler {
     private breaks: Instruction[][] = [];
     private continues: Instruction[][] = [];
 
-    constructor(ast: AST, locals?: Local[], data?: Value[]) {
+    constructor(ast: AST, locals?: Local[], data?: Value[], names?: string[]) {
         this.ast = ast;
         this.program = {
             text: [],
-            data: data || []
+            data: data || [],
+            names: names || []
         };
 
         this.locals = locals || [];
@@ -185,8 +186,11 @@ class Compiler {
     }
 
     private memberAccess(node: MemberAccess) {
+        this.codegen(node.object);
 
-
+        this.program.names.push(node.name.value);
+    
+        this.emitText(Opcode.MEMBER_ACCESS, node.lineNumber,  this.program.names.length-1);
     }
 
     private return(node: Return) {
@@ -501,7 +505,7 @@ class Compiler {
             locals.push(...node.params.map(arg => ({ name: arg.value, depth: 1 })));
         }
 
-        const compiler = new Compiler([node.body], locals, this.program.data);
+        const compiler = new Compiler([node.body], locals, this.program.data, this.program.names);
         const program = compiler.run();
 
         func.body = program.text;
