@@ -33,7 +33,7 @@ jobs:
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           title: "Melon Development Build"
-          automatic_release_tag: "dev"
+          automatic_release_tag: "dev-latest"
           prerelease: true
           files: |
             dist/webport/build.html
