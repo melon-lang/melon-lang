@@ -4,7 +4,7 @@ import interpret from './interpret';
 import VM, { VMImage } from '../src/vm';
 import {StringValue, Value} from '../src/value';
 
-const MAX_VM_STEPS_BEFORE_PAUSE = 500;
+const VM_TIME_LIMIT_FOR_EXECUTION = 150;
 
 const getParams = () => {
 	const data = window.location.href;
@@ -34,7 +34,7 @@ const begin = (sourceCode: string): void => {
 		return;
 	}
 
-	const result = interpret(atob(source), MAX_VM_STEPS_BEFORE_PAUSE);
+	const result = interpret(atob(source), VM_TIME_LIMIT_FOR_EXECUTION);
 
 	document.write(btoa(JSON.stringify(result)));
 };
@@ -42,7 +42,7 @@ const begin = (sourceCode: string): void => {
 const resume = (save: string, value): void => {
 	const image = JSON.parse(atob(save)) as VMImage;
 	const vm = VM.deserialize(image, new StringValue(atob(value)));
-	const result = vm.run(MAX_VM_STEPS_BEFORE_PAUSE);
+	const result = vm.run(VM_TIME_LIMIT_FOR_EXECUTION);
 
 	document.write(btoa(JSON.stringify(result)));
 };

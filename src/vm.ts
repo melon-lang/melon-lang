@@ -171,8 +171,11 @@ export default class VM {
         return this.frames[this.frames.length - 1].text;
     }
 
-    public run(steps: number = Infinity): VMImage {
-        while (steps-- > 0 && this.frames.length > 0 && !this.syscall) {
+    public run(timeLimitInMilliseconds: number = Infinity): VMImage {
+        
+        const startTime = Date.now();
+
+        while (Date.now() - startTime  < timeLimitInMilliseconds && this.frames.length > 0 && !this.syscall) {
             const instruction = this.text[this.ip];
 
             this.execute(instruction);
