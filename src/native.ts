@@ -1,6 +1,7 @@
 import { CompilerBug, InvalidFormat, InvalidType, InvalidTypeMultiple } from "./error";
 import { BooleanValue, NumberValue, StringValue, Value } from "./value";
 
+
 const number = (lineNumber, args: Value[]) => {
     const str = args[0].value as string;
 
@@ -35,6 +36,15 @@ const len = (lineNumber, args: Value[]) => {
     const result = a.__len__(lineNumber);
 
     return result;
+}
+
+const len = (lineNumber, args: Value[]) => {
+    const a = args[0];
+
+    if (a.type !== ValueType.STRING && a.type !== ValueType.LIST && a.type !== ValueType.TUPLE)
+        throw new InvalidTypeMultiple(lineNumber, [ValueType.STRING, ValueType.LIST, ValueType.TUPLE], a.type);
+
+    return Value.number(a.value.length);
 }
 
 export default {

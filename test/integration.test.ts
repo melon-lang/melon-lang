@@ -3439,6 +3439,7 @@ const validTestSourceCodes = [
             
         `,
         expected: new NumberValue(2)
+
     },
     {
         sourceCode: `
