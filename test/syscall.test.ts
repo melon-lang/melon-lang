@@ -1,6 +1,7 @@
 import { expect, test } from '@jest/globals';
 import { compile, evaluate } from '../src/index';
-import VM, { Value, ValueType } from '../src/vm';
+import VM from '../src/vm';
+import { NullValue, NumberValue, StringValue, Value } from '../src/value';
 
 const evalResumeSourceCode = (sourceCode: string, valueToFeed: Value ) => {
     sourceCode += 'syscall("dummy", result);';
@@ -25,29 +26,29 @@ const evalResumeSourceCode = (sourceCode: string, valueToFeed: Value ) => {
     return result;
 }
 
-const validTestSourceCodes = [
+const validTestSourceCodesWithSyscalls = [
     {
         sourceCode: `
             let a = input("enter a number");
             print(["2", "4"], "hello");
         `
         ,
-        valueToFeed: Value.number(3),
-        expected: { type: ValueType.STRING, value: '["2", "4"] hello' }
+        valueToFeed: new StringValue("3"),
+        expected: new StringValue('["2", "4"] hello')
     },
     {
         sourceCode: `
-            let a = input("enter a number");
+            let a = number(input("enter a number"));
 
             let result = 4 + a;
         `
         ,
-        valueToFeed: Value.number(3),
-        expected: { type: ValueType.NUMBER, value: 7 }
+        valueToFeed: new StringValue("3"),
+        expected: new NumberValue(7)
     }
 ]
 
-test.each(validTestSourceCodes)('.eval($sourceCode)',
+test.each(validTestSourceCodesWithSyscalls)('.eval($sourceCode)',
     ({ sourceCode, valueToFeed, expected, }) => {
         const result = evalResumeSourceCode(sourceCode, valueToFeed);
         expect(result).toEqual(expected);

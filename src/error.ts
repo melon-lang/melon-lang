@@ -1,4 +1,4 @@
-import { ValueType } from "./vm"
+import { Value } from "./value"
 
 export class MelonError extends Error {
     constructor(lineNumber: number, message: string){
@@ -66,14 +66,20 @@ export class NativeFunctionArgumentNumberMismatch extends CompilationError {
     }
 }
 
+export class InvalidOperationOnType extends RuntimeError {
+    constructor(lineNumber: number, operation: string, type: string){
+        super(lineNumber, `Invalid operation ${operation} on type ${type}`)
+    }
+}
+
 export class InvalidType extends RuntimeError {
-   constructor(lineNumber: number, expected: ValueType, got: ValueType, message: string = ''){
+   constructor(lineNumber: number, expected: string, got: string, message: string = ''){
          super(lineNumber, `${message} Expected ${expected}, got ${got}`)
     }
 }
 
 export class InvalidTypeMultiple extends RuntimeError {
-    constructor(lineNumber: number, expected: ValueType[], got: ValueType, message: string = ''){
+    constructor(lineNumber: number, expected: string[], got: string, message: string = ''){
           super(lineNumber, `${message} Expected ${expected.join("or")} got ${got}`)
      }
  }

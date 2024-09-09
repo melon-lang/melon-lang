@@ -1,8 +1,7 @@
 import { expect, test } from '@jest/globals';
 import { compile, evaluate } from '../src/index';
-import { ValueType, Syscall } from '../src/vm';
-import { DivisionByZero, FunctionArgumentNumberMismatch, InvalidType, InvalidTypeMultiple, NativeFunctionArgumentNumberMismatch, SycallArgumentNumberMismatch, SyntaxError, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
-import exp from 'constants';
+import {BooleanValue, FunctionValue, ListValue, NativeValue,NullValue,NumberValue,StringValue,SyscallValue,TupleValue} from '../src/value';
+import { DivisionByZero, FunctionArgumentNumberMismatch, InvalidOperationOnType, NativeFunctionArgumentNumberMismatch, SycallArgumentNumberMismatch, SyntaxError, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
 
 const evalValidSourceCode = (sourceCode: string) => {
     sourceCode += 'syscall("dummy", result);';
@@ -26,11 +25,11 @@ const evalInvalidSourceCode = (sourceCode: string) => {
 const validTestSourceCodes = [
     {
         sourceCode: 'let result = 1 + 2;',
-        expected: { type: ValueType.NUMBER, value: 3 }
+        expected: new NumberValue(3)
     },
     {
         sourceCode: 'let result = 1 + 2 * 3;',
-        expected: { type: ValueType.NUMBER, value: 7 }
+        expected: new NumberValue(7)
     },
     {
         sourceCode: `
@@ -42,7 +41,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: `
@@ -54,7 +53,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 2 * 87 }
+        expected: new NumberValue(2*87)
     },
     {
         sourceCode: `
@@ -66,67 +65,67 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 2 ** 11 }
+        expected: new NumberValue(2**11)
     },
     {
         sourceCode: `
             let result =  19 > 10;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
             let result =  19 < 10;
         `,
-        expected: { type: ValueType.BOOLEAN, value: false }
+        expected: new BooleanValue(false)
     },
     {
         sourceCode: `
             let result =  19 >= 10;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
             let result =  19 <= 10;
         `,
-        expected: { type: ValueType.BOOLEAN, value: false }
+        expected: new BooleanValue(false)
     },
     {
         sourceCode: `
             let result =  19 == 10;
         `,
-        expected: { type: ValueType.BOOLEAN, value: false }
+        expected: new BooleanValue(false)
     },
     {
         sourceCode: `
             let result =  19 != 10;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
             let result =  19 == 19;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
             let result =  19 != 19;
         `,
-        expected: { type: ValueType.BOOLEAN, value: false }
+        expected: new BooleanValue(false)
     },
     {
         sourceCode: `
             let result =  19 <= 19;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
             let result =  19 >= 19;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
@@ -140,185 +139,185 @@ const validTestSourceCodes = [
                 result = 2;
             }
         `,
-        expected: { type: ValueType.NUMBER, value: 1 }
+        expected: new NumberValue(1)
     },
     {
         sourceCode: `
             let result = "hello" + " " + "world";
         `,
-        expected: { type: ValueType.STRING, value: 'hello world' }
+        expected: new StringValue('hello world')
     },
     {
         sourceCode: `
             let result = 0;
             result++;
         `,
-        expected: { type: ValueType.NUMBER, value: 1 }
+        expected: new NumberValue(1)
     },
     {
         sourceCode: `
             let result = 0;
             ++result;
         `,
-        expected: { type: ValueType.NUMBER, value: 1 }
+        expected: new NumberValue(1)
     },
     {
         sourceCode: `
             let dummy = 0;
             let result = dummy++;
         `,
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: `
             let dummy = 0;
             let result = ++dummy;
         `,
-        expected: { type: ValueType.NUMBER, value: 1 }
+        expected: new NumberValue(1)
     },
     {
         sourceCode: `
             let dummy = 0;
             let result = (++dummy) + 54;
         `,
-        expected: { type: ValueType.NUMBER, value: 55 }
+        expected: new NumberValue(55)
     },
     {
         sourceCode: `
             let dummy = 0;
             let result = (dummy++) + 34;
         `,
-        expected: { type: ValueType.NUMBER, value: 34 }
+        expected: new NumberValue(34)
     },
     {
         sourceCode: `
             let dummy = 5 == 5 || 4 == 5;
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
             let dummy = 5 == 5 && 4 == 5;
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: false }
+        expected: new BooleanValue(false)
     },
     {
         sourceCode: `
             let dummy = 4 == 9000 && "string" == "string" || 5 == 5;
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `  
             let dummy = bool("true");
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
             let dummy = bool("false");
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: false }
+        expected: new BooleanValue(false)
     },
     {
         sourceCode: `
             let dummy = bool("true") && bool("false");
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: false }
+        expected: new BooleanValue(false)
     },
     {
         sourceCode: `
             let dummy = bool("true") || bool("false");
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
             let dummy = bool("true") && bool("true");
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
             let dummy = bool("false") || bool("false");
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: false }
+        expected: new BooleanValue(false)
     },
     {
         sourceCode: `
             let dummy = bool("false") || bool("true");
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
             let dummy = bool("false") && bool("true");
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: false }
+        expected: new BooleanValue(false)
     },
     {
         sourceCode: `
             let dummy = bool("false") && bool("true") || bool("true");
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
             let dummy = bool("false") && bool("true") || bool("false");
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: false }
+        expected: new BooleanValue(false)
     },
     {
         sourceCode: `
             let dummy = bool("false") && bool("false") || bool("false");
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: false }
+        expected: new BooleanValue(false)
     },
     {
         sourceCode: `
             let dummy = bool("true") && bool("true") || bool("true");
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
             let dummy = bool("true") && bool("true") || bool("false");
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
             let dummy = bool("true") && bool("false") || bool("true");
             let result = dummy;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
             let num = "123";
             let result = num + str(1);
         `,
-        expected: { type: ValueType.STRING, value: '1231' }
+        expected: new StringValue('1231')
     },
     {
         sourceCode: `let result = null;`,
-        expected: { type: ValueType.NULL, value: null }
+        expected: new NullValue()
     },
     {
         sourceCode: `
@@ -326,7 +325,7 @@ const validTestSourceCodes = [
             num = number(num);
             let result = num + 1;
         `,
-        expected: { type: ValueType.NUMBER, value: 124 }
+        expected: new NumberValue(124)
     },
     {
         sourceCode: `
@@ -336,7 +335,7 @@ const validTestSourceCodes = [
             let result = a + b;
             result = bool(a+b);
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
@@ -352,19 +351,18 @@ const validTestSourceCodes = [
             result = sub(result, -100);
             result = bool(result);
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
         function fib(i){
-            if (i == 0) return 0;
-            if (i == 1) return 1;
+            if (i < 2) return i;
             return fib(i-1) + fib(i-2);
         }
 
         let result = fib(10);
         `,
-        expected: { type: ValueType.NUMBER, value: 55 }
+        expected: new NumberValue(55)
     },
     {
         sourceCode: `
@@ -375,7 +373,7 @@ const validTestSourceCodes = [
 
         let result = decToZero(10);
         `,
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: `
@@ -386,7 +384,7 @@ const validTestSourceCodes = [
 
         let result = decToNegative(10, 1);
         `,
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     // Overrides the built-in random function
     {
@@ -394,14 +392,14 @@ const validTestSourceCodes = [
         let i = 0;
         let result = i++;
         `,
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: `
         let i = 0;
         let result = ++i;
         `,
-        expected: { type: ValueType.NUMBER, value: 1 }
+        expected: new NumberValue(1)
     },
     {
         sourceCode: `
@@ -413,7 +411,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 9 }
+        expected: new NumberValue(9)
     },
     {
         sourceCode: `
@@ -425,7 +423,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 9 }
+        expected: new NumberValue(9)
     },
     {
         sourceCode: `
@@ -437,7 +435,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 9 }
+        expected: new NumberValue(9)
     },
     {
         sourceCode: `
@@ -450,7 +448,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 9 }
+        expected: new NumberValue(9)
     },
     {
         sourceCode: `
@@ -462,7 +460,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 5 }
+        expected: new NumberValue(5)
     },
     {
         sourceCode: `
@@ -476,7 +474,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 5 }
+        expected: new NumberValue(5)
     },
     {
         sourceCode: `
@@ -488,7 +486,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 4 }
+        expected: new NumberValue(4)
     },
     {
         sourceCode: `
@@ -500,7 +498,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 11 }
+        expected: new NumberValue(11)
     },
     {
         sourceCode: `
@@ -515,7 +513,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 7 }
+        expected: new NumberValue(7)
     },
     {
         sourceCode: `
@@ -529,7 +527,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 3 }
+        expected: new NumberValue(3)
     },
     {
         sourceCode: `
@@ -543,7 +541,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 3 }
+        expected: new NumberValue(3)
     },
     {
         sourceCode: `
@@ -555,7 +553,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 9 }
+        expected: new NumberValue(9)
     },
     {
         sourceCode: `
@@ -569,7 +567,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 9 }
+        expected: new NumberValue(9)
     },
     {
         sourceCode: `
@@ -581,7 +579,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 18 }
+        expected: new NumberValue(18)
     },
     {
         sourceCode: `
@@ -595,7 +593,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 27 }
+        expected: new NumberValue(27)
     },
     {
         sourceCode: `
@@ -607,7 +605,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 16 }
+        expected: new NumberValue(16)
     },
     {
         sourceCode: `
@@ -619,7 +617,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 35 }
+        expected: new NumberValue(35)
     },
     {
         sourceCode: `
@@ -631,7 +629,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: -9 }
+        expected: new NumberValue(-9)
     },
     {
         sourceCode: `
@@ -645,7 +643,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: -8 }
+        expected: new NumberValue(-8)
     },
     {
         sourceCode: `
@@ -657,7 +655,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: -6 }
+        expected: new NumberValue(-6)
     },
     {
         sourceCode: `
@@ -669,7 +667,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 47 }
+        expected: new NumberValue(47)
     },
     {
         sourceCode: `
@@ -678,7 +676,7 @@ const validTestSourceCodes = [
 
             let result = y;
         `,
-        expected: { type: ValueType.NUMBER, value: 1 }
+        expected: new NumberValue(1)
     },
     {
         sourceCode: `
@@ -687,7 +685,7 @@ const validTestSourceCodes = [
 
             let result = y;
         `,
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: `
@@ -696,7 +694,7 @@ const validTestSourceCodes = [
 
             let result = y;
         `,
-        expected: { type: ValueType.NUMBER, value: 1 }
+        expected: new NumberValue(1)
     },
     {
         sourceCode: `
@@ -705,7 +703,7 @@ const validTestSourceCodes = [
 
             let result = y;
         `,
-        expected: { type: ValueType.NUMBER, value: 2 }
+        expected: new NumberValue(2)
     },
     {
         sourceCode: `
@@ -714,7 +712,7 @@ const validTestSourceCodes = [
 
             let result = y;
         `,
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: `
@@ -723,7 +721,7 @@ const validTestSourceCodes = [
 
             let result = y;
         `,
-        expected: { type: ValueType.NUMBER, value: 3 }
+        expected: new NumberValue(3)
     },
     {
         sourceCode: `
@@ -732,7 +730,7 @@ const validTestSourceCodes = [
 
             let result = y;
         `,
-        expected: { type: ValueType.NUMBER, value: 1 }
+        expected: new NumberValue(1)
     },
     {
         sourceCode: `
@@ -741,7 +739,7 @@ const validTestSourceCodes = [
 
             let result = y;
         `,
-        expected: { type: ValueType.NUMBER, value: 4 }
+        expected: new NumberValue(4)
     },
     {
         sourceCode: `
@@ -750,7 +748,7 @@ const validTestSourceCodes = [
 
             let result = y;
         `,
-        expected: { type: ValueType.NUMBER, value: 3 }
+        expected: new NumberValue(3)
     },
     {
         sourceCode: `
@@ -759,7 +757,7 @@ const validTestSourceCodes = [
 
             let result = y;
         `,
-        expected: { type: ValueType.NUMBER, value: 1 }
+        expected: new NumberValue(1)
     },
     {
         sourceCode: `
@@ -768,7 +766,7 @@ const validTestSourceCodes = [
 
             let result = y;
         `,
-        expected: { type: ValueType.NUMBER, value: 2.5 }
+        expected: new NumberValue(2.5)
     },
     {
         sourceCode: `
@@ -777,7 +775,7 @@ const validTestSourceCodes = [
 
             let result = x;
         `,
-        expected: { type: ValueType.NUMBER, value: 5 }
+        expected: new NumberValue(5)
     },
 
     {
@@ -787,7 +785,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 3 }
+        expected: new NumberValue(3)
     },
     {
         sourceCode: '\n' +
@@ -796,7 +794,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 15 }
+        expected: new NumberValue(15)
     },
     {
         sourceCode: '\n' +
@@ -805,7 +803,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 8 }
+        expected: new NumberValue(8)
     },
     {
         sourceCode: '\n' +
@@ -814,7 +812,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 15 }
+        expected: new NumberValue(15)
     },
     {
         sourceCode: '\n' +
@@ -823,7 +821,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 5 }
+        expected: new NumberValue(5)
     },
     {
         sourceCode: '\n' +
@@ -832,7 +830,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 5 }
+        expected: new NumberValue(5)
     },
     {
         sourceCode: '\n' +
@@ -841,7 +839,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 1 }
+        expected: new NumberValue(1)
     },
     {
         sourceCode: '\n' +
@@ -850,7 +848,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 2 }
+        expected: new NumberValue(2)
     },
     {
         sourceCode: '\n' +
@@ -859,7 +857,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 20 }
+        expected: new NumberValue(20)
     },
     {
         sourceCode: '\n' +
@@ -868,7 +866,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 20 }
+        expected: new NumberValue(20)
     },
     {
         sourceCode: '\n' +
@@ -877,7 +875,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 6 }
+        expected: new NumberValue(6)
     },
     {
         sourceCode: '\n' +
@@ -886,7 +884,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 3 }
+        expected: new NumberValue(3)
     },
     {
         sourceCode: '\n' +
@@ -895,7 +893,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -904,7 +902,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -913,7 +911,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 9 }
+        expected: new NumberValue(9)
     },
     {
         sourceCode: '\n' +
@@ -922,7 +920,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 8 }
+        expected: new NumberValue(8)
     },
     {
         sourceCode: '\n' +
@@ -931,7 +929,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 4 }
+        expected: new NumberValue(4)
     },
     {
         sourceCode: '\n' +
@@ -940,7 +938,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -949,7 +947,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -958,7 +956,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 16 }
+        expected: new NumberValue(16)
     },
     {
         sourceCode: '\n' +
@@ -967,7 +965,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -976,7 +974,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 5 }
+        expected: new NumberValue(5)
     },
     {
         sourceCode: '\n' +
@@ -985,7 +983,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -994,7 +992,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1003,7 +1001,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 25 }
+        expected: new NumberValue(25)
     },
     {
         sourceCode: '\n' +
@@ -1012,7 +1010,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 12 }
+        expected: new NumberValue(12)
     },
     {
         sourceCode: '\n' +
@@ -1021,7 +1019,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 6 }
+        expected: new NumberValue(6)
     },
     {
         sourceCode: '\n' +
@@ -1030,7 +1028,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1039,7 +1037,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1048,7 +1046,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 36 }
+        expected: new NumberValue(36)
     },
     {
         sourceCode: '\n' +
@@ -1057,7 +1055,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 14 }
+        expected: new NumberValue(14)
     },
     {
         sourceCode: '\n' +
@@ -1066,7 +1064,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 7 }
+        expected: new NumberValue(7)
     },
     {
         sourceCode: '\n' +
@@ -1075,7 +1073,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1084,7 +1082,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1093,7 +1091,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 49 }
+        expected: new NumberValue(49)
     },
     {
         sourceCode: '\n' +
@@ -1102,7 +1100,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 16 }
+        expected: new NumberValue(16)
     },
     {
         sourceCode: '\n' +
@@ -1111,7 +1109,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 8 }
+        expected: new NumberValue(8)
     },
     {
         sourceCode: '\n' +
@@ -1120,7 +1118,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1129,7 +1127,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1138,7 +1136,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 64 }
+        expected: new NumberValue(64)
     },
     {
         sourceCode: '\n' +
@@ -1147,7 +1145,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 18 }
+        expected: new NumberValue(18)
     },
     {
         sourceCode: '\n' +
@@ -1156,7 +1154,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 9 }
+        expected: new NumberValue(9)
     },
     {
         sourceCode: '\n' +
@@ -1165,7 +1163,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1174,7 +1172,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1183,7 +1181,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 81 }
+        expected: new NumberValue(81)
     },
     {
         sourceCode: '\n' +
@@ -1192,7 +1190,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 20 }
+        expected: new NumberValue(20)
     },
     {
         sourceCode: '\n' +
@@ -1201,7 +1199,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1210,7 +1208,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1219,7 +1217,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1228,7 +1226,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 100 }
+        expected: new NumberValue(100)
     },
     {
         sourceCode: '\n' +
@@ -1237,7 +1235,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 22 }
+        expected: new NumberValue(22)
     },
     {
         sourceCode: '\n' +
@@ -1246,7 +1244,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 11 }
+        expected: new NumberValue(11)
     },
     {
         sourceCode: '\n' +
@@ -1255,7 +1253,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1264,7 +1262,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1273,7 +1271,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 121 }
+        expected: new NumberValue(121)
     },
     {
         sourceCode: '\n' +
@@ -1282,7 +1280,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 24 }
+        expected: new NumberValue(24)
     },
     {
         sourceCode: '\n' +
@@ -1291,7 +1289,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 12 }
+        expected: new NumberValue(12)
     },
     {
         sourceCode: '\n' +
@@ -1300,7 +1298,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1309,7 +1307,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1318,7 +1316,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 144 }
+        expected: new NumberValue(144)
     },
     {
         sourceCode: '\n' +
@@ -1327,7 +1325,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 26 }
+        expected: new NumberValue(26)
     },
     {
         sourceCode: '\n' +
@@ -1336,7 +1334,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 13 }
+        expected: new NumberValue(13)
     },
     {
         sourceCode: '\n' +
@@ -1345,7 +1343,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1354,7 +1352,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1363,7 +1361,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 169 }
+        expected: new NumberValue(169)
     },
     {
         sourceCode: '\n' +
@@ -1372,7 +1370,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 28 }
+        expected: new NumberValue(28)
     },
     {
         sourceCode: '\n' +
@@ -1381,7 +1379,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 14 }
+        expected: new NumberValue(14)
     },
     {
         sourceCode: '\n' +
@@ -1390,7 +1388,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1399,7 +1397,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1408,7 +1406,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 196 }
+        expected: new NumberValue(196)
     },
     {
         sourceCode: '\n' +
@@ -1417,7 +1415,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 30 }
+        expected: new NumberValue(30)
     },
     {
         sourceCode: '\n' +
@@ -1426,7 +1424,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 15 }
+        expected: new NumberValue(15)
     },
     {
         sourceCode: '\n' +
@@ -1435,7 +1433,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1444,7 +1442,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1453,7 +1451,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 225 }
+        expected: new NumberValue(225)
     },
     {
         sourceCode: '\n' +
@@ -1462,7 +1460,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 32 }
+        expected: new NumberValue(32)
     },
     {
         sourceCode: '\n' +
@@ -1471,7 +1469,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 16 }
+        expected: new NumberValue(16)
     },
     {
         sourceCode: '\n' +
@@ -1480,7 +1478,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1489,7 +1487,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1498,7 +1496,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 256 }
+        expected: new NumberValue(256)
     },
     {
         sourceCode: '\n' +
@@ -1507,7 +1505,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 34 }
+        expected: new NumberValue(34)
     },
     {
         sourceCode: '\n' +
@@ -1516,7 +1514,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 17 }
+        expected: new NumberValue(17)
     },
     {
         sourceCode: '\n' +
@@ -1525,7 +1523,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1534,7 +1532,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1543,7 +1541,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 289 }
+        expected: new NumberValue(289)
     },
     {
         sourceCode: '\n' +
@@ -1552,7 +1550,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 36 }
+        expected: new NumberValue(36)
     },
     {
         sourceCode: '\n' +
@@ -1561,7 +1559,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 18 }
+        expected: new NumberValue(18)
     },
     {
         sourceCode: '\n' +
@@ -1570,7 +1568,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1579,7 +1577,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1588,7 +1586,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 324 }
+        expected: new NumberValue(324)
     },
     {
         sourceCode: '\n' +
@@ -1597,7 +1595,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 38 }
+        expected: new NumberValue(38)
     },
     {
         sourceCode: '\n' +
@@ -1606,7 +1604,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 19 }
+        expected: new NumberValue(19)
     },
     {
         sourceCode: '\n' +
@@ -1615,7 +1613,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1624,7 +1622,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1633,7 +1631,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 361 }
+        expected: new NumberValue(361)
     },
     {
         sourceCode: '\n' +
@@ -1642,7 +1640,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 40 }
+        expected: new NumberValue(40)
     },
     {
         sourceCode: '\n' +
@@ -1651,7 +1649,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 20 }
+        expected: new NumberValue(20)
     },
     {
         sourceCode: '\n' +
@@ -1660,7 +1658,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -1669,7 +1667,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: '\n' +
@@ -1678,7 +1676,7 @@ const validTestSourceCodes = [
             '\n' +
             '            let result = x;\n' +
             '        ',
-        expected: { type: ValueType.NUMBER, value: 400 }
+        expected: new NumberValue(400)
     },
     {
         sourceCode: '\n' +
@@ -1690,7 +1688,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 414 }
+        expected: new NumberValue(414)
     },
     {
         sourceCode: '\n' +
@@ -1702,7 +1700,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 7469 }
+        expected: new NumberValue(7469)
     },
     {
         sourceCode: '\n' +
@@ -1714,7 +1712,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 7373 }
+        expected: new NumberValue(7373)
     },
     {
         sourceCode: '\n' +
@@ -1726,7 +1724,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: -4956 }
+        expected: new NumberValue(-4956)
     },
     {
         sourceCode: '\n' +
@@ -1738,7 +1736,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 94 }
+        expected: new NumberValue(94)
     },
     {
         sourceCode: '\n' +
@@ -1750,7 +1748,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 96 }
+        expected: new NumberValue(96)
     },
     {
         sourceCode: '\n' +
@@ -1762,7 +1760,7 @@ const validTestSourceCodes = [
             '        c /= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 0.09206349206349207 }
+        expected: new NumberValue(0.09206349206349207)
     },
     {
         sourceCode: '\n' +
@@ -1774,7 +1772,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: -2244 }
+        expected: new NumberValue(-2244)
     },
     {
         sourceCode: '\n' +
@@ -1786,7 +1784,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 9 }
+        expected: new NumberValue(9)
     },
     {
         sourceCode: '\n' +
@@ -1798,7 +1796,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 24 }
+        expected: new NumberValue(24)
     },
     {
         sourceCode: '\n' +
@@ -1810,7 +1808,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 46 }
+        expected: new NumberValue(46)
     },
     {
         sourceCode: '\n' +
@@ -1822,7 +1820,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 165 }
+        expected: new NumberValue(165)
     },
     {
         sourceCode: '\n' +
@@ -1834,7 +1832,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 2.886579864025407e-15 }
+        expected: new NumberValue(2.886579864025407e-15)
     },
     {
         sourceCode: '\n' +
@@ -1846,7 +1844,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 43 }
+        expected: new NumberValue(43)
     },
     {
         sourceCode: '\n' +
@@ -1858,7 +1856,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 224 }
+        expected: new NumberValue(224)
     },
     {
         sourceCode: '\n' +
@@ -1870,7 +1868,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 48 }
+        expected: new NumberValue(48)
     },
     {
         sourceCode: '\n' +
@@ -1882,7 +1880,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 65.35714285714286 }
+        expected: new NumberValue(65.35714285714286)
     },
     {
         sourceCode: '\n' +
@@ -1894,7 +1892,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 213 }
+        expected: new NumberValue(213)
     },
     {
         sourceCode: '\n' +
@@ -1906,7 +1904,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 91 }
+        expected: new NumberValue(91)
     },
     {
         sourceCode: '\n' +
@@ -1918,7 +1916,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: -153 }
+        expected: new NumberValue(-153)
     },
     {
         sourceCode: '\n' +
@@ -1930,7 +1928,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: -109 }
+        expected: new NumberValue(-109)
     },
     {
         sourceCode: '\n' +
@@ -1942,7 +1940,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 41 }
+        expected: new NumberValue(41)
     },
     {
         sourceCode: '\n' +
@@ -1954,7 +1952,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 32 }
+        expected: new NumberValue(32)
     },
     {
         sourceCode: '\n' +
@@ -1966,7 +1964,7 @@ const validTestSourceCodes = [
             '        c /= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 0.04559915164369035 }
+        expected: new NumberValue(0.04559915164369035)
     },
     {
         sourceCode: '\n' +
@@ -1978,7 +1976,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 92 }
+        expected: new NumberValue(92)
     },
     {
         sourceCode: '\n' +
@@ -1990,7 +1988,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 33 }
+        expected: new NumberValue(33)
     },
     {
         sourceCode: '\n' +
@@ -2002,7 +2000,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 376470 }
+        expected: new NumberValue(376470)
     },
     {
         sourceCode: '\n' +
@@ -2014,7 +2012,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 139.12 }
+        expected: new NumberValue(139.12)
     },
     {
         sourceCode: '\n' +
@@ -2026,7 +2024,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 3836 }
+        expected: new NumberValue(3836)
     },
     {
         sourceCode: '\n' +
@@ -2038,7 +2036,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 125 }
+        expected: new NumberValue(125)
     },
     {
         sourceCode: '\n' +
@@ -2050,7 +2048,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 83.08 }
+        expected: new NumberValue(83.08)
     },
     {
         sourceCode: '\n' +
@@ -2062,7 +2060,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 362576 }
+        expected: new NumberValue(362576)
     },
     {
         sourceCode: '\n' +
@@ -2074,7 +2072,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 7.891304347826087 }
+        expected: new NumberValue(7.891304347826087)
     },
     {
         sourceCode: '\n' +
@@ -2086,7 +2084,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: -76 }
+        expected: new NumberValue(-76)
     },
     {
         sourceCode: '\n' +
@@ -2098,7 +2096,7 @@ const validTestSourceCodes = [
             '        c /= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 40.26315789473684 }
+        expected: new NumberValue(40.26315789473684)
     },
     {
         sourceCode: '\n' +
@@ -2110,7 +2108,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 26 }
+        expected: new NumberValue(26)
     },
     {
         sourceCode: '\n' +
@@ -2122,7 +2120,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 22 }
+        expected: new NumberValue(22)
     },
     {
         sourceCode: '\n' +
@@ -2134,7 +2132,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: -139 }
+        expected: new NumberValue(-139)
     },
     {
         sourceCode: '\n' +
@@ -2146,7 +2144,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 10293 }
+        expected: new NumberValue(10293)
     },
     {
         sourceCode: '\n' +
@@ -2158,7 +2156,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 10528 }
+        expected: new NumberValue(10528)
     },
     {
         sourceCode: '\n' +
@@ -2170,7 +2168,7 @@ const validTestSourceCodes = [
             '        c /= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 14.057142857142857 }
+        expected: new NumberValue(14.057142857142857)
     },
     {
         sourceCode: '\n' +
@@ -2182,7 +2180,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -2194,7 +2192,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 1.1666666666666685 }
+        expected: new NumberValue(1.1666666666666685)
     },
     {
         sourceCode: '\n' +
@@ -2206,7 +2204,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 33 }
+        expected: new NumberValue(33)
     },
     {
         sourceCode: '\n' +
@@ -2218,7 +2216,7 @@ const validTestSourceCodes = [
             '        c /= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 14 }
+        expected: new NumberValue(14)
     },
     {
         sourceCode: '\n' +
@@ -2230,7 +2228,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 1800 }
+        expected: new NumberValue(1800)
     },
     {
         sourceCode: '\n' +
@@ -2242,7 +2240,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 3880 }
+        expected: new NumberValue(3880)
     },
     {
         sourceCode: '\n' +
@@ -2254,7 +2252,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 131 }
+        expected: new NumberValue(131)
     },
     {
         sourceCode: '\n' +
@@ -2266,7 +2264,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 78 }
+        expected: new NumberValue(78)
     },
     {
         sourceCode: '\n' +
@@ -2278,7 +2276,7 @@ const validTestSourceCodes = [
             '        c /= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 0.4632352941176471 }
+        expected: new NumberValue(0.4632352941176471)
     },
     {
         sourceCode: '\n' +
@@ -2290,7 +2288,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 2 }
+        expected: new NumberValue(2)
     },
     {
         sourceCode: '\n' +
@@ -2302,7 +2300,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 15232 }
+        expected: new NumberValue(15232)
     },
     {
         sourceCode: '\n' +
@@ -2314,7 +2312,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 650 }
+        expected: new NumberValue(650)
     },
     {
         sourceCode: '\n' +
@@ -2326,7 +2324,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 65 }
+        expected: new NumberValue(65)
     },
     {
         sourceCode: '\n' +
@@ -2338,7 +2336,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 19 }
+        expected: new NumberValue(19)
     },
     {
         sourceCode: '\n' +
@@ -2350,7 +2348,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 57 }
+        expected: new NumberValue(57)
     },
     {
         sourceCode: '\n' +
@@ -2362,7 +2360,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 2576 }
+        expected: new NumberValue(2576)
     },
     {
         sourceCode: '\n' +
@@ -2374,7 +2372,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 7290 }
+        expected: new NumberValue(7290)
     },
     {
         sourceCode: '\n' +
@@ -2386,7 +2384,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 4416 }
+        expected: new NumberValue(4416)
     },
     {
         sourceCode: '\n' +
@@ -2398,7 +2396,7 @@ const validTestSourceCodes = [
             '        c /= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 2.5833333333333335 }
+        expected: new NumberValue(2.5833333333333335)
     },
     {
         sourceCode: '\n' +
@@ -2410,7 +2408,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 31 }
+        expected: new NumberValue(31)
     },
     {
         sourceCode: '\n' +
@@ -2422,7 +2420,7 @@ const validTestSourceCodes = [
             '        c /= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 51.599999999999994 }
+        expected: new NumberValue(51.599999999999994)
     },
     {
         sourceCode: '\n' +
@@ -2434,7 +2432,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 11 }
+        expected: new NumberValue(11)
     },
     {
         sourceCode: '\n' +
@@ -2446,7 +2444,7 @@ const validTestSourceCodes = [
             '        c /= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 0.037037037037037035 }
+        expected: new NumberValue(0.037037037037037035)
     },
     {
         sourceCode: '\n' +
@@ -2458,7 +2456,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 19 }
+        expected: new NumberValue(19)
     },
     {
         sourceCode: '\n' +
@@ -2470,7 +2468,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 183 }
+        expected: new NumberValue(183)
     },
     {
         sourceCode: '\n' +
@@ -2482,7 +2480,7 @@ const validTestSourceCodes = [
             '        c /= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: -3.5384615384615383 }
+        expected: new NumberValue(-3.5384615384615383)
     },
     {
         sourceCode: '\n' +
@@ -2494,7 +2492,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: -4306 }
+        expected: new NumberValue(-4306)
     },
     {
         sourceCode: '\n' +
@@ -2506,7 +2504,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 90 }
+        expected: new NumberValue(90)
     },
     {
         sourceCode: '\n' +
@@ -2518,7 +2516,7 @@ const validTestSourceCodes = [
             '        c /= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 20.423076923076923 }
+        expected: new NumberValue(20.423076923076923)
     },
     {
         sourceCode: '\n' +
@@ -2530,7 +2528,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 6003 }
+        expected: new NumberValue(6003)
     },
     {
         sourceCode: '\n' +
@@ -2542,7 +2540,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 4 }
+        expected: new NumberValue(4)
     },
     {
         sourceCode: '\n' +
@@ -2554,7 +2552,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 63336 }
+        expected: new NumberValue(63336)
     },
     {
         sourceCode: '\n' +
@@ -2566,7 +2564,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 52.104166666666664 }
+        expected: new NumberValue(52.104166666666664)
     },
     {
         sourceCode: '\n' +
@@ -2578,7 +2576,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 57 }
+        expected: new NumberValue(57)
     },
     {
         sourceCode: '\n' +
@@ -2590,7 +2588,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 1 }
+        expected: new NumberValue(1)
     },
     {
         sourceCode: '\n' +
@@ -2602,7 +2600,7 @@ const validTestSourceCodes = [
             '        c /= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 0.14912280701754385 }
+        expected: new NumberValue(0.14912280701754385)
     },
     {
         sourceCode: '\n' +
@@ -2614,7 +2612,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 29 }
+        expected: new NumberValue(29)
     },
     {
         sourceCode: '\n' +
@@ -2626,7 +2624,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: '\n' +
@@ -2638,7 +2636,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 69.48484848484848 }
+        expected: new NumberValue(69.48484848484848)
     },
     {
         sourceCode: '\n' +
@@ -2650,7 +2648,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 5.328947368421052 }
+        expected: new NumberValue(5.328947368421052)
     },
     {
         sourceCode: '\n' +
@@ -2662,7 +2660,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 6 }
+        expected: new NumberValue(6)
     },
     {
         sourceCode: '\n' +
@@ -2674,7 +2672,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 29 }
+        expected: new NumberValue(29)
     },
     {
         sourceCode: '\n' +
@@ -2686,7 +2684,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 106 }
+        expected: new NumberValue(106)
     },
     {
         sourceCode: '\n' +
@@ -2698,7 +2696,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 11286 }
+        expected: new NumberValue(11286)
     },
     {
         sourceCode: '\n' +
@@ -2710,7 +2708,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 4474 }
+        expected: new NumberValue(4474)
     },
     {
         sourceCode: '\n' +
@@ -2722,7 +2720,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 46 }
+        expected: new NumberValue(46)
     },
     {
         sourceCode: '\n' +
@@ -2734,7 +2732,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 15 }
+        expected: new NumberValue(15)
     },
     {
         sourceCode: '\n' +
@@ -2746,7 +2744,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 19 }
+        expected: new NumberValue(19)
     },
     {
         sourceCode: '\n' +
@@ -2758,7 +2756,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 131 }
+        expected: new NumberValue(131)
     },
     {
         sourceCode: '\n' +
@@ -2770,7 +2768,7 @@ const validTestSourceCodes = [
             '        c %= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 54 }
+        expected: new NumberValue(54)
     },
     {
         sourceCode: '\n' +
@@ -2782,7 +2780,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 86 }
+        expected: new NumberValue(86)
     },
     {
         sourceCode: '\n' +
@@ -2794,7 +2792,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 41.51764705882353 }
+        expected: new NumberValue(41.51764705882353)
     },
     {
         sourceCode: '\n' +
@@ -2806,7 +2804,7 @@ const validTestSourceCodes = [
             '        c /= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 5.2 }
+        expected: new NumberValue(5.2)
     },
     {
         sourceCode: '\n' +
@@ -2818,7 +2816,7 @@ const validTestSourceCodes = [
             '        c -= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 24.61764705882353 }
+        expected: new NumberValue(24.61764705882353)
     },
     {
         sourceCode: '\n' +
@@ -2830,7 +2828,7 @@ const validTestSourceCodes = [
             '        c += a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 52 }
+        expected: new NumberValue(52)
     },
     {
         sourceCode: '\n' +
@@ -2842,7 +2840,7 @@ const validTestSourceCodes = [
             '        c /= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 0.00014367816091954023 }
+        expected: new NumberValue(0.00014367816091954023)
     },
     {
         sourceCode: '\n' +
@@ -2854,7 +2852,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: -5382 }
+        expected: new NumberValue(-5382)
     },
     {
         sourceCode: '\n' +
@@ -2866,7 +2864,7 @@ const validTestSourceCodes = [
             '        c *= a;\n' +
             '        let result = c;\n' +
             '    ',
-        expected: { type: ValueType.NUMBER, value: 495 }
+        expected: new NumberValue(495)
     },
     {
         sourceCode: `
@@ -2876,7 +2874,7 @@ const validTestSourceCodes = [
         
             let result = x + y + z;
         `,
-        expected: { type: ValueType.NUMBER, value: 33.68 }
+        expected: new NumberValue(33.68)
     },
     {
         sourceCode: `
@@ -2887,25 +2885,25 @@ const validTestSourceCodes = [
                 result = 0.76;
             }
         `,
-        expected: { type: ValueType.NUMBER, value: 0.95 }
+        expected: new NumberValue(0.95)
     },
     {
         sourceCode: `
             let result = 234534543.999992
         `,
-        expected: { type: ValueType.NUMBER, value: 234534543.999992 }
+        expected: new NumberValue(234534543.999992)
     },
     {
         sourceCode: `
             let result = 234534543.
         `,
-        expected: { type: ValueType.NUMBER, value: 234534543 }
+        expected: new NumberValue(234534543)
     },
     {
         sourceCode: `
             let result = .5
         `,
-        expected: { type: ValueType.NUMBER, value: 0.5 }
+        expected: new NumberValue(0.5)
     },
     {
         sourceCode: `
@@ -2920,7 +2918,7 @@ const validTestSourceCodes = [
                 result = .5;
             }
         `,
-        expected: { type: ValueType.NUMBER, value: 0.5 }
+        expected: new NumberValue(0.5)
     },
     {
         sourceCode: `
@@ -2934,7 +2932,7 @@ const validTestSourceCodes = [
 
             let result = a()();
         `,
-        expected: { type: ValueType.NUMBER, value: 0.5 }
+        expected: new NumberValue(0.5)
     },
     {
         sourceCode: `
@@ -2950,7 +2948,7 @@ const validTestSourceCodes = [
 
             let result = "done" + str(a()()[1]);
         `,
-        expected: { type: ValueType.STRING, value: "done56" }
+        expected: new StringValue("done56")
     },
     {
         sourceCode: `
@@ -2968,7 +2966,7 @@ const validTestSourceCodes = [
 
             let result = (a()[0]()[2][1]);
         `,
-        expected: { type: ValueType.NUMBER, value: 1.9 }
+        expected: new NumberValue(1.9)
     },
     {
         sourceCode: `
@@ -2994,7 +2992,7 @@ const validTestSourceCodes = [
             
             let result = a;
         `,
-        expected: { type: ValueType.NUMBER, value: 51 }
+        expected: new NumberValue(51)
     },
     {
         sourceCode: `
@@ -3004,7 +3002,7 @@ const validTestSourceCodes = [
 
             let result = steps;
             `,
-        expected: { type: ValueType.NUMBER, value: 400 }
+        expected: new NumberValue(400)
     },
     {
         sourceCode: `
@@ -3014,7 +3012,7 @@ const validTestSourceCodes = [
             
             let result = 0;
             `,
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: `
@@ -3030,7 +3028,7 @@ const validTestSourceCodes = [
                 
             let result = x + y + z + a + b + c + d + e + f;
             `,
-        expected: { type: ValueType.NUMBER, value: 45 }
+        expected: new NumberValue(45)
     },
     {
         sourceCode: `
@@ -3048,7 +3046,7 @@ const validTestSourceCodes = [
                 result += x();
             }
             `,
-        expected: { type: ValueType.NUMBER, value: 45 }
+        expected: new NumberValue(45)
     },
     {
         sourceCode: `
@@ -3063,7 +3061,7 @@ const validTestSourceCodes = [
             }
             let result = i;
             `,
-        expected: { type: ValueType.NUMBER, value: 5 }
+        expected: new NumberValue(5)
     },
     {
         sourceCode: `
@@ -3082,7 +3080,7 @@ const validTestSourceCodes = [
 
             let result = i;
             `,
-        expected: { type: ValueType.NUMBER, value: 13245 }
+        expected: new NumberValue(13245)
     },
     {
         sourceCode: `
@@ -3095,7 +3093,7 @@ const validTestSourceCodes = [
 
             let result = x + y + z;
             `,
-        expected: { type: ValueType.NUMBER, value: 6 }
+        expected: new NumberValue(6)
     },
     {
         sourceCode: `
@@ -3116,7 +3114,7 @@ const validTestSourceCodes = [
 
             let result = x + y + z;
             `,
-        expected: { type: ValueType.NUMBER, value: 6 }
+        expected: new NumberValue(6)
     },
     {
         sourceCode: `
@@ -3127,7 +3125,7 @@ const validTestSourceCodes = [
             // Premature syscall
             y("dummy", result);
         `,
-        expected: { type: ValueType.SYSCALL, value: "syscall" }
+        expected: new SyscallValue("syscall")
     },
     {
         sourceCode: `
@@ -3165,7 +3163,7 @@ const validTestSourceCodes = [
 
             let result = zero(addOne(subTwo(0))) + zeroer()(addOne(subTwo(0)), true);
         `,
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     // numbers in identifiers, underscores in identifiers
     {
@@ -3178,7 +3176,7 @@ const validTestSourceCodes = [
             let result = xX_23423432_asdasdsa + _ + __ + ___;
             `
         ,
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: `
@@ -3193,7 +3191,7 @@ const validTestSourceCodes = [
             let result = 0;
             `
         ,
-        expected: { type: ValueType.NUMBER, value: 0 }
+        expected: new NumberValue(0)
     },
     {
         sourceCode: `
@@ -3202,48 +3200,38 @@ const validTestSourceCodes = [
             let result = my_tuple[0];
             `
         ,
-        expected: { type: ValueType.NUMBER, value: 1 }
+        expected: new NumberValue(1)
     },
     {
         sourceCode: `
             let result = (1,2);
         `,
-        expected: {
-            type: ValueType.TUPLE,
-            value: [{
-                type: ValueType.NUMBER,
-                value: 1
-            }, {
-                type: ValueType.NUMBER,
-                value: 2
-            }]
-        }
+        expected: new TupleValue([
+            new NumberValue(1),
+            new NumberValue(2)
+        ])
     },
     {
         sourceCode: `
             let result = (1,2,4,);
         `,
-        expected: {
-            type: ValueType.TUPLE, value: [{
-                type: ValueType.NUMBER, value: 1
-            }, {
-                type: ValueType.NUMBER, value: 2
-            }, {
-                type: ValueType.NUMBER, value: 4
-            }]
-        }
+        expected: new TupleValue([
+            new NumberValue(1),
+            new NumberValue(2),
+            new NumberValue(4)
+        ])
     },
     {
         sourceCode: `
             let result = (1,(1,true));
         `,
-        expected: { type: ValueType.TUPLE, value: [
-            { type: ValueType.NUMBER, value: 1 },
-            { type: ValueType.TUPLE, value: [
-                { type: ValueType.NUMBER, value: 1 },
-                { type: ValueType.BOOLEAN, value: true }
-            ]}
-        ]}
+        expected: new TupleValue([
+            new NumberValue(1),
+            new TupleValue([
+                new NumberValue(1),
+                new BooleanValue(true)
+            ])
+        ])
     },
     {
         sourceCode: `
@@ -3262,14 +3250,14 @@ const validTestSourceCodes = [
 
             let result = my_functions[0](1) + my_functions[1](1);
         `,
-        expected: { type: ValueType.NUMBER, value: 0.04 }
+        expected: new NumberValue(0.04)
     },
     {
         sourceCode: `
 
             let result = !!!!true;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
@@ -3282,7 +3270,7 @@ const validTestSourceCodes = [
             
             let result = x()[0]()[0];
         `,
-        expected: { type: ValueType.NUMBER, value: -100 }
+        expected: new NumberValue(-100)
     },
     {
         sourceCode: `
@@ -3290,7 +3278,7 @@ const validTestSourceCodes = [
 
             let result = a[0];
         `,
-        expected: { type: ValueType.NUMBER, value: 1 }
+        expected: new NumberValue(1)
     },
     {
         sourceCode: `
@@ -3298,7 +3286,7 @@ const validTestSourceCodes = [
 
             let result = a[1][1][1][1][1][1][1][1][1][0];
         `,
-        expected: { type: ValueType.NUMBER, value: 10 }
+        expected: new NumberValue(10)
     },
     {
         sourceCode: `
@@ -3307,7 +3295,7 @@ const validTestSourceCodes = [
 
             let result = a[0];
         `,
-        expected: { type: ValueType.NUMBER, value: 2 }
+        expected: new NumberValue(2)
     },
     {
         sourceCode: `
@@ -3316,19 +3304,19 @@ const validTestSourceCodes = [
 
             let result = a[5] + a[5-1*1*0+1-2];
         `,
-        expected: { type: ValueType.NUMBER, value: 5 }
+        expected: new NumberValue(5)
     },
     {
         sourceCode: `
             let result = ([1,2,3] + [4,5,6,])[5];
         `,
-        expected: { type: ValueType.NUMBER, value: 6 }
+        expected: new NumberValue(6)
     },
     {
         sourceCode: `
             let result = true || false && false;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
@@ -3338,7 +3326,7 @@ const validTestSourceCodes = [
 
             let result = a[0];
         `,
-        expected: { type: ValueType.NUMBER, value: 2 }
+        expected: new NumberValue(2)
     },
     {
         sourceCode: `
@@ -3349,7 +3337,7 @@ const validTestSourceCodes = [
 
             let result = b[3];
         `,
-        expected: { type: ValueType.NUMBER, value: 4 }
+        expected: new NumberValue(4)
     },
     {
         sourceCode: `
@@ -3360,7 +3348,7 @@ const validTestSourceCodes = [
 
             let result = b == a;
         `,
-        expected: { type: ValueType.BOOLEAN, value: false }
+        expected: new BooleanValue(false)
     },
     {
         sourceCode: `
@@ -3369,7 +3357,7 @@ const validTestSourceCodes = [
             
             let result = b == a;
         `,
-        expected: { type: ValueType.BOOLEAN, value: true }
+        expected: new BooleanValue(true)
     },
     {
         sourceCode: `
@@ -3377,7 +3365,7 @@ const validTestSourceCodes = [
             
             let result = str(a);
         `,
-        expected: { type: ValueType.STRING, value: "3.44" }
+        expected: new StringValue("3.44")
     },
     {
         sourceCode: `
@@ -3385,7 +3373,7 @@ const validTestSourceCodes = [
             
             print(a);
         `,
-        expected: { type: ValueType.STRING, value: "3.44" }
+        expected: new StringValue("3.44")
     },
     {
         sourceCode: `
@@ -3393,7 +3381,7 @@ const validTestSourceCodes = [
             
             print(a); // line ends with comment
         `,
-        expected: { type: ValueType.STRING, value: "3.44" }
+        expected: new StringValue("3.44")
     },
     {
         sourceCode: `
@@ -3401,7 +3389,7 @@ const validTestSourceCodes = [
             
             print(a);
             // line ends with comment`,
-        expected: { type: ValueType.STRING, value: "3.44" }
+        expected: new StringValue("3.44")
     },
     {
         sourceCode: `
@@ -3409,55 +3397,55 @@ const validTestSourceCodes = [
             
             exit(a)
             // line ends with comment`,
-        expected: { type: ValueType.STRING, value: "[3.44]" }
+        expected: new StringValue("[3.44]")
     },
     {
         sourceCode: `
             exit(true);
         `,
-        expected: { type: ValueType.STRING, value: "true" }
+        expected: new StringValue("true")
              
     },
     {
          sourceCode: `
             print("\\\" Hello my man!");
         `,
-        expected: { type: ValueType.STRING, value: "\" Hello my man!" }
+        expected: new StringValue("\" Hello my man!")
     },
     {
         sourceCode: `
              print("{\\\"name\\\":\\\"John\\\"}");
             
         `,
-        expected: { type: ValueType.STRING, value: "{\"name\":\"John\"}" }
+        expected: new StringValue("{\"name\":\"John\"}")
     },
     {
         sourceCode: `
             let result = len([1,2,3,4,5]);
             
         `,
-        expected: { type: ValueType.NUMBER, value: 5 }
+        expected: new NumberValue(5)
     },
     {
         sourceCode: `
             let result = len("Hello World!");
             
         `,
-        expected: { type: ValueType.NUMBER, value: 12 }
+        expected: new NumberValue(12)
     },
     {
         sourceCode: `
             let result = len((1,2,));
             
         `,
-        expected: { type: ValueType.NUMBER, value: 2 }
+        expected: new NumberValue(2)
     },
     {
         sourceCode: `
             let result = len([1,[1,2]]);
             
         `,
-        expected: { type: ValueType.NUMBER, value: 2 }
+        expected: new NumberValue(2)
     },
     {
         sourceCode: `
@@ -3475,7 +3463,20 @@ const validTestSourceCodes = [
 
             let result = message;
         `,
-        expected: { type: ValueType.STRING, value: "Welcome to john and doe" }
+        expected: new StringValue("Welcome to john and doe")
+    },
+    {
+        sourceCode: `
+            let result = 100 / 5 * 25;
+        `,
+        expected: new NumberValue(500)
+    },
+    {
+        sourceCode: `
+            let result = 1 < 5;
+            
+        `,
+        expected: new NumberValue(1)
     },
 ]
 
@@ -3570,7 +3571,7 @@ const invalidTestSourceCodes = [
         sourceCode: `
         1 && true;
         `,
-        expected: InvalidType
+        expected: InvalidOperationOnType
     },
     {
         sourceCode: `
@@ -3659,7 +3660,21 @@ const invalidTestSourceCodes = [
             let result = len(1);
             
         `,
-        expected: InvalidTypeMultiple
+        expected: InvalidOperationOnType
+    },
+    {
+        sourceCode: `
+            let result = "lol"++;
+            
+        `,
+        expected: InvalidOperationOnType
+    },
+    {
+        sourceCode: `
+            let result = "lol" + 1;
+            
+        `,
+        expected: InvalidOperationOnType
     },
 ];
 

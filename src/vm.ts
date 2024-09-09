@@ -1,8 +1,9 @@
 import "reflect-metadata";
-import { Type, serialize, deserialize } from 'class-transformer';
+import { Type, serialize, deserialize, Transform } from 'class-transformer';
 import { CompilerBug, DivisionByZero, FunctionArgumentNumberMismatch, IndexError, InvalidFormat, InvalidType, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclared, VariableNotDeclared } from './error';
 import natives from './native';
 import syscalls from './syscall';
+import { BooleanValue, Function, FunctionValue, NativeValue, ListValue, NullValue, NumberValue, StringValue, SyscallValue, TupleValue, Value, ValueTransform, ValueOptions, AnyValueType } from './value';
 
 export enum Opcode {
     PUSH = "push",
@@ -47,122 +48,11 @@ export enum Opcode {
     MAKE_TUPLE = "make_tuple",
     MAKE_LIST = "make_list",
     SUBSCRIPT = "subscript",
-    STORE_SUBSCRIPT = "store_subscript"
-}
-
-export enum ValueType {
-    STRING = "string",
-    NUMBER = "number",
-    BOOLEAN = "boolean",
-    FUNCTION = "function",
-    NATIVE = 'native',
-    SYSCALL = "syscall",
-    TUPLE = "tuple",
-    LIST = "list",
-    NULL = "null",
-}
-
-export class Value {
-    public type: ValueType;
-    public value: any;
-
-    constructor(type: ValueType, value: any) {
-        this.type = type;
-        this.value = value;
-    }
-
-    static string(value: string) {
-        return new Value(ValueType.STRING, value);
-    }
-
-    static number(value: number) {
-        return new Value(ValueType.NUMBER, value);
-    }
-
-    static boolean(value: boolean) {
-        return new Value(ValueType.BOOLEAN, value);
-    }
-
-    static function(value: Function) {
-        return new Value(ValueType.FUNCTION, value);
-    }
-
-    static native(value: string) {
-        return new Value(ValueType.NATIVE, value);
-    }
-
-    static syscall(value: string) {
-        return new Value(ValueType.SYSCALL, value);
-    }
-
-    static tuple(value: Value[]) {
-        return new Value(ValueType.TUPLE, value);
-    }
-
-    static list(value: Value[]) {
-        return new Value(ValueType.LIST, value);
-    }
-
-    static null() {
-        return new Value(ValueType.NULL, null);
-    }
-
-    get repr(): string {
-        switch (this.type) {
-            case ValueType.BOOLEAN:
-                return this.value ? "true" : "false";
-            case ValueType.STRING:
-                return `"${this.value}"`;
-            case ValueType.NUMBER:
-                return this.value.toString();
-            case ValueType.FUNCTION:
-                return `<function ${this.value.name}>`;
-            case ValueType.NATIVE:
-                return `<native ${this.value}>`;
-            case ValueType.SYSCALL:
-                return `<syscall ${this.value}>`;
-            case ValueType.TUPLE:
-                return `(${this.value.map(v => v.repr).join(", ")})`;
-            case ValueType.LIST:
-                return `[${this.value.map(v => v.repr).join(", ")}]`;
-            case ValueType.NULL:
-                return "null";
-            default:
-                throw new CompilerBug(`Unknown value type ${this.type}`);
-        }
-    }
-
-    get str(): string {
-        switch (this.type) {
-            case ValueType.BOOLEAN:
-                return this.value ? "true" : "false";
-            case ValueType.STRING:
-                return this.value;
-            case ValueType.NUMBER:
-                return this.value.toString();
-            case ValueType.FUNCTION:
-                return `<function ${this.value.name}>`;
-            case ValueType.NATIVE:
-                return `<native ${this.value}>`;
-            case ValueType.SYSCALL:
-                return `<syscall ${this.value}>`;
-            case ValueType.TUPLE:
-                return `(${this.value.map(v => v.repr).join(", ")})`;
-            case ValueType.LIST:
-                return `[${this.value.map(v => v.repr).join(", ")}]`;
-            case ValueType.NULL:
-                return "null";
-            default:
-                throw new CompilerBug(`Unknown value type ${this.type}`);
-        }
-    }
+    STORE_SUBSCRIPT = "store_subscript",
+    MEMBER_ACCESS = "member_access"
 }
 
 export class Stack extends Array<Value> {
-
-    constructor(values: Value[] = []) {
-        super(...values);
-    }
 
     pop() {
         if (this.length === 0)
@@ -172,24 +62,10 @@ export class Stack extends Array<Value> {
     }
 }
 
-export class Function {
-    name: string;
-    args: string[];
-
-    @Type(() => Instruction)
-    body: Instruction[];
-
-    constructor(name: string, args: string[], body: Instruction[]) {
-        this.name = name;
-        this.args = args;
-        this.body = body;
-    }
-}
-
 export class Instruction {
     type: Opcode;
+    lineNumber: number;
     value?: number;
-    lineNumber?: number;
 
     constructor(type: Opcode, lineNumber: number, value?: number,) {
         this.type = type;
@@ -200,7 +76,8 @@ export class Instruction {
 
 export class Program {
     text: Instruction[];
-    data: Value[];
+    @Type(()=>Value)
+    data: AnyValueType[];
 
     constructor(text: Instruction[], data: Value[]) {
         this.text = text;
@@ -211,7 +88,8 @@ export class Program {
 class CallFrame {
     ip: number;
 
-    @Type(() => Value)
+    @Type(()=>Value)
+    @ValueTransform()
     stack: Stack;
 
     @Type(() => Instruction)
@@ -219,7 +97,12 @@ class CallFrame {
 
     constructor(ip: number, stack: Value[], text: Instruction[]) {
         this.ip = ip;
-        this.stack = new Stack(stack);
+        this.stack = new Stack();
+
+        // Related with class-transformers. Might look unnecesarry to check if undefined, but it is needed.
+        if(stack)
+            this.stack.push(...stack);
+
         this.text = text;
     }
 }
@@ -244,14 +127,16 @@ export interface Syscall {
 }
 
 export default class VM {
-    @Type(() => Value)
-    private data: Value[];
+    @ValueTransform()
+    @Type(()=>Value)
+    private data: AnyValueType[];
 
     @Type(() => CallFrame)
     private frames: CallFrame[];
 
-    @Type(() => Value)
-    private globals: Map<string, Value>;
+    @ValueTransform()
+    @Type(()=>Value)
+    private globals: Map<string, AnyValueType>;
 
     private syscall?: Syscall = undefined;
 
@@ -296,7 +181,7 @@ export default class VM {
     }
 
     private execute(instruction: Instruction) {
-        const { type, value, lineNumber } = instruction;
+        const { type, value = 0, lineNumber } = instruction;
 
         switch (type) {
             case Opcode.PUSH:
@@ -310,10 +195,8 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.BOOLEAN || b.type !== ValueType.BOOLEAN)
-                        throw new InvalidType(lineNumber, ValueType.BOOLEAN, a.type);
-
-                    this.stack.push(Value.boolean(b.value || a.value));
+                    const result = b.__or__(lineNumber, a);
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.AND:
@@ -321,45 +204,33 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.BOOLEAN || b.type !== ValueType.BOOLEAN)
-                        throw new InvalidType(lineNumber, ValueType.BOOLEAN, a.type);
-
-                    this.stack.push(Value.boolean(b.value && a.value));
+                    const result = b.__and__(lineNumber, a);
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.ADD:
                 {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
-
-                    if (a.type === ValueType.NUMBER && b.type === ValueType.NUMBER)
-                        this.stack.push(Value.number(b.value + a.value));
-                    else if (a.type === ValueType.STRING && b.type === ValueType.STRING)
-                        this.stack.push(Value.string(b.value + a.value));
-                    else if (a.type === ValueType.LIST && b.type === ValueType.LIST)
-                    {
-                        //  Append to a list
-                        if(value && value === 1) {
-                            b.value.push(...a.value);
-                            this.stack.push(b);
-                        }
-                        // Concatenate two lists
-                        else {
-                            this.stack.push(Value.list(b.value.concat(a.value)));
-                        }
-                    }
+                    
+                    let result;
+                    if (value  === 0) 
+                        result = b.__add__(lineNumber, a);
+                    else if (value === 1)
+                        result = b.__extend__(lineNumber, a);
                     else
-                        throw new InvalidType(lineNumber, a.type, b.type, `Cannot add ${a.type} ${a.value} with ${b.type} ${b.value}`);
+                        throw new CompilerBug("ADD instruction can only get 0 or 1 as value");
+
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.SUB: {
                 const a = this.stack.pop();
                 const b = this.stack.pop();
 
-                if (a.type !== ValueType.NUMBER || b.type !== ValueType.NUMBER)
-                    throw new InvalidType(lineNumber, a.type, b.type, `Cannot subtract non-numbers ${a.value} and ${b.value}`);
+                const result = b.__sub__(lineNumber, a);
 
-                this.stack.push(Value.number(b.value - a.value));
+                this.stack.push(result);
                 break;
             }
             case Opcode.MUL:
@@ -367,12 +238,9 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, "Cannot multiply non-numbers");
-                    if (b.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot multiply non-numbers");
+                    const result = b.__mul__(lineNumber, a);
 
-                    this.stack.push(Value.number(a.value * b.value));
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.DIV:
@@ -380,15 +248,9 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, "Cannot divide non-numbers");
-                    if (b.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot divide non-numbers");
+                    const result = b.__div__(lineNumber, a);
 
-                    if (a.value === 0)
-                        throw new DivisionByZero(lineNumber);
-
-                    this.stack.push(Value.number(b.value / a.value));
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.MOD:
@@ -396,15 +258,9 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, "Cannot divide non-numbers");
-                    if (b.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot divide non-numbers");
+                    const result = b.__mod__(lineNumber, a);
 
-                    if (a.value === 0)
-                        throw new DivisionByZero(lineNumber);
-
-                    this.stack.push(Value.number(b.value % a.value));
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.LT:
@@ -412,13 +268,9 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, "Cannot compare (<) non-numbers");
-                    if (b.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot compare (<) non-numbers");
+                    const result = b.__lt__(lineNumber, a);
 
-
-                    this.stack.push(Value.boolean(b.value < a.value));
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.GT:
@@ -426,12 +278,9 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, "Cannot compare (>) non-numbers");
-                    if (b.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot compare (>) non-numbers");
+                    const result = b.__gt__(lineNumber, a);
 
-                    this.stack.push(Value.boolean(b.value > a.value));
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.LTE:
@@ -439,12 +288,9 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, "Cannot compare (<=) non-numbers");
-                    if (b.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot compare (<=) non-numbers");
+                    const result = b.__lte__(lineNumber, a);
 
-                    this.stack.push(Value.boolean(b.value <= a.value));
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.GTE:
@@ -452,12 +298,9 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, "Cannot compare (>=) non-numbers");
-                    if (b.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, b.type, "Cannot compare (>=) non-numbers");
+                    const result = b.__gte__(lineNumber, a);
 
-                    this.stack.push(Value.boolean(b.value >= a.value));
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.EQ:
@@ -465,7 +308,9 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    this.stack.push(Value.boolean(a.type === b.type && b.value === a.value));
+                    const result = b.__eq__(lineNumber, a);
+
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.NEQ:
@@ -473,7 +318,9 @@ export default class VM {
                     const a = this.stack.pop();
                     const b = this.stack.pop();
 
-                    this.stack.push(Value.boolean(a.type !== b.type || b.value !== a.value));
+                    const result = b.__neq__(lineNumber, a);
+
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.JUMP:
@@ -495,7 +342,7 @@ export default class VM {
 
                     const func = this.stack.pop();
 
-                    if (func.type === ValueType.NATIVE) {
+                    if (func instanceof NativeValue) {
                         const nativeInfo = natives[func.value];
                         if (nativeInfo === undefined)
                             throw new CompilerBug(`Native function ${func.value} is not defined`);
@@ -506,7 +353,7 @@ export default class VM {
                         const result = nativeInfo.function(lineNumber, args);
 
                         this.stack.push(result);
-                    } else if (func.type === ValueType.FUNCTION) {
+                    } else if (func instanceof FunctionValue) {
                         if (func.value.args.length !== value)
                             throw new FunctionArgumentNumberMismatch(lineNumber, func.value.name, func.value.args.length, value);
                         args.unshift(func);
@@ -515,7 +362,7 @@ export default class VM {
                             args,
                             func.value.body
                         ));
-                    } else if (func.type === ValueType.SYSCALL) {
+                    } else if (func instanceof SyscallValue) {
                         let syscallName = func.value;
                         const syscallInfo = syscalls[syscallName];
 
@@ -523,13 +370,13 @@ export default class VM {
                             throw new CompilerBug(`Syscall ${syscallName} is not defined`);
 
                         let syscallId = syscallInfo.syscallId;
-                        
+
                         const processedArgs = syscallInfo.preprocessor(args, lineNumber);
 
                         // Special case for `syscall()`, the syscall id is the first argument
                         if (syscallName === 'syscall') {
-                            if (processedArgs[0].type !== ValueType.STRING)
-                                throw new InvalidType(lineNumber, ValueType.STRING, processedArgs[0].type, `Syscall name must be a string`);
+                            if (!(processedArgs[0] instanceof StringValue))
+                                throw new InvalidType(lineNumber, StringValue.typeName, processedArgs[0].typeName, `Syscall name must be a string`);
 
                             syscallId = processedArgs.shift().value;
                         }
@@ -540,7 +387,7 @@ export default class VM {
                         };
                     }
                     else {
-                        throw new InvalidType(lineNumber, ValueType.FUNCTION, func.type, `Cannot call non-function ${func.value}`);
+                        throw new InvalidType(lineNumber, FunctionValue.typeName, func.typeName, `Cannot call non-function ${func.value}`);
                     }
 
                     break;
@@ -549,7 +396,7 @@ export default class VM {
                 if (value === 1)
                     this.frames.at(-2).stack.push(this.stack.pop());
                 else
-                    this.frames.at(-2).stack.push(Value.null());
+                    this.frames.at(-2).stack.push(new NullValue());
 
                 this.frames.pop();
                 break;
@@ -596,30 +443,27 @@ export default class VM {
                 {
                     const a = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, `Cannot negate non-number ${a.value}`);
+                    const result = a.__neg__(lineNumber);
 
-                    this.stack.push(Value.number(-a.value));
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.INC:
                 {
                     const a = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, `Cannot increment non-number ${a.value}`);
+                    const result = a.__inc__(lineNumber);
 
-                    this.stack.push(Value.number(a.value + 1));
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.DEC:
                 {
                     const a = this.stack.pop();
 
-                    if (a.type !== ValueType.NUMBER)
-                        throw new InvalidType(lineNumber, ValueType.NUMBER, a.type, `Cannot decrement non-number ${a.value}`);
+                    const result = a.__dec__(lineNumber);
 
-                    this.stack.push(Value.number(a.value - 1));
+                    this.stack.push(result);
                     break;
                 }
             case Opcode.COPY:
@@ -637,7 +481,7 @@ export default class VM {
                     for (let i = 0; i < value; i++)
                         elements.unshift(this.stack.pop());
 
-                    this.stack.push(Value.tuple(elements));
+                    this.stack.push(new TupleValue(elements));
                     break;
                 }
             case Opcode.MAKE_LIST:
@@ -647,51 +491,43 @@ export default class VM {
                     for (let i = 0; i < value; i++)
                         elements.unshift(this.stack.pop());
 
-                    this.stack.push(Value.list(elements));
+                    this.stack.push(new ListValue(elements));
                     break;
                 }
             case Opcode.SUBSCRIPT: {
                 const key = this.stack.pop();
                 const container = this.stack.pop();
 
-                if (container.type !== ValueType.TUPLE && container.type !== ValueType.LIST)
-                    throw new InvalidType(lineNumber, ValueType.TUPLE, container.type, `Cannot subscript this type.`);
-                if (key.type !== ValueType.NUMBER)
-                    throw new InvalidType(lineNumber, ValueType.NUMBER, key.type, `Cannot subscript with non-number ${key.value}`);
+                const result = container.__getitem__(lineNumber, key);
 
-                if(container.value.length < key.value)
-                    throw new IndexError(lineNumber);
-
-                this.stack.push(container.value[key.value]);
-
+                this.stack.push(result);
                 break;
             }
             case Opcode.STORE_SUBSCRIPT: {
                 const key = this.stack.pop();
                 const name = this.stack.pop();
 
-                if (name.type !== ValueType.LIST)
-                    throw new InvalidType(lineNumber, ValueType.LIST, name.type, "Cannot set an element of non-list.")
-                if (key.type !== ValueType.NUMBER)
-                    throw new InvalidType(lineNumber, ValueType.NUMBER, name.type, "Cannot use non-number to index a list.")
+                const result = name.__setitem__(lineNumber, key, this.stack.pop());
 
-                const value =  this.stack.pop();
-
-                name.value[key.value] = value;
-
-                this.stack.push(value);
+                this.stack.push(result);
 
                 break;
             }
-            case Opcode.NOT:{
+            case Opcode.NOT: {
                 const a = this.stack.pop();
 
-                if (a.type !== ValueType.BOOLEAN)
-                    throw new InvalidType(lineNumber, ValueType.BOOLEAN, a.type, `Cannot negate non-boolean ${a.value}`);
+                const result = a.__not__(lineNumber);
 
-                this.stack.push(Value.boolean(!a.value));
+                this.stack.push(result);
                 break;
             }
+            case Opcode.MEMBER_ACCESS:
+                {
+                    const name = this.stack.pop();
+                    const object = this.stack.pop();
+
+                    break;
+                }
             case Opcode.NOP:
                 break;
 
@@ -702,13 +538,13 @@ export default class VM {
 
     private defineNatives() {
         for (const [name, _] of Object.entries(natives)) {
-            this.globals.set(name, Value.native(name));
+            this.globals.set(name, new NativeValue(name));
         }
     }
 
     private defineSyscalls() {
         for (const [name, _] of Object.entries(syscalls)) {
-            this.globals.set(name, Value.syscall(name));
+            this.globals.set(name, new SyscallValue(name));
         }
     }
 

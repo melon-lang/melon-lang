@@ -4,7 +4,7 @@ import { SyntaxError } from './error';
 export type AST = (Declaration | Statement)[];
 export type Declaration = FunctionDeclaration | VariableDeclaration | Statement;
 export type Statement = Expression | Call | If | While | For | Return | Block | ExpressionStatement | ImportStatement | BreakStatement | EmptyStatement;
-export type Expression = Literal | Identifier | Call | Block | BinaryOperation | UnaryOperation | Tuple | List | VariableAssignment | Subscript;
+export type Expression = Literal | Identifier | Call | Block | BinaryOperation | UnaryOperation | Tuple | List | VariableAssignment | Subscript | MemberAccess;
 
 export class ASTNode {
 
@@ -186,12 +186,26 @@ export class ASTNode {
         return res;
     }
 
+    static MemberAccess(object: Expression, name: Token, lineNumber: number): MemberAccess {
+        const res = new MemberAccess();
+        res.name = name;
+        res.object = object;
+        res.lineNumber = lineNumber;
+
+        return res;
+    }
+
     static EmptyStatement(lineNumber: number): EmptyStatement {
         const res = new EmptyStatement();
         res.lineNumber = lineNumber;
 
         return res;
     }
+}
+
+export class MemberAccess extends ASTNode {
+    object: Expression
+    name: Token
 }
 
 export class ImportStatement extends ASTNode {
@@ -807,6 +821,16 @@ export default class Parser {
                 this.advance();
 
                 expr = ASTNode.Call(expr, args, lineNumber);
+            } else if (this.peek().type === TokenType.DOT) {
+                this.advance();
+
+                const name = this.peek();
+                if (name.type !== TokenType.IDENTIFIER)
+                    this.error(lineNumber, "Expected identifier after '.'");
+
+                this.advance();
+
+                expr = ASTNode.MemberAccess(expr, name, lineNumber);
             } else {
                 break;
             }

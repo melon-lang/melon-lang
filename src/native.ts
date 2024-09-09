@@ -1,5 +1,5 @@
 import { CompilerBug, InvalidFormat, InvalidType, InvalidTypeMultiple } from "./error";
-import { Value, ValueType } from "./vm";
+import { BooleanValue, NumberValue, StringValue, Value } from "./value";
 
 const number = (lineNumber, args: Value[]) => {
     const str = args[0].value as string;
@@ -7,35 +7,34 @@ const number = (lineNumber, args: Value[]) => {
     if (isNaN(Number(str)))
         throw new InvalidFormat(lineNumber, `Cannot parse ${str} as number`);
 
-   return Value.number(parseFloat(str));
+   return new NumberValue(parseFloat(str));
 }
 
 const bool = (lineNumber, args: Value[]) => {
     const str = args[0].value;
 
     if (str !== "true" && str !== "false" && str !== "1" && str !== "0" && str !== 1 && str !== 0)
-        throw new InvalidType(lineNumber, ValueType.BOOLEAN, str.type);
+        throw new InvalidType(lineNumber, BooleanValue.typeName, str.type);
 
-    return  Value.boolean(str === "true" || str === "1" || str === 1);
+    return  new BooleanValue(str === "true" || str === "1" || str === 1);
 }
 
 const random = (lineNumber) => {
-    return Value.number(Math.random());
+    return new NumberValue(Math.random());
 }
 
 const str = (lineNumber, args: Value[]) => {
     const a = args[0];
 
-    return (Value.string(a.str));
+    return new StringValue(a.str);
 }
 
 const len = (lineNumber, args: Value[]) => {
     const a = args[0];
 
-    if (a.type !== ValueType.STRING && a.type !== ValueType.LIST && a.type !== ValueType.TUPLE)
-        throw new InvalidTypeMultiple(lineNumber, [ValueType.STRING, ValueType.LIST, ValueType.TUPLE], a.type);
+    const result = a.__len__(lineNumber);
 
-    return Value.number(a.value.length);
+    return result;
 }
 
 export default {

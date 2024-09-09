@@ -1,6 +1,7 @@
 import { expect, test } from '@jest/globals';
-import VM, { Opcode, Program, Value, ValueType, VMImage, VMStatus } from '../src/vm';
+import VM, { Opcode, Program, VMImage, VMStatus } from '../src/vm';
 import { CompilerBug,  } from '../src/error';
+import { NumberValue, StringValue, SyscallValue } from '../src/value';
 
 const decodeString = (str: string) => (JSON.parse(atob(str)));
 
@@ -14,24 +15,24 @@ const validTestCases: {
             program:
                 new Program(
                     [
-                        { type: Opcode.DATA, value: 0 },
-                        { type: Opcode.DATA, value: 1 },
-                        { type: Opcode.ADD },
-                        { type: Opcode.NOP },
+                        { type: Opcode.DATA, value: 0, lineNumber: 0  },
+                        { type: Opcode.DATA, value: 1, lineNumber: 0  },
+                        { type: Opcode.ADD, lineNumber: 0  },
+                        { type: Opcode.NOP, lineNumber: 0  },
                     ],
                     [
-                        Value.number(1),
-                        Value.number(2),
+                        new NumberValue(1),
+                        new NumberValue(2),
                     ]
                 ),
             steps: 3,
             expected: {
                 state: {
-                    "data": [{ "type": ValueType.NUMBER, "value": 1 }, { "type": ValueType.NUMBER, "value": 2 }],
+                    "data": [new NumberValue(1), new NumberValue(2)],
                     "frames": [
                         {
                             ip: 3,
-                            stack: [{ type: ValueType.NUMBER, value: 3 }],
+                            stack: [new NumberValue(3)],
                         }
                     ],
                 },
@@ -43,24 +44,24 @@ const validTestCases: {
             program:
                 new Program(
                     [
-                        { type: Opcode.DATA, value: 0 },
-                        { type: Opcode.DATA, value: 1 },
-                        { type: Opcode.SUB },
-                        { type: Opcode.NOP },
+                        { type: Opcode.DATA, value: 0, lineNumber: 0  },
+                        { type: Opcode.DATA, value: 1, lineNumber: 0  },
+                        { type: Opcode.SUB, lineNumber: 0  },
+                        { type: Opcode.NOP, lineNumber: 0  },
                     ],
                     [
-                        Value.number(56),
-                        Value.number(-2),
+                        new NumberValue(56),
+                        new NumberValue(-2),
                    ]
                 ),
             steps: 3,
             expected: {
                 state: {
-                    "data": [{ "type": ValueType.NUMBER, "value": 56 }, { "type": ValueType.NUMBER, "value": -2 }],
+                    "data": [new NumberValue(56), new NumberValue(-2)],
                     "frames": [
                         {
                             ip: 3,
-                            stack: [{ type: ValueType.NUMBER, value: 58 }],
+                            stack: [new NumberValue(58)],
                         }
                     ],
                 },
@@ -72,23 +73,23 @@ const validTestCases: {
             program:
                 new Program(
                     [
-                        { type: Opcode.DATA, value: 0 },
-                        { type: Opcode.DATA, value: 0 },
-                        { type: Opcode.SUB },
-                        { type: Opcode.NOP },
+                        { type: Opcode.DATA, value: 0, lineNumber: 0  },
+                        { type: Opcode.DATA, value: 0, lineNumber: 0  },
+                        { type: Opcode.SUB, lineNumber: 0  },
+                        { type: Opcode.NOP, lineNumber: 0  },
                     ],
                     [
-                        Value.number(100000),
+                        new NumberValue(100000),
                     ]
                 ),
             steps: 3,
             expected: {
                 state: {
-                    "data": [{ "type": ValueType.NUMBER, "value": 100000 }],
+                    "data": [new NumberValue(100000)],
                     "frames": [
                         {
                             ip: 3,
-                            stack: [{ type: ValueType.NUMBER, value: 0 }],
+                            stack: [new NumberValue(0)],
                         }
                     ],
                 },
@@ -99,24 +100,24 @@ const validTestCases: {
             program:
                 new Program(
                     [
-                        { type: Opcode.DATA, value: 0 },
-                        { type: Opcode.DATA, value: 1 },
-                        { type: Opcode.SUB },
-                        { type: Opcode.NOP },
+                        { type: Opcode.DATA, value: 0, lineNumber: 0  },
+                        { type: Opcode.DATA, value: 1, lineNumber: 0  },
+                        { type: Opcode.SUB, lineNumber: 0  },
+                        { type: Opcode.NOP, lineNumber: 0  },
                     ],
                     [
-                        Value.number(3),
-                        Value.number(2),
+                        new NumberValue(3),
+                        new NumberValue(2),
                     ]
                 ),
             steps: 3,
             expected: {
                 state: {
-                    "data": [{ "type": ValueType.NUMBER, "value": 3 }, { "type": ValueType.NUMBER, "value": 2 }],
+                    "data": [new NumberValue(3), new NumberValue(2)],
                     "frames": [
                         {
                             ip: 3,
-                            stack: [{ type: ValueType.NUMBER, value: 1 }],
+                            stack: [new NumberValue(1)],
                         }
                     ],
                 },
@@ -128,24 +129,24 @@ const validTestCases: {
             program:
                 new Program(
                     [
-                        { type: Opcode.DATA, value: 0 },
-                        { type: Opcode.DATA, value: 1 },
-                        { type: Opcode.MUL },
-                        { type: Opcode.NOP },
+                        { type: Opcode.DATA, value: 0, lineNumber: 0  },
+                        { type: Opcode.DATA, value: 1, lineNumber: 0  },
+                        { type: Opcode.MUL, lineNumber: 0  },
+                        { type: Opcode.NOP, lineNumber: 0  },
                     ],
                     [
-                        Value.number(3),
-                        Value.number(2),
+                        new NumberValue(3),
+                        new NumberValue(2),
                     ]
                 ),
             steps: 3,
             expected: {
                 state: {
-                    "data": [{ "type": ValueType.NUMBER, "value": 3 }, { "type": ValueType.NUMBER, "value": 2 }],
+                    "data": [new NumberValue(3), new NumberValue(2),],
                     "frames": [
                         {
                             ip: 3,
-                            stack: [{ type: ValueType.NUMBER, value: 6 }],
+                            stack: [new NumberValue(6),],
                         }
                     ],
                 },
@@ -157,24 +158,24 @@ const validTestCases: {
             program:
                 new Program(
                     [
-                        { type: Opcode.DATA, value: 0 },
-                        { type: Opcode.DATA, value: 1 },
-                        { type: Opcode.DIV },
-                        { type: Opcode.NOP },
+                        { type: Opcode.DATA, value: 0, lineNumber: 0  },
+                        { type: Opcode.DATA, value: 1, lineNumber: 0  },
+                        { type: Opcode.DIV, lineNumber: 0  },
+                        { type: Opcode.NOP, lineNumber: 0  },
                     ],
                     [
-                        Value.number(6),
-                        Value.number(2),
+                        new NumberValue(6),
+                        new NumberValue(2),
                     ]
                 ),
             steps: 3,
             expected: {
                 state: {
-                    "data": [{ "type": ValueType.NUMBER, "value": 6 }, { "type": ValueType.NUMBER, "value": 2 }],
+                    "data": [new NumberValue(6), new NumberValue(2),],
                     "frames": [
                         {
                             ip: 3,
-                            stack: [{ type: ValueType.NUMBER, value: 3 }],
+                            stack: [new NumberValue(3)],
                         }
                     ],
                 },
@@ -186,7 +187,7 @@ const validTestCases: {
             program:
                 new Program(
                     [
-                        { type: Opcode.NOP },
+                        { type: Opcode.NOP, lineNumber: 0  },
                     ],
                     []
                 ),
@@ -204,15 +205,15 @@ const validTestCases: {
             program:
                 new Program(
                     [
-                        { type: Opcode.DATA, value: 1 }, // function
-                        { type: Opcode.DATA, value: 0 }, // arg 0
-                        { type: Opcode.DATA, value: 2 }, // arg 1
-                        { type: Opcode.CALL, value: 2 },
+                        { type: Opcode.DATA, value: 1, lineNumber: 0  }, // function
+                        { type: Opcode.DATA, value: 0, lineNumber: 0  }, // arg 0
+                        { type: Opcode.DATA, value: 2, lineNumber: 0  }, // arg 1
+                        { type: Opcode.CALL, value: 2, lineNumber: 0  },
                     ],
                     [
-                        Value.string("dummy-syscall"),
-                        Value.syscall("syscall"),
-                        Value.number(5.453),
+                        new StringValue("dummy-syscall"),
+                        new SyscallValue("syscall"),
+                        new NumberValue(5.453),
                     ]
                 ),
             steps: 4,
@@ -222,7 +223,7 @@ const validTestCases: {
                 },
                 status: VMStatus.SYSCALL,
                 syscall: { name: 'dummy-syscall', args: [
-                    { type: ValueType.NUMBER, value: 5.453 }
+                    new NumberValue(5.453)
                 ] }
             }
         },
@@ -231,14 +232,14 @@ const validTestCases: {
             program:
                 new Program(
                     [
-                        { type: Opcode.DATA, value: 0 },
-                        { type: Opcode.DATA, value: 1 },
-                        { type: Opcode.DIV },
-                        { type: Opcode.NOP },
+                        { type: Opcode.DATA, value: 0, lineNumber: 0  },
+                        { type: Opcode.DATA, value: 1, lineNumber: 0  },
+                        { type: Opcode.DIV, lineNumber: 0  },
+                        { type: Opcode.NOP, lineNumber: 0  },
                     ],
                     [
-                        Value.number(33),
-                        Value.number(3),
+                        new NumberValue(33),
+                        new NumberValue(3),
                     ]
                 ),
             steps: 3,
@@ -247,7 +248,7 @@ const validTestCases: {
                     "frames": [
                         {
                             ip: 3,
-                            stack: [{ type: ValueType.NUMBER, value: 11 }],
+                            stack: [new NumberValue(11)],
                         }
                     ],
                 },
@@ -265,14 +266,14 @@ const invalidTestCases: {
             program:
                 new Program(
                     [
-                        { type: Opcode.DATA, value: 1 },
-                        { type: Opcode.DATA, value: 2 },
-                        { type: Opcode.CALL, value: 2 },
+                        { type: Opcode.DATA, value: 1, lineNumber: 0 },
+                        { type: Opcode.DATA, value: 2, lineNumber: 0 },
+                        { type: Opcode.CALL, value: 2, lineNumber: 0 },
                     ],
                     [
-                        Value.string("dum"),
-                        Value.number(5),
-                        Value.syscall("syscall"),
+                        new StringValue("dum"),
+                        new NumberValue(5),
+                        new SyscallValue("syscall"),
                     ]
                 ),
             steps: 3,
