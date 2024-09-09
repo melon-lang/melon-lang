@@ -3484,7 +3484,158 @@ const validTestSourceCodes = [
             let result = ([1,12]).__len__()
         `,
         expected: new NumberValue(2)
-    }
+    },
+    {
+        sourceCode: `
+            let result =  "hello world".split(" ")
+        `,
+        expected: new ListValue([
+            new StringValue("hello"),
+            new StringValue("world")
+        ])
+    },
+    {
+        sourceCode: `
+            let result =  "hello world".split(" ")
+            let y = "";
+            for(let i= 0;i<len(result); i++)
+                y += "a";
+
+            result = y.upper();
+        `,
+        expected: new StringValue("AA")
+    },
+    {
+        sourceCode: `
+            let result =  "hello worldx".reverse()
+            
+        `,
+        expected: new StringValue("xdlrow olleh")
+    },
+    {
+        sourceCode: `
+            let result =  "hello worldx".split().reverse()
+            
+        `,
+        expected: new ListValue([new StringValue("worldx"), new StringValue("hello")])
+    },
+    {
+        sourceCode: `
+            let result =  "hello world!".split().reverse().insert(10, "lol")
+            
+        `,
+        expected: new ListValue([new StringValue("world!"), new StringValue("hello"), new StringValue("lol")])
+    },
+    {
+        sourceCode: `
+            let result =  "hello world!".split().reverse().insert(0, "lol")
+            
+        `,
+        expected: new ListValue([new StringValue("lol"), new StringValue("world!"), new StringValue("hello")])
+    },
+    {
+        sourceCode: `
+            let result = [1,2,3,(1,2,3),[[[234234,[[],[],[233432]]]]]].reverse().insert(0, (1,2,3,4))
+            
+            result = result[0]
+        `,
+        expected: new TupleValue([new NumberValue(1),new NumberValue(2),new NumberValue(3),new NumberValue(4),])
+    },
+    {
+        sourceCode: `
+            let result = [1,2,3,(1,2,3),[[[234234,[[],[],[233432]]]]]].append((1,2,3,4)).reverse()
+            
+            result = result[0]
+        `,
+        expected: new TupleValue([new NumberValue(1),new NumberValue(2),new NumberValue(3),new NumberValue(4),])
+    },
+    {
+        sourceCode: `
+            let result = [1,2,3,(1,2,3),[[[234234,[[],[],[233432]]]]]].append((1,2,3,4))
+            
+            result = result[4][0][0][0]
+        `,
+        expected: new NumberValue(234234)
+    },
+    {
+        sourceCode: `
+        let result = []
+        for(let i=0; i<100; i++)
+            result.append(i);
+
+        result = result[34]
+        `,
+        expected: new NumberValue(34)
+    },
+    {
+        sourceCode: `
+        let result = []
+        for(let i=0; i<100; i++)
+            result.insert(0, i);
+
+        result = result[0]
+        `,
+        expected: new NumberValue(99)
+    },
+    {
+        sourceCode: `
+        let a = [];
+        let b = a;
+
+        b.append(1);
+
+        let result = a[0];
+        `,
+        expected: new NumberValue(1)
+    },
+    {
+        sourceCode: `
+        let a = "asdf";
+
+        let result = a.upper();
+        result = result.lower();
+
+        result = result.reverse();
+
+        result = result.contains("fds");
+        `,
+        expected: new BooleanValue(true)
+    },
+    {
+        sourceCode: `
+        let a = "asdf";
+
+        let result = a.upper();
+        result = result.lower().lower().lower();
+
+        result = result.contains("asd");
+        `,
+        expected: new BooleanValue(true)
+    },
+    {
+        sourceCode: `
+        let _______dumy = "hello-world-WOAH-\\\"OMAGAD\\\"-ARE-YOU--READING-THIS?".split("-");
+
+        let result = _______dumy[3];
+        `,
+        expected: new StringValue("\"OMAGAD\"")
+    },
+    {
+        sourceCode: `
+        let _______dumy = "lollollol"
+
+        let result = _______dumy.replace("lol", "wow")
+        `,
+        expected: new StringValue("wowwowwow")
+    },
+    {
+        sourceCode: `
+        let _______dumy = "        \tlollollol\t\t\t\n".trim()
+
+        let result = _______dumy.replace("lol", "wow")
+        `,
+        expected: new StringValue("wowwowwow")
+    },
 ]
 
 const invalidTestSourceCodes = [
@@ -3670,14 +3821,14 @@ const invalidTestSourceCodes = [
     },
 ];
 
-test.each(validTestSourceCodes)('',
+test.each(validTestSourceCodes)('.eval($sourceCode)',
     ({ sourceCode, expected }) => {
         const result = evalValidSourceCode(sourceCode);
         expect(result).toEqual(expected);
     }
 );
 
-test.each(invalidTestSourceCodes)('',
+test.each(invalidTestSourceCodes)('.eval($sourceCode)',
     ({ sourceCode, expected }) => {
         expect(() => evalInvalidSourceCode(sourceCode)).toThrowError(expected);
     }

@@ -464,9 +464,39 @@ export class StringValue extends Value {
     }
 
     @ValueMethod({ args: [], optionals: [StringValue] })
-    __split__(lineNumber: number, ...args: Value[]): Value {
+    split(lineNumber: number, ...args: Value[]): Value {
         return new ListValue(this.value.split(args[0] ? args[0].value : " ")
             .map(v => new StringValue(v)));
+    }
+
+    @ValueMethod({ args: [] })
+    lower(lineNumber: number, ...args: Value[]): Value {
+        return new StringValue(this.value.toLowerCase());
+    }
+
+    @ValueMethod({ args: [] })
+    upper(lineNumber: number, ...args: Value[]): Value {
+        return new StringValue(this.value.toUpperCase());
+    }
+
+    @ValueMethod({ args: [] })
+    trim(lineNumber: number, ...args: Value[]): Value {
+        return new StringValue(this.value.trim());
+    }
+
+    @ValueMethod({ args: [StringValue, StringValue] })
+    replace(lineNumber: number, ...args: Value[]): Value {
+        return new StringValue(this.value.replaceAll(args[0].value, args[1].value));
+    }
+
+    @ValueMethod({ args: [] })
+    reverse(lineNumber: number, ...args: Value[]): Value {
+        return new StringValue(this.value.split("").reverse().join(""));
+    }
+
+    @ValueMethod({ args: [StringValue] })
+    contains(lineNumber: number, ...args: Value[]): Value {
+        return new BooleanValue(this.value.includes(args[0].value))
     }
 }
 
@@ -525,8 +555,32 @@ export class ListValue extends Value {
     }
 
     @ValueMethod({ args: [] })
-    __len__(lineNumber: number): Value {
+    __len__(lineNumber: number, ...args: Value[]): Value {
         return new NumberValue(this.value.length);
+    }
+
+    @ValueMethod({ args: [Value] })
+    append(lineNumber: number, ...args: Value[]): Value {
+        this.value.push(args[0]);
+        return this;
+    }
+
+    @ValueMethod({ args: [ListValue] })
+    extend(lineNumber: number, ...args: Value[]): Value {
+        return this.__extend__(lineNumber, ...args);
+    }
+
+    @ValueMethod({args: []})
+    reverse(lineNumber: number, ...args: Value[]): Value {
+        this.value.reverse();
+
+        return this;
+    }
+
+    @ValueMethod({args: [NumberValue, Value]})
+    insert(lineNumber: number, ...args: Value[]): Value {
+        this.value.splice(args[0].value, 0, args[1]);
+        return this;
     }
 }
 
