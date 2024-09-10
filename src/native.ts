@@ -1,4 +1,4 @@
-import { CompilerBug, InvalidFormat, InvalidType, InvalidTypeMultiple } from "./error";
+import { CompilerBug, InvalidFormat, InvalidType, InvalidTypeMultiple, NativeFunctionArgumentNumberMismatch } from "./error";
 import { BooleanValue, NumberValue, StringValue, Value } from "./value";
 
 
@@ -17,7 +17,7 @@ const bool = (lineNumber, args: Value[]) => {
     if (str !== "true" && str !== "false" && str !== "1" && str !== "0" && str !== 1 && str !== 0)
         throw new InvalidType(lineNumber, BooleanValue.typeName, str.type);
 
-    return  new BooleanValue(str === "true" || str === "1" || str === 1);
+    return new BooleanValue(str === "true" || str === "1" || str === 1);
 }
 
 const random = (lineNumber) => {
@@ -25,17 +25,32 @@ const random = (lineNumber) => {
 }
 
 const str = (lineNumber, args: Value[]) => {
-    const a = args[0];
+    const a = args.at(0);
 
-    return new StringValue(a.str);
+    if(!a)
+        throw new NativeFunctionArgumentNumberMismatch(lineNumber, "str", 1, 0);
+
+    return a.__str__(lineNumber, ...args.slice(1,));
 }
 
 const len = (lineNumber, args: Value[]) => {
     const a = args[0];
 
-    const result = a.__len__(lineNumber);
+    if(!a)
+        throw new NativeFunctionArgumentNumberMismatch(lineNumber, "len", 1, 0);
+
+    const result = a.__len__(lineNumber, ...args.slice(1,));
 
     return result;
+}
+
+const type = (lineNumber, args: Value[]) => {
+    const a = args[0];
+
+    if(!a)
+        throw new NativeFunctionArgumentNumberMismatch(lineNumber, "type", 1, 0);
+
+    return a.__type__(lineNumber, ...args.slice(1,))
 }
 
 export default {
@@ -59,4 +74,8 @@ export default {
         function: len,
         args: 1
     },
+    'type': {
+        function: type,
+        args: 1
+    }
 };

@@ -2,10 +2,10 @@ import "reflect-metadata";
 import 'es6-shim';
 import { Type, Expose, Transform } from "class-transformer";
 import { Instruction } from "./vm";
-import { CompilerBug, DivisionByZero, IndexError, InvalidOperationOnType, InvalidType, NativeFunctionArgumentNumberMismatch } from './error';
+import { CompilerBug, DivisionByZero, IndexError, InvalidOperationOnType, InvalidType, KeyError, NativeFunctionArgumentNumberMismatch } from './error';
 
 const getAsValue = (value) => {
-    switch (value.__type__) {
+    switch (value.___serialization_type) {
         case BooleanValue.typeName:
             return new BooleanValue(value.value);
         case StringValue.typeName:
@@ -26,13 +26,15 @@ const getAsValue = (value) => {
             return new FunctionValue(value.value)
         case MemberMethodValue.typeName:
             return new MemberMethodValue(value.value, value.obj)
+        case DictValue.typeName:
+            return new DictValue(value.value);
         default:
-            throw new CompilerBug(`No such value type: ${value.__type__}`);
+            throw new CompilerBug(`No such value type: ${value.___serialization_type}`);
     }
 }
 
 export const ValueTransform = () => (Transform(({ value, obj }) => {
-    
+
     if (Array.isArray(value)) {
         return value.map((val) => getAsValue(val))
     } else if (value instanceof Map) {
@@ -169,15 +171,15 @@ export abstract class Value {
     public static readonly typeName: string = 'value';
 
     get typeName(): string { return this.constructor['typeName'] }
-    public __type__: string;
+    private ___serialization_type: string; // Be careful when altering its behaviour.
 
     getMemberMethodValue(name: string): MemberMethodValue {
         const method = this[name];
 
         if (!method)
             return undefined;
-
-        const isMember = Reflect.getMetadata("method", this.constructor.prototype, name).isMemberMethod || false;
+        
+        const isMember = Reflect.getMetadata("method", this.constructor.prototype, name)?.isMemberMethod || false;
 
         if (!isMember)
             return undefined;
@@ -187,7 +189,7 @@ export abstract class Value {
 
     constructor(value: any) {
         this.value = value;
-        this.__type__ = this.typeName;
+        this.___serialization_type = this.typeName;
     }
 
     abstract get repr(): string;
@@ -235,13 +237,18 @@ export abstract class Value {
     __neq__(lineNumber: number, ...args: Value[]): Value {
         return new BooleanValue(!this.equals(args[0]));
     }
+
+    @ValueMethod({ args: [] })
+    __type__(lineNumber: number, ...args: Value[]): Value {
+        return new StringValue(this.typeName);
+    }
 }
 
 export class MemberMethodValue extends Value {
 
     public static readonly typeName = 'member_method';
     @ValueTransform()
-    @Type(()=>Value)
+    @Type(() => Value)
     public obj: Value;
 
     constructor(value: string, obj: Value) {
@@ -249,7 +256,7 @@ export class MemberMethodValue extends Value {
         this.obj = obj;
     }
 
-    resolve(){
+    resolve() {
         return [this.obj, this.value];
     }
 
@@ -570,14 +577,14 @@ export class ListValue extends Value {
         return this.__extend__(lineNumber, ...args);
     }
 
-    @ValueMethod({args: []})
+    @ValueMethod({ args: [] })
     reverse(lineNumber: number, ...args: Value[]): Value {
         this.value.reverse();
 
         return this;
     }
 
-    @ValueMethod({args: [NumberValue, Value]})
+    @ValueMethod({ args: [NumberValue, Value] })
     insert(lineNumber: number, ...args: Value[]): Value {
         this.value.splice(args[0].value, 0, args[1]);
         return this;
@@ -614,6 +621,94 @@ export class TupleValue extends Value {
     @ValueMethod({ args: [] })
     __len__(lineNumber: number): Value {
         return new NumberValue(this.value.length);
+    }
+}
+
+export class DictValue extends Value {
+
+    public static readonly typeName = 'dict';
+
+    constructor(value: Map<string, Value>) {
+        super(value);
+    }
+
+    get repr(): string {
+        let repr = "{\n"
+
+        for(const [key, val] of this.value.entries()){
+            const lines = val.repr.split("\n")
+                                  .map((line, index)=> {
+                                    if(index === 0) return line;
+
+                                    return "  " + line;
+                                  })
+                                  .join("\n");
+
+            repr += `  "${key}" : ${lines},\n`;
+        }
+        
+        repr += "}"
+
+        return repr;
+    }
+    
+    get str(): string {
+        return this.repr;
+    }
+
+    equals(other: Value): boolean {
+        return other instanceof DictValue && this.value === other.value;
+    }
+
+    @ValueMethod({args: [StringValue]})
+    __getitem__(lineNumber: number, ...args: Value[]): Value {
+        const key = args[0].value;
+        const item = this.value.get(key);
+
+        if(!item)
+            throw new KeyError(lineNumber, key);
+
+        return item;
+    }
+
+    @ValueMethod({args: [StringValue, Value]})
+    __setitem__(lineNumber: number, ...args: Value[]): Value {
+        const key = args[0].value;
+        const value = args[1];
+
+        this.value.set(key, value);
+
+        return new NullValue();
+    }
+
+    @ValueMethod({args: []})
+    __len__(lineNumber: number, ...args: Value[]): Value {
+        return new NumberValue(this.value.size);
+    }
+
+    @ValueMethod({args: [StringValue]})
+    get(lineNumber: number, ...args: Value[]): Value {
+        return this.__getitem__(lineNumber, ...args);
+    }
+
+    @ValueMethod({args: [StringValue, Value]})
+    set(lineNumber: number, ...args: Value[]): Value {
+        return this.__setitem__(lineNumber, ...args);
+    }
+
+    @ValueMethod({args: []})
+    values(lineNumber: number, ...args: Value[]): Value {
+        const values = Array.from(this.value.values()) as Value[];
+        
+        return new ListValue(values);
+    }
+
+    @ValueMethod({args: []})
+    keys(lineNumber: number, ...args: Value[]): Value {
+        const keys = Array.from(this.value.keys()) as string[];
+        const keysAsValue = keys.map((key) => new StringValue(key));
+
+        return new ListValue(keysAsValue);
     }
 }
 
@@ -708,6 +803,3 @@ export class NullValue extends Value {
         return other instanceof NullValue;
     }
 }
-
-export type AnyValueType = BooleanValue | StringValue | NullValue | NumberValue | ListValue | TupleValue | SyscallValue | NativeValue | FunctionValue;
-

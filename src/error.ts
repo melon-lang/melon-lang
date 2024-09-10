@@ -102,6 +102,12 @@ export class IndexError extends RuntimeError {
     }
 }
 
+export class KeyError extends RuntimeError {
+    constructor(lineNumber: number, key: string){
+        super(lineNumber, `The key '${key}' does not exist in the dictionary`);
+    }
+}
+
 export class NoSuchMemberMethod extends RuntimeError {
     constructor(lineNumber: number, object: string, name: string){
         super(lineNumber, `${object} has no such member ${name}`);

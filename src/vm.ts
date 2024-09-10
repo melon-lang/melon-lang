@@ -3,7 +3,7 @@ import { Type, serialize, deserialize, Transform } from 'class-transformer';
 import { CompilerBug, DivisionByZero, FunctionArgumentNumberMismatch, IndexError, InvalidFormat, InvalidType, NativeFunctionArgumentNumberMismatch, NoSuchMemberMethod, VariableAlreadyDeclared, VariableNotDeclared } from './error';
 import natives from './native';
 import syscalls from './syscall';
-import { BooleanValue, Function, FunctionValue, NativeValue, ListValue, NullValue, NumberValue, StringValue, SyscallValue, TupleValue, Value, ValueTransform, MemberMethodValue } from './value';
+import { BooleanValue, Function, FunctionValue, NativeValue, ListValue, NullValue, NumberValue, StringValue, SyscallValue, TupleValue, Value, ValueTransform, MemberMethodValue, DictValue } from './value';
 
 export enum Opcode {
     PUSH = "push",
@@ -47,6 +47,7 @@ export enum Opcode {
     MOD = "MOD",
     MAKE_TUPLE = "make_tuple",
     MAKE_LIST = "make_list",
+    MAKE_DICT = "make_dict",
     SUBSCRIPT = "subscript",
     STORE_SUBSCRIPT = "store_subscript",
     MEMBER_ACCESS = "member_access"
@@ -513,6 +514,22 @@ export default class VM {
                         elements.unshift(this.stack.pop());
 
                     this.stack.push(new ListValue(elements));
+                    break;
+                }
+                case Opcode.MAKE_DICT: 
+                {
+                    const keys = this.stack.pop();
+                    const entries = new Map<string, Value>;
+
+                    for(let key of keys.value){
+                        const value = this.stack.pop();
+
+                        entries.set(key.value, value);
+                    }
+                    
+                    const dict = new DictValue(entries);
+
+                    this.stack.push(dict);
                     break;
                 }
             case Opcode.SUBSCRIPT: {

@@ -1,7 +1,7 @@
 import { expect, test } from '@jest/globals';
 import { compile, evaluate } from '../src/index';
 import {BooleanValue, FunctionValue, ListValue, MemberMethodValue, NativeValue,NullValue,NumberValue,StringValue,SyscallValue,TupleValue} from '../src/value';
-import { DivisionByZero, FunctionArgumentNumberMismatch, InvalidOperationOnType, NativeFunctionArgumentNumberMismatch, SycallArgumentNumberMismatch, SyntaxError, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
+import { DivisionByZero, FunctionArgumentNumberMismatch, InvalidOperationOnType, KeyError, NativeFunctionArgumentNumberMismatch, NoSuchMemberMethod, SycallArgumentNumberMismatch, SyntaxError, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
 
 const evalValidSourceCode = (sourceCode: string) => {
     sourceCode += 'syscall("dummy", result);';
@@ -3636,6 +3636,255 @@ const validTestSourceCodes = [
         `,
         expected: new StringValue("wowwowwow")
     },
+    {
+        sourceCode: `
+        let my_dict = {"first" : 31};
+
+        let result = my_dict["first"];
+        `,
+        expected: new NumberValue(31)
+    },
+    {
+        sourceCode: `
+        let my_dict = {"first" : 31, "second": {"lol": {"lol": 42}}};
+
+        let result = my_dict["second"]["lol"]["lol"];
+        `,
+        expected: new NumberValue(42)
+    },
+    {
+        sourceCode: `
+        let my_dict = {"first" : 31, "second": {"lol": {"lol": 42}}};
+
+        let result = my_dict["second"]["lol"].set("woah", 1);
+        `,
+        expected: new NullValue()
+    },
+    {
+        sourceCode: `
+        {}.set("lolzxxx_sdfdsfsdml", 1);
+
+        let result = {"___00023423": true}.get("___00023423")
+        `,
+        expected: new BooleanValue(true)
+    },
+    {
+        sourceCode: `
+        {}.set("lolzxxx_sdfdsfsdml", 1);
+
+        let result = {"___00023423": true, "LOL": {"DSFS": 32234}}.get("LOL").get("DSFS")
+        `,
+        expected: new NumberValue(32234)
+    },
+    {
+        sourceCode: `
+        {}.set("lolzxxx_sdfdsfsdml", 1);
+
+        let result = {"___00023423": true, "LOL": {"DSFS": 32234}}.get("LOL")["DSFS"]
+        `,
+        expected: new NumberValue(32234)
+    },
+    {
+        sourceCode: `
+        {}["lolzxxx_sdfdsfsdml"] =  1;
+
+        let result = {"___00023423": true, "LOL": {"DSFS": 32234}}.get("LOL")["DSFS"]
+        `,
+        expected: new NumberValue(32234)
+    },
+    {
+        sourceCode: `
+        {}["lolzxxx_sdfdsfsdml"] =  1;
+
+        let result = {"___00023423": true, "LOL": {"DSFS": 32234}}["LOL"]["DSFS"]
+        `,
+        expected: new NumberValue(32234)
+    },
+    {
+        sourceCode: `
+        let tuple = (1,2,3);
+
+        let list = [1,2,3];
+
+        let dict = {"0": 123};
+
+        let result = tuple[0] + tuple[1] + list[1] + dict["0"];
+        `,
+        expected: new NumberValue(128)
+    },
+    {
+        sourceCode: `
+        let tuple = (1,2,3);
+
+        let list = [1,2,3];
+
+        let dict = {"0": 123};
+
+        let result = tuple[0] + tuple[1] + list[1] + dict["0"];
+
+        result = str(dict);
+        `,
+        expected: new StringValue("{\n  \"0\" : 123,\n}")
+    },
+    {
+        sourceCode: `
+        let my_dict___000 = {"a": [], "b": [], "c": (), "d": 2423423};
+
+        let result = my_dict___000.keys();
+        `,
+        expected: new ListValue([
+            new StringValue("a"),
+            new StringValue("b"),
+            new StringValue("c"),
+            new StringValue("d"),
+        ])
+    },
+    {
+        sourceCode: `
+        let my_dict___000 = {"a": [], "b": [], "c": (), "d": 2423423};
+
+        let result = my_dict___000.values();
+        `,
+        expected: new ListValue([
+            new ListValue([]),
+            new ListValue([]),
+            new TupleValue([]),
+            new NumberValue(2423423),
+        ])
+    },
+    {
+        sourceCode: `
+        function search(dict, value){
+            let n = len(dict);
+            let keys = dict.keys();
+
+            for(let i=0; i<n; i++){
+                if(dict[keys[i]] == value)
+                    return keys[i];
+            }
+            
+            return -1;
+        }
+        
+        let xxxxxxxx = {"a": [], "b": [], "c": (), "d": 2423423};
+
+
+
+        let result = search(xxxxxxxx, 2423423);
+        `,
+        expected: new StringValue("d")
+    },
+    {
+        sourceCode: `
+        function search(dict, value){
+            let n = len(dict);
+            let keys = dict.keys();
+
+            for(let i=0; i<n; i++){
+                if(dict[keys[i]] == value)
+                    return keys[i];
+            }
+            
+            return -1;
+        }
+        
+
+        let result = search({}, 234324);
+        `,
+        expected: new NumberValue(-1)
+    },
+    {
+        sourceCode: `
+        function search(dict, value){
+            let n = len(dict);
+            let keys = dict.keys();
+
+            for(let i=0; i<n; i++){
+                if(dict[keys[i]] == value)
+                    return keys[i];
+            }
+            
+            return -1;
+        }
+        
+
+        let result = search({"lol": {}, "sdasdasdasdas": [2432,23423,2423423,{}],}, 234324);
+        `,
+        expected: new NumberValue(-1)
+    },
+    {
+        sourceCode: `
+        function search(dict, value){
+            let n = len(dict);
+            let keys = dict.keys();
+
+            for(let i=0; i<n; i++){
+                if(dict[keys[i]] == value)
+                    return keys[i];
+            }
+            
+            return -1;
+        }
+        
+        let result = search({"H": 1.1}, 1.1) + search({"e": 1.1}, 1.1) +search({"l": 1.1}, 1.1) +search({"l": 1.1}, 1.1) +search({"o": 1.1}, 1.1);
+        `,
+        expected: new StringValue("Hello")
+    },
+    {
+        sourceCode: `
+        let result = type({});
+        `,
+        expected: new StringValue("dict")
+    },
+    {
+        sourceCode: `
+        let result = type([]);
+        `,
+        expected: new StringValue("list")
+    },
+    {
+        sourceCode: `
+        let result = type(123);
+        `,
+        expected: new StringValue("number")
+    },
+    {
+        sourceCode: `
+        let result = type(true);
+        `,
+        expected: new StringValue("boolean")
+    },
+    {
+        sourceCode: `
+        let result = type(null);
+        `,
+        expected: new StringValue("null")
+    },
+    {
+        sourceCode: `
+
+        function a(){}
+
+        let result = type(a);
+        `,
+        expected: new StringValue("function")
+    },
+    {
+        sourceCode: `
+        function a(){}
+
+        let result = type(len);
+        `,
+        expected: new StringValue("native_function")
+    },
+    {
+        sourceCode: `
+        function a(){}
+
+        let result = type(print);
+        `,
+        expected: new StringValue("syscall")
+    },
 ]
 
 const invalidTestSourceCodes = [
@@ -3818,6 +4067,38 @@ const invalidTestSourceCodes = [
             let result = len(1);
         `,
         expected: InvalidOperationOnType
+    },
+    {
+        sourceCode: `
+        let tuple = (1,2,3);
+
+        tuple[0] = 1;
+        `,
+        expected: InvalidOperationOnType
+    },
+    {
+        sourceCode: `
+        let tuple = (1,2,3);
+
+        tuple.__setitem__(0, 1);
+        `,
+        expected: NoSuchMemberMethod
+    },
+    {
+        sourceCode: `
+        let tuple = ()[0] = 1;
+        `,
+        expected: InvalidOperationOnType
+    },
+    {
+        sourceCode: `
+        let dict = {
+            "key1": 2423423423423423.23423423
+        }
+
+        dict["non_existent"]
+        `,
+        expected: KeyError
     },
 ];
 

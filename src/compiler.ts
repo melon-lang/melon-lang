@@ -1,8 +1,8 @@
 import { CompilerBug, SyntaxError, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclaredInScope } from './error';
 import { TokenType } from './lexer';
-import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement, BreakStatement, ContinueStatement, Tuple, List, Subscript, MemberAccess } from './parser';
+import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement, BreakStatement, ContinueStatement, Tuple, List, Subscript, MemberAccess, Dict } from './parser';
 import { Program, Opcode, Instruction } from './vm';
-import { BooleanValue, FunctionValue, NullValue, NumberValue, StringValue, Value } from './value';
+import { BooleanValue, FunctionValue, NullValue, NumberValue, StringValue, TupleValue, Value } from './value';
 
 interface Local {
     name: string;
@@ -82,9 +82,27 @@ class Compiler {
             this.subscript(node);
         else if (node instanceof MemberAccess)
             this.memberAccess(node);
+        else if (node instanceof Dict)
+            this.dict(node);
         else {
             throw new CompilerBug(`Unknown node type ${node.constructor.name}`);
         }
+    }
+
+    private dict(node: Dict) {
+        const keys = Array.from(node.entries.keys());
+
+        for(let i = 0; i < keys.length; i++) {
+            this.codegen(node.entries.get(keys.at(-1-i)));
+        }
+
+        const keysAsValue = keys.map(key => new StringValue(key));
+        
+        this.program.data.push(new TupleValue(keysAsValue));
+        
+        this.emitText(Opcode.DATA, node.lineNumber, this.program.data.length - 1);
+
+        this.emitText(Opcode.MAKE_DICT, node.lineNumber);
     }
 
     private list(node: List) {

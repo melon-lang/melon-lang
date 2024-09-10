@@ -49,6 +49,7 @@ export enum TokenType {
     BREAK = "BREAK",
     CONTINUE = "CONTINUE",
     SEMICOLON = "SEMICOLON",
+    COLON = "COLON",
     LET = "LET",
     INC = "INC",
     DEC = "DEC",
@@ -148,6 +149,9 @@ class Lexer {
                     tokens.push({ type: TokenType.MOD, value: c, line: this.line });
                     this.advance();
                 }
+            } else if (c === ":") {
+                tokens.push({ type: TokenType.COLON, value: ":", line: this.line});
+                this.advance();
             } else if (c === "/") {
                 if (this.peek(1) === "/") {
                     while (this.peek() !== "\n" && this.peek() !== "\0") {
