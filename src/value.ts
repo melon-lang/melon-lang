@@ -276,8 +276,6 @@ export class MemberMethodValue extends Value {
 export class BooleanValue extends Value {
 
     public static readonly typeName = 'boolean';
-    private static _methods = new Map<string, any>;
-    public get methods() { return this.constructor["_methods"] }
 
     constructor(value: boolean) {
         super(value);
@@ -403,8 +401,6 @@ export class NumberValue extends Value {
 export class StringValue extends Value {
 
     public static readonly typeName = 'string';
-    private static _methods = new Map<string, any>;
-    public get methods() { return this.constructor["_methods"] }
 
     constructor(value: string) {
         super(value);
@@ -594,8 +590,6 @@ export class ListValue extends Value {
 export class TupleValue extends Value {
 
     public static readonly typeName = 'tuple';
-    private static _methods = new Map<string, any>;
-    public get methods() { return this.constructor["_methods"] }
 
     constructor(value: Value[]) {
         super(value);
@@ -715,8 +709,6 @@ export class DictValue extends Value {
 export class FunctionValue extends Value {
 
     public static readonly typeName = 'function';
-    private static _methods = new Map<string, any>;
-    public get methods() { return this.constructor["_methods"] }
 
     constructor(value: Function) {
         super(value);
@@ -738,8 +730,6 @@ export class FunctionValue extends Value {
 export class NativeValue extends Value {
 
     public static readonly typeName = 'native_function';
-    private static _methods = new Map<string, any>;
-    public get methods() { return this.constructor["_methods"] }
 
     constructor(value: string) {
         super(value);
@@ -761,8 +751,6 @@ export class NativeValue extends Value {
 export class SyscallValue extends Value {
 
     public static readonly typeName = 'syscall';
-    private static _methods = new Map<string, any>;
-    public get methods() { return this.constructor["_methods"] }
 
     constructor(value: string) {
         super(value);
@@ -784,8 +772,6 @@ export class SyscallValue extends Value {
 export class NullValue extends Value {
 
     public static readonly typeName = 'null';
-    private static _methods = new Map<string, any>;
-    public get methods() { return this.constructor["_methods"] }
 
     constructor() {
         super(null);
