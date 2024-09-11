@@ -27,7 +27,16 @@ const getAsValue = (value) => {
         case MemberMethodValue.typeName:
             return new MemberMethodValue(value.value, value.obj)
         case DictValue.typeName:
-            return new DictValue(value.value);
+        {   
+            const keys = Object.keys(value.value);
+            const entries = new Map<string, Value>();
+
+            for(const key of keys){
+                entries.set(key, getAsValue(value.value[key]));
+            }
+
+            return new DictValue(entries);
+        }
         default:
             throw new CompilerBug(`No such value type: ${value.___serialization_type}`);
     }
