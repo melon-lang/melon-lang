@@ -6,10 +6,6 @@
 
 Strings in Melon are sequences of characters that allow various operations, making them versatile for text manipulation and processing. Here’s a detailed look at the common operations you can perform on strings in Melon:
 
-### Strings in Melon
-
-Strings in Melon are used to represent sequences of characters and support a variety of methods for manipulation and inspection. Here’s a breakdown of the key functionalities currently available for strings.
-
 #### String Declaration
 
 Strings in Melon are defined using double quotes (`"`). You can assign string values to variables.
