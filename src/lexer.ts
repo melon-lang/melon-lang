@@ -57,6 +57,8 @@ export enum TokenType {
     IMPORT = "IMPORT",
 
     DOT = "DOT",
+    POW_ASSIGN = "POW_ASSIGN",
+    POW = "POW",
 }
 
 class Lexer {
@@ -136,6 +138,15 @@ class Lexer {
                 if (this.peek(1) === "=") {
                     tokens.push({ type: TokenType.MUL_ASSIGN, value: "*=", line: this.line });
                     this.advance(2);
+                }
+                else if (this.peek(1) === "*") {
+                    if (this.peek(2) === "=") {
+                        tokens.push({ type: TokenType.POW_ASSIGN, value: "**=", line: this.line });
+                        this.advance(3);
+                    } else {
+                        tokens.push({ type: TokenType.POW, value: "**", line: this.line });
+                        this.advance(2);
+                    }
                 }
                 else {
                     tokens.push({ type: TokenType.MUL, value: c, line: this.line });

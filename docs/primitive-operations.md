@@ -117,6 +117,7 @@ Melon supports several basic arithmetic operations that allow you to perform cal
 - **Multiplication (`*`)**: Multiplies two numbers.
 - **Division (`/`)**: Divides one number by another.
 - **Modulus (`%`)**: Returns the remainder of a division operation.
+- **Exponentiation (`**`)**: Returns the result of raising the first operand to the power of the second operand.
 
 **Examples:**
 ```melon
@@ -128,6 +129,7 @@ let difference = a - b;  // difference is 7
 let product = a * b;     // product is 30
 let quotient = a / b;    // quotient is 3.333... (floating-point division)
 let remainder = a % b;   // remainder is 1
+let exponent = 3 ** 2;   // result is 9
 ```
 
 #### 2. Comparison Operations

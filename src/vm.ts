@@ -50,7 +50,8 @@ export enum Opcode {
     MAKE_DICT = "make_dict",
     SUBSCRIPT = "subscript",
     STORE_SUBSCRIPT = "store_subscript",
-    MEMBER_ACCESS = "member_access"
+    MEMBER_ACCESS = "member_access",
+    POW = "POW"
 }
 
 export class Stack extends Array<Value> {
@@ -274,6 +275,16 @@ export default class VM {
                     const b = this.stack.pop();
 
                     const result = b.__mod__(lineNumber, a);
+
+                    this.stack.push(result);
+                    break;
+                }
+            case Opcode.POW:
+                {
+                    const a = this.stack.pop();
+                    const b = this.stack.pop();
+
+                    const result = b.__pow__(lineNumber, a);
 
                     this.stack.push(result);
                     break;

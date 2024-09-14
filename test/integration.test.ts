@@ -4065,6 +4065,53 @@ const validTestSourceCodes = [
         `,
         expected: new BooleanValue(false)
     },
+    {
+        sourceCode: `
+            let result = 1 == 4*4;
+        `,
+        expected: new BooleanValue(false)
+    },
+    {
+        sourceCode: `
+            let result = 16 == 4**2;
+        `,
+        expected: new BooleanValue(true)
+    },
+    {
+        sourceCode: `
+            let result = 3;
+            result **= 2
+        `,
+        expected: new NumberValue(9)
+    },
+    {
+        sourceCode: `
+            let x = 1 + 34 * 2 - 9 / 3;
+            let y = 1 + 34 * 2 **4 - 9 / 3**2;
+
+            let result = x + y;
+        `,
+        expected: new NumberValue(610)
+    },
+    {
+        sourceCode: `
+            let x = 64/4**2/4;
+            let y = 9*9/3**2;
+
+            let result = x + y;
+        `,
+        expected: new NumberValue(10)
+    },
+    {
+        sourceCode: `
+            let x = 64/4**2/4;
+            let y = 9*9/3**2;
+
+            let result = x + y;
+            result **= 3**1;
+        `,
+        expected: new NumberValue(1000)
+    }
 ]
 
 const invalidTestSourceCodes = [
