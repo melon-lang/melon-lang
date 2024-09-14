@@ -1,6 +1,6 @@
-# Primitives <!-- {docsify-all} -->
+# Types <!-- {docsify-all} -->
 
-Primitives are the basic data types in Melon. They are simple and immutable (except for lists) and form the building blocks for more complex data structures. Melon supports several primitive types:
+There are different types in melon that you can use.
 
 ### Strings 
 
@@ -28,7 +28,7 @@ let b = 3.14;     // A floating-point number
 let c = -10;      // A negative integer
 ```
 
-Numbers support a variety of arithmetic operations, including addition, subtraction, multiplication, division, and modulus.
+Numbers support a variety of arithmetic operations, including addition, subtraction, multiplication, division, modulus, and more.
 
 ### Booleans
 
@@ -85,7 +85,7 @@ Dictionaries in Melon provide a powerful way to organize and manage data using u
 
 ### Null
 
-Null is a special primitive type in Melon that represents the absence of a value. It is often used to signify that a variable has no value or that a function does not return a value.
+Null is a special type in Melon that represents the absence of a value. It is often used to signify that a variable has no value or that a function does not return a value.
 
 Examples:
 ```melon

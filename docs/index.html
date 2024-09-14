@@ -7,6 +7,9 @@
   <meta name="description" content="Description">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+  
+  <!-- docsify-simple-dark-mode plugin -->
+
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body>
@@ -16,7 +19,13 @@
       name: 'melon 🍉',
       repo: 'https://github.com/melon-lang/melon-lang',
       loadSidebar: true,
-      subMaxLevel: 3
+      subMaxLevel: 3,
+      switchLightDarkMode: {
+          useSwitchMode: true,
+          top: 130,
+          right: 26,
+          svgColor: '#000',
+      },
     }
   </script>
   <!-- Docsify v4 -->
