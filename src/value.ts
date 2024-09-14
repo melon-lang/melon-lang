@@ -172,7 +172,8 @@ const ValueMethodAsString = {
     "__dec__": "--",
     "__getitem__": "__getitem__",
     "__setitem__": "__setitem__",
-    "__extend__": "__extend__"
+    "__extend__": "__extend__",
+    "__delitem__": "__delitem__",
 }
 
 export abstract class Value {
@@ -226,6 +227,7 @@ export abstract class Value {
     __getitem__(lineNumber: number, ...args: Value[]): Value { throw new InvalidOperationOnType(lineNumber, "getitem", this.typeName); };
     __setitem__(lineNumber: number, ...args: Value[]): Value { throw new InvalidOperationOnType(lineNumber, "setitem", this.typeName); };
     __extend__(lineNumber: number, ...args: Value[]): Value { return this.__add__(lineNumber, ...args); };
+    __delitem__(lineNumber: number, ...args: Value[]): Value { throw new InvalidOperationOnType(lineNumber, "delitem", this.typeName); };
 
     @ValueMethod({ args: [] })
     __repr__(lineNumber: number, ...args: Value[]): Value {
@@ -561,6 +563,20 @@ export class ListValue extends Value {
         return this;
     }
 
+    @ValueMethod({ args: [], optionals: [NumberValue] })
+    __delitem__(lineNumber: number, ...args: Value[]): Value {
+        const index = (args.length === 1) ? args[0].value : this.value.length - 1;
+
+        if (index < 0 || index >= this.value.length)
+            throw new IndexError(lineNumber);
+
+        const element = this.value[index];
+        
+        this.value.splice(index, 1);
+
+        return element;
+    }
+
     @ValueMethod({ args: [Value] })
     __contains__(lineNumber: number, ...args: Value[]): Value {
         return new BooleanValue(this.value.some(v => v.__eq__(lineNumber, args[0])));
@@ -593,6 +609,12 @@ export class ListValue extends Value {
     insert(lineNumber: number, ...args: Value[]): Value {
         this.value.splice(args[0].value, 0, args[1]);
         return this;
+    }
+
+    @ValueMethod({ args: [], optionals: [NumberValue] })
+    pop(lineNumber: number, ...args: Value[]): Value {
+        console.log(this.value)
+       return this.__delitem__(lineNumber, ...args);
     }
 }
 
@@ -690,6 +712,27 @@ export class DictValue extends Value {
     }
 
     @ValueMethod({args: [StringValue]})
+    __delitem__(lineNumber: number, ...args: Value[]): Value {
+        const key = args[0].value;
+        
+        if (!this.value.has(key))
+            throw new KeyError(lineNumber, key);
+
+        const item = this.value.get(key);
+        const deleted = this.value.delete(key);
+
+        if(!deleted)
+            throw new KeyError(lineNumber, key);
+
+        return item;
+    }
+
+    @ValueMethod({args: [StringValue]})
+    __contains__(lineNumber: number, ...args: Value[]): Value {
+        return new BooleanValue(this.value.has(args[0].value));
+    }
+
+    @ValueMethod({args: [StringValue]})
     get(lineNumber: number, ...args: Value[]): Value {
         return this.__getitem__(lineNumber, ...args);
     }
@@ -712,6 +755,31 @@ export class DictValue extends Value {
         const keysAsValue = keys.map((key) => new StringValue(key));
 
         return new ListValue(keysAsValue);
+    }
+
+    @ValueMethod({args: [StringValue]})
+    pop(lineNumber: number, ...args: Value[]): Value {
+        return this.__delitem__(lineNumber, ...args);
+    }
+
+    @ValueMethod({args: [StringValue]})
+    has(lineNumber: number, ...args: Value[]): Value {
+        return this.__contains__(lineNumber, ...args);
+    }
+
+    @ValueMethod({args: []})
+    clear(lineNumber: number, ...args: Value[]): Value {
+        this.value.clear();
+        return new NullValue();
+    }
+
+    @ValueMethod({args: [DictValue]})
+    update(lineNumber: number, ...args: Value[]): Value {
+        for(const [key, value] of args[0].value.entries()){
+            this.value.set(key, value);
+        }
+
+        return new NullValue();
     }
 }
 

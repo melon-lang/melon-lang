@@ -321,6 +321,8 @@ class Compiler {
             opcode = Opcode.OR;
         else if (type === TokenType.MOD)
             opcode = Opcode.MOD;
+        else if (type === TokenType.POW)
+            opcode = Opcode.POW;
         else
             throw new CompilerBug(`Unknown binary operator ${type}`);
 
@@ -358,6 +360,9 @@ class Compiler {
                     break;
                 case TokenType.MOD_ASSIGN:
                     this.emitText(Opcode.MOD, node.lineNumber, 1);
+                    break;
+                case TokenType.POW_ASSIGN:
+                    this.emitText(Opcode.POW, node.lineNumber, 1);
                     break;
                 default:
                     throw new CompilerBug(`Unknown assignment operator ${node.op.type}`);

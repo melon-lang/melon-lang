@@ -667,7 +667,8 @@ export default class Parser {
                 this.peek().type === TokenType.MINUS_ASSIGN || 
                 this.peek().type === TokenType.MOD_ASSIGN || 
                 this.peek().type === TokenType.DIV_ASSIGN || 
-                this.peek().type === TokenType.MUL_ASSIGN
+                this.peek().type === TokenType.MUL_ASSIGN ||
+                this.peek().type === TokenType.POW_ASSIGN
             ){
             let op = this.peek();
 
@@ -763,13 +764,29 @@ export default class Parser {
     private factor(): Expression {
         const lineNumber = this.peek().line;
 
-        let expr: Expression = this.prefixunary();
+        let expr: Expression = this.exponent();
 
         while (this.peek().type === TokenType.MUL || this.peek().type === TokenType.DIV || this.peek().type === TokenType.MOD) {
             const op = this.peek();
             this.advance();
-            const rhs = this.prefixunary();
+            const rhs = this.exponent();
             
+            expr = ASTNode.BinaryOperation(op, expr, rhs, lineNumber);
+        }
+
+        return expr;
+    }
+
+    private exponent(): Expression {
+        const lineNumber = this.peek().line;
+
+        let expr = this.prefixunary();
+
+        while (this.peek().type === TokenType.POW) {
+            const op = this.peek();
+            this.advance();
+            const rhs = this.prefixunary();
+
             expr = ASTNode.BinaryOperation(op, expr, rhs, lineNumber);
         }
 
