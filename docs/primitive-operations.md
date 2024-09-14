@@ -374,9 +374,8 @@ let my_list = [1, 2, 3, "hello", [4, 5]];
 
 Tuples in Melon are immutable ordered collections of elements. Unlike lists, tuples cannot be changed after they are created, meaning that you cannot add, remove, or modify elements. However, you can access elements within a tuple. Here’s a detailed look at tuple operations focusing on accessing elements:
 
- 1. Accessing Elements
-
-You can access individual elements of a tuple using zero-based indexing, similar to lists. The index specifies the position of the element within the tuple.
+1. **Accessing Elements**
+- You can access individual elements of a tuple using zero-based indexing, similar to lists. The index specifies the position of the element within the tuple.
 
     **Example:**
     ```melon
@@ -385,11 +384,11 @@ You can access individual elements of a tuple using zero-based indexing, similar
     let third_element = my_tuple[2]; // third_element is 30
     ```
 
-Tuples, being immutable, do not support operations that alter their contents. You can only read and access the data stored in them. This immutability ensures that tuples are a reliable and consistent way to group related values that should not change throughout the program.
+- Tuples, being immutable, do not support operations that alter their contents. You can only read and access the data stored in them. This immutability ensures that tuples are a reliable and consistent way to group related values that should not change throughout the program.
 
- 2. Length
+2. **Length**
 
-    The `len` function can be used to determine the number of elements in a tuple.
+- The `len` function can be used to determine the number of elements in a tuple.
 
     **Example:**
     ```melon
