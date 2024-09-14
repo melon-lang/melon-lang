@@ -364,17 +364,21 @@ let my_list = [1, 2, 3, "hello", [4, 5]];
    my_list.reverse();  // Outputs: [9, 8, 7, 6, [4, 5], "hello", 3, "new", 10, 1]
    ```
 
-8. **Checking for Containment (`in` operator or `contains()` method)**
+8. **Checking for Containment ( `contains()` method)**
    - You can check if a value exists in a list using the `contains()` method.
    
    **Example:**
    ```melon
    print(my_list.contains(3));  // Outputs: true
    ```
+9. **Deleting items at Index (`pop()` method)**
 
-#### Planned List Operations
+   - You can remove an item from a list by using `pop` method. If you don't pass it an argument, it pops the last item. This method returns the removed item.
 
-- **`del()` Function**: The ability to delete elements from a list by index is planned.
+   ```melon
+   let my_list = [1,2,3];
+   my_list.pop(2); // returns 3
+   ```
 
 ### Tuples
 
@@ -458,7 +462,28 @@ let my_dict = {"name": "Alice", "age": 30};
    let values = my_dict.values();  // Outputs: ["Alice", 31, "New York"]
    ```
 
-#### Planned Features
+9. **Deleting keys (`pop()` method)**
 
-- **Deleting Items**: Planned functionality to remove key-value pairs from a dictionary.
-- **Key Existence Check**: Planned methods to check if a specific key exists in the dictionary.
+   - You can remove a key from a dictionary by using `pop` method. This method returns the removed value.
+   
+   **Example:**
+   ```melon
+   let my_dict = {"name": "John"};
+   my_dict.pop("name"); // returns "John"
+   ```
+
+10. **Checking Existence of Key (`has()` method)**
+
+   - You can check if a dictionary contains a key by using `has` method. Returns a boolean value.
+
+   **Example:**
+   ```melon
+   let my_dict = {"name": "John"};
+   
+   if(!my_dict.has("name")){
+      print("invalid dictionary!");
+      exit();
+   }
+
+   print("Hello ", my_dict["name"]);
+   ```

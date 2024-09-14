@@ -1,7 +1,7 @@
 import { expect, test } from '@jest/globals';
 import { compile, evaluate } from '../src/index';
 import {BooleanValue, FunctionValue, ListValue, MemberMethodValue, NativeValue,NullValue,NumberValue,StringValue,SyscallValue,TupleValue} from '../src/value';
-import { DivisionByZero, FunctionArgumentNumberMismatch, InvalidOperationOnType, KeyError, NativeFunctionArgumentNumberMismatch, NoSuchMemberMethod, SycallArgumentNumberMismatch, SyntaxError, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
+import { DivisionByZero, FunctionArgumentNumberMismatch, IndexError, InvalidOperationOnType, KeyError, NativeFunctionArgumentNumberMismatch, NoSuchMemberMethod, SycallArgumentNumberMismatch, SyntaxError, VariableAlreadyDeclared, VariableAlreadyDeclaredInScope, VariableNotDeclared } from '../src/error';
 
 const evalValidSourceCode = (sourceCode: string) => {
     sourceCode += 'syscall("dummy", result);';
@@ -3885,6 +3885,186 @@ const validTestSourceCodes = [
         `,
         expected: new StringValue("syscall")
     },
+    {
+        sourceCode: `
+        let my_dict = {"a": 1, "b": 2, "c": 3};
+
+        my_dict.pop("a");
+
+        let result = len(my_dict);
+        `,
+        expected: new NumberValue(2)
+    },
+    {
+        sourceCode: `
+        let my_dict = {"a": 1, "b": 2, "c": 3};
+
+        my_dict.pop("a");
+
+        let result = my_dict.keys() + my_dict.values();
+        `,
+        expected: new ListValue([
+            new StringValue("b"),
+            new StringValue("c"),
+            new NumberValue(2),
+            new NumberValue(3)
+        ])
+    },
+    {
+        sourceCode: `
+            let my_dict = {"a": 1, "b": 2, "c": 3, "my_list" : []};
+
+            my_dict["my_list"].append(1);
+
+            let result = my_dict["my_list"][0];
+        `,
+        expected: new NumberValue(1)
+    },
+    {
+        sourceCode: `
+            let my_list = [1,2,3,4,5,6,7,8,9,10];
+
+            while(len(my_list) > 0){
+                my_list.pop(0);
+            }
+
+            let result = len(my_list);
+        `,
+        expected: new NumberValue(0)
+    },
+    {
+        sourceCode: `
+            let my_list = [1,2,3,4,5,6,7,8,9,10];
+            let new_list = [];
+
+            while(len(my_list) > 0){
+                let item = my_list.pop(0);
+
+                new_list.append(item);
+            }
+
+            let result = len(new_list);
+        `,
+        expected: new NumberValue(10)
+    },
+    {
+        sourceCode: `
+            let my_list = [1,2,3,4,5,6,7,8,9,10];
+            let new_list = [];
+
+            while(len(my_list) > 0){
+                let item = my_list.pop(0);
+
+                new_list.insert(0, item);
+            }
+
+            let result = new_list[0];
+        `,
+        expected: new NumberValue(10)
+    },
+    {
+        sourceCode: `
+            let my_list = [1,2,3,4,5,6,7,8,9,10];
+            let new_list = [];
+
+            while(len(my_list) > 0){
+                let item = my_list.pop(0);
+
+                new_list.insert(0, item);
+            }
+
+            let result = new_list;
+        `,
+        expected: new ListValue([
+            new NumberValue(10),
+            new NumberValue(9),
+            new NumberValue(8),
+            new NumberValue(7),
+            new NumberValue(6),
+            new NumberValue(5),
+            new NumberValue(4),
+            new NumberValue(3),
+            new NumberValue(2),
+            new NumberValue(1),
+
+        ])
+    },
+    {
+        sourceCode: `
+            let my_list = [1,2,3,4,5,6,7,8,9,10];
+            let new_list = [];
+
+            while(len(my_list) > 0){
+                let item = my_list.pop(0);
+
+                new_list.insert(0, item);
+            }
+
+            let result = new_list.reverse();
+        `,
+        expected: new ListValue([
+            new NumberValue(1),
+            new NumberValue(2),
+            new NumberValue(3),
+            new NumberValue(4),
+            new NumberValue(5),
+            new NumberValue(6),
+            new NumberValue(7),
+            new NumberValue(8),
+            new NumberValue(9),
+            new NumberValue(10),
+        ])
+    },
+    {
+        sourceCode: `
+            let my_list = [1,2,3,4,5,6,7,8,9,10];
+            let new_list = [];
+
+            while(len(my_list) > 0){
+                let item = my_list.pop();
+
+                new_list.insert(0, item);
+            }
+
+            let result = new_list.reverse();
+        `,
+        expected: new ListValue([
+            new NumberValue(10),
+            new NumberValue(9),
+            new NumberValue(8),
+            new NumberValue(7),
+            new NumberValue(6),
+            new NumberValue(5),
+            new NumberValue(4),
+            new NumberValue(3),
+            new NumberValue(2),
+            new NumberValue(1),
+        ])
+    },
+    {
+        sourceCode: `
+            let my_list = {"lol": 1, "lol2": 2, "lol3": 3, "lol4": 4, "lol5": 5, "lol6": 6, "lol7": 7, "lol8": 8, "lol9": 9, "lol10": 10};
+
+            let result = my_list.pop("lol");
+        `,
+        expected: new NumberValue(1)
+    },
+    {
+        sourceCode: `
+            let my_list = {"lol": 1, "lol2": 2, "lol3": 3, "lol4": 4, "lol5": 5, "lol6": 6, "lol7": 7, "lol8": 8, "lol9": 9, "lol10": 10};
+
+            let result = my_list.has("lol");
+        `,
+        expected: new BooleanValue(true)
+    },
+    {
+        sourceCode: `
+            let my_list = {"lol": 1, "lol2": 2, "lol3": 3, "lol4": 4, "lol5": 5, "lol6": 6, "lol7": 7, "lol8": 8, "lol9": 9, "lol10": 10};
+            my_list.pop("lol");
+            let result = my_list.has("lol");
+        `,
+        expected: new BooleanValue(false)
+    },
 ]
 
 const invalidTestSourceCodes = [
@@ -4100,6 +4280,28 @@ const invalidTestSourceCodes = [
         `,
         expected: KeyError
     },
+    {
+        sourceCode: `
+        let dict = {
+            "key1": 2423423423423423.23423423
+        }
+
+        dict["key1"] = 1;
+        dict.pop("key1");
+
+        let result = dict["key1"];
+        `
+        ,
+        expected: KeyError
+    },
+    {
+        sourceCode: `
+            let my_list = [1,2,3,4,5];
+            my_list.pop(5);
+            let result = my_list[5];
+        `,
+        expected: IndexError
+    }
 ];
 
 test.each(validTestSourceCodes)('.eval($sourceCode)',
