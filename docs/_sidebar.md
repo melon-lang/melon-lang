@@ -1,9 +1,9 @@
 <!-- docs/_sidebar.md -->
 
 * [Introduction](README.md)
-* [Primitives](primitives.md)
+* [Types](types.md)
 * [Variables](variables.md)
-* [Primitive Operations](primitive-operations.md)
+* [Operations](type-operations.md)
 * [Control Flow](control-flow.md)
 * [Native Functions](natives.md)
 * [Functions](functions.md)

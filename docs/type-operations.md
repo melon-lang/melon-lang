@@ -1,8 +1,8 @@
 
 
-# Operations on Primitives <!-- {docsify-all} -->
+# Operations <!-- {docsify-all} -->
 
-### Strings
+### String Operations
 
 Strings in Melon are sequences of characters that allow various operations, making them versatile for text manipulation and processing. Here’s a detailed look at the common operations you can perform on strings in Melon:
 
@@ -100,7 +100,11 @@ let greeting = "Hello, world!";
     let reversed = "Hello".reverse();  // Outputs: "olleH"
     ```
 
-### Numbers
+#### Planned Features
+- **Searching**, **slicing**, **case conversion**, and **length retrieval** through direct functions are currently planned for future releases.
+
+
+### Number Operations
 
 Numbers in Melon represent numeric values and can be either integers or floating-point numbers. These numbers are essential for performing mathematical computations and comparisons. Melon provides a variety of operations that can be performed on numbers, making it versatile for handling arithmetic and logical tasks.
 
@@ -125,7 +129,7 @@ let difference = a - b;  // difference is 7
 let product = a * b;     // product is 30
 let quotient = a / b;    // quotient is 3.333... (floating-point division)
 let remainder = a % b;   // remainder is 1
-let exp = 3 ** 2;   // exp is 9
+let exponent = 3 ** 2;   // result is 9
 ```
 
 #### 2. Comparison Operations
@@ -216,7 +220,7 @@ let abs_value = abs(value); // Expected to be 5
 
 let base = 2;
 let exponent = 3;
-let power = pow(base, exponent); // For now just use 2**3
+let power = pow(base, exponent); // Expected to be 8
 
 let number = 9;
 let square_root = sqrt(number); // Expected to be 3
@@ -461,6 +465,7 @@ let my_dict = {"name": "Alice", "age": 30};
    ```
 
 9. **Deleting keys (`pop()` method)**
+
    - You can remove a key from a dictionary by using `pop` method. This method returns the removed value.
    
    **Example:**
@@ -470,16 +475,17 @@ let my_dict = {"name": "Alice", "age": 30};
    ```
 
 10. **Checking Existence of Key (`has()` method)**
-      - You can check if a dictionary contains a key by using `has` method. Returns a boolean value.
+
+   - You can check if a dictionary contains a key by using `has` method. Returns a boolean value.
+
+   **Example:**
+   ```melon
+   let my_dict = {"name": "John"};
    
-      **Example:**
-      ```melon
-      let my_dict = {"name": "John"};
-      
-      if(!my_dict.has("name")){
-         print("invalid dictionary!");
-         exit();
-      }
-      
-      print("Hello ", my_dict["name"]);
-      ```
+   if(!my_dict.has("name")){
+      print("invalid dictionary!");
+      exit();
+   }
+
+   print("Hello ", my_dict["name"]);
+   ```
