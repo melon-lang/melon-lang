@@ -36,3 +36,7 @@ In melon, you use native `print` function to display text or other types of data
 
 Also, lines in melon must end with a semicolon.
 
+### Contribution and More
+
+Guides on how to contribute are available in docs.
+You can join our [Discord server](https://discord.gg/5WS2PBEJcn) to discuss about anything related to melon. 
