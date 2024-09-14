@@ -67,6 +67,22 @@ let mixed_list = [1, "apple", true, 3.14]; // A list containing different types 
 let nested_list = [1, 2, [3, 4], 5]; // A list containing another list
 ```
 
+### Dictionaries
+
+Dictionaries in Melon are unordered collections of key-value pairs, where each key is unique and maps to a specific value. This structure allows for efficient data retrieval and modification based on keys. Dictionaries are mutable, which means their contents can be changed after they are created, providing flexibility in managing mappings of data.
+
+Dictionaries are defined by placing key-value pairs inside curly braces (`{}`), with each pair separated by a comma and keys and values separated by a colon (`:`).
+
+**Examples:**
+
+```melon
+let my_dict = {"name": "Alice", "age": 30}; // A dictionary with string keys and integer values
+let mixed_dict = {"id": 101, "name": "Bob", "active": true, "score": 95.5}; // A dictionary with various value types
+let nested_dict = {"user": {"name": "Charlie", "age": 25}, "active": false}; // A dictionary containing another dictionary
+```
+
+Dictionaries in Melon provide a powerful way to organize and manage data using unique keys.
+
 ### Null
 
 Null is a special primitive type in Melon that represents the absence of a value. It is often used to signify that a variable has no value or that a function does not return a value.

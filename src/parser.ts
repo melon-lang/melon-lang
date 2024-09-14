@@ -4,7 +4,7 @@ import { SyntaxError } from './error';
 export type AST = (Declaration | Statement)[];
 export type Declaration = FunctionDeclaration | VariableDeclaration | Statement;
 export type Statement = Expression | Call | If | While | For | Return | Block | ExpressionStatement | ImportStatement | BreakStatement | EmptyStatement;
-export type Expression = Literal | Identifier | Call | Block | BinaryOperation | UnaryOperation | Tuple | List | VariableAssignment | Subscript;
+export type Expression = Literal | Identifier | Call | Block | BinaryOperation | UnaryOperation | Tuple | List | Dict| VariableAssignment | Subscript | MemberAccess;
 
 export class ASTNode {
 
@@ -186,12 +186,34 @@ export class ASTNode {
         return res;
     }
 
+    static MemberAccess(object: Expression, name: Token, lineNumber: number): MemberAccess {
+        const res = new MemberAccess();
+        res.name = name;
+        res.object = object;
+        res.lineNumber = lineNumber;
+
+        return res;
+    }
+
     static EmptyStatement(lineNumber: number): EmptyStatement {
         const res = new EmptyStatement();
         res.lineNumber = lineNumber;
 
         return res;
     }
+
+    static Dict(lineNumber: number): Dict {
+        const res = new Dict();
+        res.lineNumber = lineNumber;
+        res.entries = new Map();
+
+        return res;
+    }
+}
+
+export class MemberAccess extends ASTNode {
+    object: Expression
+    name: Token
 }
 
 export class ImportStatement extends ASTNode {
@@ -282,6 +304,10 @@ export class List extends ASTNode {
     elements: Expression[]
 }
 
+export class Dict extends ASTNode {
+    entries: Map<string, Expression>
+}
+
 export class Subscript extends ASTNode {
     name: Expression
     key: Expression
@@ -349,6 +375,10 @@ export default class Parser {
             case TokenType.FOR:
                 return this.for();
             case TokenType.LBRACE:
+                if(this.peek(1).type === TokenType.RBRACE 
+                    || (this.peek(1).type === TokenType.STRING && this.peek(2).type === TokenType.COLON)) // consider this a dict rather than a scope.
+                    return this.expressionStatement();
+                
                 return this.block();
             case TokenType.IMPORT:
                 return this.import();
@@ -807,6 +837,16 @@ export default class Parser {
                 this.advance();
 
                 expr = ASTNode.Call(expr, args, lineNumber);
+            } else if (this.peek().type === TokenType.DOT) {
+                this.advance();
+
+                const name = this.peek();
+                if (name.type !== TokenType.IDENTIFIER)
+                    this.error(lineNumber, "Expected identifier after '.'");
+
+                this.advance();
+
+                expr = ASTNode.MemberAccess(expr, name, lineNumber);
             } else {
                 break;
             }
@@ -842,6 +882,13 @@ export default class Parser {
                 return ASTNode.Identifier(t, lineNumber);
             case TokenType.LPAREN:
                 this.advance();
+                
+                // Empty tuple 
+                if(this.peek().type === TokenType.RPAREN) {
+                    this.advance();
+                    return ASTNode.Tuple([], lineNumber);
+                }
+
                 let expr = this.expression();
 
                 if (this.peek().type === TokenType.COMMA) {
@@ -877,6 +924,36 @@ export default class Parser {
 
                 this.advance();
                 return ASTNode.List(elements, lineNumber);
+            case TokenType.LBRACE:
+                this.advance();
+                const node = ASTNode.Dict(lineNumber);
+
+                while(this.peek().type !== TokenType.RBRACE ){
+
+                    if(this.peek().type != TokenType.STRING )
+                        this.error(lineNumber, "Expected a string");
+
+                    const key = this.peek().value;
+                    this.advance();
+                    
+                    if(this.peek().type !== TokenType.COLON)
+                        this.error(lineNumber, "Expected a colon (:)");
+                    
+                    this.advance();
+
+                    const value = this.expression();
+
+                    node.entries.set(key, value);
+
+                    if(this.peek().type === TokenType.COMMA) {
+                        this.advance();
+                    } else if (this.peek().type !== TokenType.RBRACE) {
+                        this.error(lineNumber, "Expected a right curly brace (})")
+                    }
+                }
+                this.advance(); // RBRACE
+
+                return node;
             default:
                 this.error(lineNumber, "Unexpected token in expression: " + t.type);
 

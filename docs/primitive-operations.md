@@ -6,89 +6,107 @@
 
 Strings in Melon are sequences of characters that allow various operations, making them versatile for text manipulation and processing. Here’s a detailed look at the common operations you can perform on strings in Melon:
 
-#### 1. Concatenation
+### Strings in Melon
 
-Concatenation is the process of joining two or more strings end-to-end to form a new string. In Melon, the `+` operator is used for string concatenation.
+Strings in Melon are used to represent sequences of characters and support a variety of methods for manipulation and inspection. Here’s a breakdown of the key functionalities currently available for strings.
 
-**Example:**
-```melon
-let str1 = "Hello, ";
-let str2 = "world!";
-let result = str1 + str2; // result is "Hello, world!"
-```
+#### String Declaration
 
-You can concatenate multiple strings at once:
-```melon
-let part1 = "Concatenating ";
-let part2 = "multiple ";
-let part3 = "strings.";
-let full_sentence = part1 + part2 + part3; // full_sentence is "Concatenating multiple strings."
-```
-
-#### 2. Slicing (Planned)
-
-Slicing will allow you to extract a substring from a string using start and end indices. The `start` index would be inclusive, while the `end` index would be exclusive.
-
-**Planned Example:**
-```melon
-let text = "Melon Programming Language";
-let slice1 = text[0:5];  // Expected to be "Melon"
-let slice2 = text[6:17]; // Expected to be "Programming"
-let slice3 = text[18:];  // Expected to be "Language"
-```
-
-#### 3. Length
-
-The `len` function can be used to determine the number of characters in a string.
+Strings in Melon are defined using double quotes (`"`). You can assign string values to variables.
 
 **Example:**
 ```melon
-let phrase = "Count me in!";
-let length = len(phrase); // Expected to be 12
+let greeting = "Hello, world!";
 ```
 
-#### 4. Searching (Planned)
+#### String Operations
 
-Searching will allow you to find the position of a substring or check for its presence. Functions like `index` and `contains` are planned.
+1. **Concatenation (`+` Operator)**
+   - You can concatenate two strings using the `+` operator.
+   
+   **Example:**
+   ```melon
+   let full_name = "John" + " " + "Doe"; // Outputs: "John Doe"
+   ```
 
-**Planned Example:**
-```melon
-let sentence = "Find the needle in the haystack.";
-let position = sentence.index("needle"); // Expected to be 9
-let exists = sentence.contains("needle");  // Expected to be true
-let not_found = sentence.index("thread"); // Expected to be -1
-```
+2. **Comparison (`<=`, `<`, `>=`, `>`)**
+   - Strings can be compared lexicographically using comparison operators like `<=`, `<`, `>=`, and `>`.
 
-#### 5. Case Conversion (Planned)
+   **Example:**
+   ```melon
+   print("apple" < "banana");  // Outputs: true
+   ```
 
-Case conversion functions will allow you to convert strings to all uppercase or all lowercase, making it easier to standardize and compare text.
+3. **Length (`len()` method)** 
+   - The `len()` method returns the number of characters in the string.
 
-**Planned Example:**
-```melon
-let mixed_case = "Melon";
-let upper_case = mixed_case.upper(); // Expected to be "MELON"
-let lower_case = mixed_case.lower(); // Expected to be "melon"
-```
+   **Example:**
+   ```melon
+   let length = len("Hello");  // Outputs: 5
+   ```
 
-#### 6. Trimming (Planned)
+4. **Accessing Characters (Indexing)**
+   - You can access individual characters in a string using zero-based indexing.
 
-The `trim` function will remove whitespace characters from both ends of a string, which is useful for cleaning up input data.
+   **Example:**
+   ```melon
+   let first_char = "Hello"[0]; // Outputs: "H"
+   let last_char = "Hello"[4];  // Outputs: "o"
+   ```
 
-**Planned Example:**
-```melon
-let messy_string = "   too much space   ";
-let clean_string = messy_string.trim(); // Expected to be "too much space"
-```
+5. **Containment (`contains` method)**
+   - You can check if a string contains another string using the `contains` method.
 
-#### 7. Replacing (Planned)
+   **Example:**
+   ```melon
+   print("Hello, world!".contains("Hello"));  // Outputs: true
+   ```
 
-The `replace` function will allow you to substitute parts of a string with a different substring.
+6. **Splitting (`split()` method)**
+   - The `split()` method splits a string into a list of substrings based on a delimiter (default is a space).
+   
+   **Example:**
+   ```melon
+   let words = "Hello world".split();  // Outputs: ["Hello", "world"]
+   ```
 
-**Planned Example:**
-```melon
-let original = "I love apples.";
-let modified = original.replace("apples", "bananas"); // Expected to be "I love bananas."
-```
+7. **Case Conversion (`lower()` and `upper()` methods)**
+   - `lower()` converts all characters to lowercase.
+   - `upper()` converts all characters to uppercase.
+
+   **Example:**
+   ```melon
+   let lowercase = "HELLO".lower();  // Outputs: "hello"
+   let uppercase = "hello".upper();  // Outputs: "HELLO"
+   ```
+
+8. **Trimming (`trim()` method)**
+   - The `trim()` method removes any leading or trailing whitespace characters from the string.
+
+   **Example:**
+   ```melon
+   let trimmed = "  Hello  ".trim();  // Outputs: "Hello"
+   ```
+
+9. **Replacing Substrings (`replace()` method)**
+   - The `replace()` method replaces all occurrences of a substring with another string.
+
+   **Example:**
+   ```melon
+   let new_string = "Hello, world".replace("world", "Melon");  // Outputs: "Hello, Melon"
+   ```
+
+10. **Reversing a String (`reverse()` method)**
+    - The `reverse()` method reverses the characters in the string.
+
+    **Example:**
+    ```melon
+    let reversed = "Hello".reverse();  // Outputs: "olleH"
+    ```
+
+#### Planned Features
+- **Searching**, **slicing**, **case conversion**, and **length retrieval** through direct functions are currently planned for future releases.
+
 
 ### Number Operations
 
@@ -272,120 +290,174 @@ let y = "hello";
 let comparison_result = (x == y); // comparison_result is true
 ```
 
-### List Operations
+### Lists
 
-Lists in Melon are ordered collections of elements that can be of any data type, including other lists. They provide powerful ways to manage and manipulate sequences of data. Here’s a detailed look at the operations you can perform on lists in Melon:
+#### List Declaration
 
-#### 1. Accessing Elements
-
-You can access individual elements of a list using zero-based indexing. The index specifies the position of the element within the list.
+You can declare lists using square brackets (`[]`). Lists can contain any data type, including other lists.
 
 **Example:**
 ```melon
-let my_list = [10, 20, 30, 40];
-let first_element = my_list[0]; // first_element is 10
-let third_element = my_list[2]; // third_element is 30
+let my_list = [1, 2, 3, "hello", [4, 5]];
 ```
 
-**Example:**
-```melon
-let my_list = ['a', 'b', 'c'];
-let second_element = my_list[1]; // second_element is 'b'
-```
+#### List Operations
 
-#### 2. Appending Elements
+1. **Accessing Elements (`[]` operator)**
+   - Lists are zero-indexed, meaning the first element is at index `0`.
+   - You can access elements using the `[]` operator.
+   
+   **Example:**
+   ```melon
+   let first_item = my_list[0];  // Outputs: 1
+   ```
 
-You can add elements to the end of a list using the `+=` operator. This operator allows you to concatenate another list or element to the existing list.
+2. **Setting Elements (`[]` operator)**
+   - You can modify elements in a list by setting them at a specific index.
+   
+   **Example:**
+   ```melon
+   my_list[1] = 10;  // my_list becomes [1, 10, 3, "hello", [4, 5]]
+   ```
 
-**Example using `+=` operator:**
-```melon
-let my_list = [1, 2, 3];
-my_list += [4, 5]; // my_list is now [1, 2, 3, 4, 5]
-```
+3. **Length (`len()` method)**
+   - The `len()` method returns the number of elements in the list.
+   
+   **Example:**
+   ```melon
+   let length = len(my_list);  // Outputs: 5
+   ```
 
-#### 3. Inserting Elements (Planned)
+4. **Appending Elements (`+=` or `append()` method)**
+   - You can append a new element to the end of a list using the `append()` method or the `+=` operator.
+   
+   **Example:**
+   ```melon
+   my_list.append(6);  // my_list becomes [1, 10, 3, "hello", [4, 5], 6]
+   my_list += [7];     // my_list becomes [1, 10, 3, "hello", [4, 5], 6, 7]
+   ```
 
-Inserting an element at a specific position in the list is planned for future releases. This operation will allow you to specify the index where the new element should be added.
+5. **Extending Lists (`extend()` method or `+` operator)**
+   - The `extend()` method or the `+` operator can be used to concatenate two lists.
+   
+   **Example:**
+   ```melon
+   my_list.extend([8, 9]);  // my_list becomes [1, 10, 3, "hello", [4, 5], 6, 7, 8, 9]
+   let new_list = my_list + [10, 11];  // new_list becomes [1, 10, 3, "hello", [4, 5], 6, 7, 8, 9, 10, 11]
+   ```
 
-**Planned Example:**
-```melon
-let my_list = [1, 2, 4];
-my_list.insert(2, 3); // Inserts 3 at index 2, my_list is now [1, 2, 3, 4]
-```
+6. **Inserting Elements (`insert()` method)**
+   - The `insert()` method inserts an element at a specific index, shifting the rest of the list to the right.
+   
+   **Example:**
+   ```melon
+   my_list.insert(2, "new");  // my_list becomes [1, 10, "new", 3, "hello", [4, 5], 6, 7, 8, 9]
+   ```
 
-#### 4. Removing Elements (Planned)
+7. **Reversing a List (`reverse()` method)**
+   - The `reverse()` method reverses the elements of the list in place.
+   
+   **Example:**
+   ```melon
+   my_list.reverse();  // Outputs: [9, 8, 7, 6, [4, 5], "hello", 3, "new", 10, 1]
+   ```
 
-The `pop` operation for removing elements by index is planned for future releases.
+8. **Checking for Containment (`in` operator or `contains()` method)**
+   - You can check if a value exists in a list using the `contains()` method.
+   
+   **Example:**
+   ```melon
+   print(my_list.contains(3));  // Outputs: true
+   ```
 
-**Planned Example:**
-```melon
-let my_list = [1, 2, 3, 4];
-my_list.pop(1); // Removes the element at index 1, my_list is now [1, 3, 4]
-```
+#### Planned List Operations
 
-#### 5. Slicing (Planned)
- 
-Slicing allows you to create a sublist from a list by specifying a start and end index. The start index is inclusive, and the end index is exclusive.
+- **`del()` Function**: The ability to delete elements from a list by index is planned.
 
-**Example:**
-```melon
-let my_list = [1, 2, 3, 4, 5];
-let sublist = my_list[1:4]; // sublist is [2, 3, 4]
-```
-
-You can omit the start or end index to slice from the beginning or to the end of the list, respectively.
-
-**Example:**
-```melon
-let start_slice = my_list[:3]; // start_slice is [1, 2, 3]
-let end_slice = my_list[3:];   // end_slice is [4, 5]
-```
-
-#### 6. Length
-
-The `len` function can be used to determine the number of elements in a list.
-
-**Example:**
-```melon
-let list = [1,2,3];
-let length = len(list); // Expected to be 3
-```
-
-#### 7. Iteration (Planned)
-
-Lists can be iterated over using loops, allowing you to perform operations on each element.
-
-**Example:**
-```melon
-let my_list = [1, 2, 3, 4];
-for(item in my_list) {
-    print(item);
-}
-// Output: 1 2 3 4
-```
-
-### Tuple Operations
+### Tuples
 
 Tuples in Melon are immutable ordered collections of elements. Unlike lists, tuples cannot be changed after they are created, meaning that you cannot add, remove, or modify elements. However, you can access elements within a tuple. Here’s a detailed look at tuple operations focusing on accessing elements:
 
-#### 1. Accessing Elements
+ 1. Accessing Elements
 
 You can access individual elements of a tuple using zero-based indexing, similar to lists. The index specifies the position of the element within the tuple.
 
-**Example:**
-```melon
-let my_tuple = (10, 20, 30, 40);
-let first_element = my_tuple[0]; // first_element is 10
-let third_element = my_tuple[2]; // third_element is 30
-```
+    **Example:**
+    ```melon
+    let my_tuple = (10, 20, 30, 40);
+    let first_element = my_tuple[0]; // first_element is 10
+    let third_element = my_tuple[2]; // third_element is 30
+    ```
 
 Tuples, being immutable, do not support operations that alter their contents. You can only read and access the data stored in them. This immutability ensures that tuples are a reliable and consistent way to group related values that should not change throughout the program.
 
-#### 2. Length
+ 2. Length
 
-The `len` function can be used to determine the number of elements in a tuple.
+    The `len` function can be used to determine the number of elements in a tuple.
+
+    **Example:**
+    ```melon
+    let tuple = (1,2,3);
+    let length = len(tuple); // Expected to be 3
+
+### Dictionaries
+
+Dictionaries are a powerful data structure in Melon that store key-value pairs. They provide a way to map unique keys to values, allowing for efficient data retrieval and manipulation.
+
+#### Dictionary Declaration
+
+Dictionaries are created using curly braces (`{}`). Each key-value pair is separated by a colon (`:`), and pairs are separated by commas.
 
 **Example:**
 ```melon
-let tuple = (1,2,3);
-let length = len(tuple); // Expected to be 3
+let my_dict = {"name": "Alice", "age": 30};
+```
+
+#### Dictionary Operations
+
+1. **Accessing Values (`[]` operator or `get()` method)**
+   - You can retrieve values from a dictionary using the `[]` operator or the `get()` method by specifying the key.
+   
+   **Example:**
+   ```melon
+   let name = my_dict["name"];  // Outputs: "Alice"
+   let age = my_dict.get("age");  // Outputs: 30
+   ```
+
+2. **Setting Values (`[]` operator or `set()` method)**
+   - You can set or update values in a dictionary using the `[]` operator or the `set()` method by specifying the key and the new value.
+   
+   **Example:**
+   ```melon
+   my_dict["age"] = 31;         // Updates the value associated with key "age"
+   my_dict.set("city", "New York");  // Adds a new key-value pair
+   ```
+
+3. **Length (`len()` method)**
+   - The `len()` method returns the number of key-value pairs in the dictionary.
+   
+   **Example:**
+   ```melon
+   let size = len(my_dict);  // Outputs: 3 (after adding "city")
+   ```
+
+4. **Getting Keys (`keys()` method)**
+   - The `keys()` method returns a list of all keys in the dictionary.
+   
+   **Example:**
+   ```melon
+   let keys = my_dict.keys();  // Outputs: ["name", "age", "city"]
+   ```
+
+5. **Getting Values (`values()` method)**
+   - The `values()` method returns a list of all values in the dictionary.
+   
+   **Example:**
+   ```melon
+   let values = my_dict.values();  // Outputs: ["Alice", 31, "New York"]
+   ```
+
+#### Planned Features
+
+- **Deleting Items**: Planned functionality to remove key-value pairs from a dictionary.
+- **Key Existence Check**: Planned methods to check if a specific key exists in the dictionary.

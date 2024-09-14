@@ -1,7 +1,8 @@
 import { CompilerBug, SyntaxError, NativeFunctionArgumentNumberMismatch, VariableAlreadyDeclaredInScope } from './error';
 import { TokenType } from './lexer';
-import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement, BreakStatement, ContinueStatement, Tuple, List, Subscript } from './parser';
-import { Program, Opcode, Value, Instruction } from './vm';
+import { AST, Literal, Identifier, BinaryOperation, While, If, Block, Call, Return, For, FunctionDeclaration, Expression, Statement, UnaryOperation, ASTNode, VariableAssignment, VariableDeclaration, ExpressionStatement, ImportStatement, EmptyStatement, BreakStatement, ContinueStatement, Tuple, List, Subscript, MemberAccess, Dict } from './parser';
+import { Program, Opcode, Instruction } from './vm';
+import { BooleanValue, FunctionValue, NullValue, NumberValue, StringValue, TupleValue, Value } from './value';
 
 interface Local {
     name: string;
@@ -19,11 +20,12 @@ class Compiler {
     private breaks: Instruction[][] = [];
     private continues: Instruction[][] = [];
 
-    constructor(ast: AST, locals?: Local[], data?: Value[]) {
+    constructor(ast: AST, locals?: Local[], data?: Value[], names?: string[]) {
         this.ast = ast;
         this.program = {
             text: [],
-            data: data || []
+            data: data || [],
+            names: names || []
         };
 
         this.locals = locals || [];
@@ -78,9 +80,29 @@ class Compiler {
             this.list(node);
         else if (node instanceof Subscript)
             this.subscript(node);
+        else if (node instanceof MemberAccess)
+            this.memberAccess(node);
+        else if (node instanceof Dict)
+            this.dict(node);
         else {
             throw new CompilerBug(`Unknown node type ${node.constructor.name}`);
         }
+    }
+
+    private dict(node: Dict) {
+        const keys = Array.from(node.entries.keys());
+
+        for(let i = 0; i < keys.length; i++) {
+            this.codegen(node.entries.get(keys.at(-1-i)));
+        }
+
+        const keysAsValue = keys.map(key => new StringValue(key));
+        
+        this.program.data.push(new TupleValue(keysAsValue));
+        
+        this.emitText(Opcode.DATA, node.lineNumber, this.program.data.length - 1);
+
+        this.emitText(Opcode.MAKE_DICT, node.lineNumber);
     }
 
     private list(node: List) {
@@ -146,15 +168,15 @@ class Compiler {
         let constant;
 
         if (node.value.type === TokenType.NUMBER)
-            constant = Value.number(parseFloat(str));
+            constant = new NumberValue(parseFloat(str));
         else if (node.value.type === TokenType.STRING)
-            constant = Value.string(str);
+            constant = new StringValue(str);
         else if (node.value.type === TokenType.TRUE)
-            constant = Value.boolean(true);
+            constant = new BooleanValue(true);
         else if (node.value.type === TokenType.FALSE)
-            constant = Value.boolean(false);
+            constant = new BooleanValue(false);
         else if (node.value.type === TokenType.NULL)
-            constant = Value.null();
+            constant = new NullValue();
         else
             throw new CompilerBug(`Unknown literal type ${node.value.type}`);
 
@@ -179,6 +201,14 @@ class Compiler {
             node.lineNumber,
             node.args.length
         );
+    }
+
+    private memberAccess(node: MemberAccess) {
+        this.codegen(node.object);
+
+        this.program.names.push(node.name.value);
+    
+        this.emitText(Opcode.MEMBER_ACCESS, node.lineNumber,  this.program.names.length-1);
     }
 
     private return(node: Return) {
@@ -294,7 +324,7 @@ class Compiler {
         else
             throw new CompilerBug(`Unknown binary operator ${type}`);
 
-        this.emitText(opcode, node.lineNumber);
+        this.emitText(opcode, node.lineNumber, 0);
     }
 
     private subscript(node: Subscript) { 
@@ -318,16 +348,16 @@ class Compiler {
                     this.emitText(Opcode.ADD, node.lineNumber, 1);
                     break;
                 case TokenType.MINUS_ASSIGN:
-                    this.emitText(Opcode.SUB, node.lineNumber);
+                    this.emitText(Opcode.SUB, node.lineNumber, 1);
                     break;
                 case TokenType.MUL_ASSIGN:
-                    this.emitText(Opcode.MUL, node.lineNumber);
+                    this.emitText(Opcode.MUL, node.lineNumber, 1);
                     break;
                 case TokenType.DIV_ASSIGN:
-                    this.emitText(Opcode.DIV, node.lineNumber);
+                    this.emitText(Opcode.DIV, node.lineNumber, 1);
                     break;
                 case TokenType.MOD_ASSIGN:
-                    this.emitText(Opcode.MOD, node.lineNumber);
+                    this.emitText(Opcode.MOD, node.lineNumber, 1);
                     break;
                 default:
                     throw new CompilerBug(`Unknown assignment operator ${node.op.type}`);
@@ -484,7 +514,7 @@ class Compiler {
             name: node.name.value
         };
 
-        this.program.data.push(Value.function(func));
+        this.program.data.push(new FunctionValue(func));
         const index = this.program.data.length - 1;
 
         const locals = [{ name: node.name.value, depth: 0 }]
@@ -493,7 +523,7 @@ class Compiler {
             locals.push(...node.params.map(arg => ({ name: arg.value, depth: 1 })));
         }
 
-        const compiler = new Compiler([node.body], locals, this.program.data);
+        const compiler = new Compiler([node.body], locals, this.program.data, this.program.names);
         const program = compiler.run();
 
         func.body = program.text;
@@ -525,7 +555,7 @@ class Compiler {
             }
         }
 
-        this.program.data.push(Value.string(name));
+        this.program.data.push(new StringValue(name));
 
         this.emitText(
             Opcode.LOADGL,
@@ -536,7 +566,7 @@ class Compiler {
 
     private declareVariable(name: string, node: ASTNode) {
         if (this.depth === 0) {
-            this.program.data.push(Value.string(name));
+            this.program.data.push(new StringValue(name));
 
             this.emitText(
                 Opcode.DECLAREGL,
@@ -559,7 +589,7 @@ class Compiler {
 
     private assignVariable(name: string, node: ASTNode) {
         if (this.depth === 0) {
-            this.program.data.push(Value.string(name));
+            this.program.data.push(new StringValue(name));
 
             this.emitText(
                 Opcode.SETGL,
@@ -570,7 +600,7 @@ class Compiler {
             let index = this.locals.findIndex(local => local.name === name);
 
             if (index === -1) {
-                this.program.data.push(Value.string(name));
+                this.program.data.push(new StringValue(name));
 
                 this.emitText(
                     Opcode.SETGL,

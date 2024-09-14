@@ -1,5 +1,5 @@
 import { InvalidType, SycallArgumentNumberMismatch } from "./error";
-import { Value, ValueType } from "./vm";
+import {Value, StringValue} from './value'
 
 export default {
     'syscall': {
@@ -8,8 +8,8 @@ export default {
             if (args.length < 2)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'syscall', 2, args.length);
 
-            if (args[0].type !== ValueType.STRING)
-                throw new InvalidType(lineNumber, ValueType.STRING, args[0].type, 'First argument of syscall (syscall id) must be a string');
+            if (!(args[0] instanceof StringValue))
+                throw new InvalidType(lineNumber, StringValue.typeName, args[0].typeName, 'First argument of syscall (syscall id) must be a string');
 
             return args;
         },
@@ -17,7 +17,7 @@ export default {
     'print': {
         syscallId: 'is.workflow.actions.showresult',
         preprocessor: (args: Value[], lineNumber: number) => {
-            return [Value.string(args.map(arg => arg.str).join(' '))];
+            return [new StringValue(args.map(arg => arg.str).join(' '))];
         }
     },
     'input': {
@@ -26,8 +26,8 @@ export default {
             if (args.length > 1)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'input', 1, args.length);
 
-            if (args.length === 1 && args[0].type !== ValueType.STRING)
-                throw new InvalidType(lineNumber, ValueType.STRING, args[0].type, 'First argument of input must be a string.');
+            if (args.length === 1 && !(args[0] instanceof StringValue))
+                throw new InvalidType(lineNumber, StringValue.typeName, args[0].typeName, 'First argument of input must be a string.');
 
             return args;
         }
@@ -38,9 +38,9 @@ export default {
             if (args.length > 1)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'exit', 1, args.length);
             else if (args.length === 1)
-                return [Value.string(args[0].str)];
+                return [new StringValue(args[0].str)];
             else
-                return [Value.string("")];
+                return [new StringValue("")];
         }
     },
 }

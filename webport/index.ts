@@ -1,7 +1,10 @@
 import 'es6-shim';
 import 'reflect-metadata';
 import interpret from './interpret';
-import VM, { VMImage, Value } from '../src/vm';
+import VM, { VMImage } from '../src/vm';
+import {StringValue, Value} from '../src/value';
+
+const VM_TIME_LIMIT_FOR_EXECUTION = 150;
 
 const getParams = () => {
 	const data = window.location.href;
@@ -31,15 +34,15 @@ const begin = (sourceCode: string): void => {
 		return;
 	}
 
-	const result = interpret(atob(source));
+	const result = interpret(atob(source), VM_TIME_LIMIT_FOR_EXECUTION);
 
 	document.write(btoa(JSON.stringify(result)));
 };
 
 const resume = (save: string, value): void => {
 	const image = JSON.parse(atob(save)) as VMImage;
-	const vm = VM.deserialize(image, Value.string(atob(value)));
-	const result = vm.run();
+	const vm = VM.deserialize(image, new StringValue(atob(value)));
+	const result = vm.run(VM_TIME_LIMIT_FOR_EXECUTION);
 
 	document.write(btoa(JSON.stringify(result)));
 };

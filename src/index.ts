@@ -1,12 +1,11 @@
 import "reflect-metadata";
+import 'es6-shim';
+
 import Compiler from './compiler';
 import Lexer from './lexer';
 import Parser from './parser';
-import Disassembler from './disassembler';
-import VM, { Program, Value } from './vm';
+import VM, { Program } from './vm';
 import { deserialize } from 'class-transformer';
-
-export const disassemble = (program: Program) => Disassembler.disassemble(program);
 
 export const compile = (source: string) => {
     const tokens = new Lexer(source).run();

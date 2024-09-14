@@ -49,11 +49,14 @@ export enum TokenType {
     BREAK = "BREAK",
     CONTINUE = "CONTINUE",
     SEMICOLON = "SEMICOLON",
+    COLON = "COLON",
     LET = "LET",
     INC = "INC",
     DEC = "DEC",
     NULL = "NULL",
     IMPORT = "IMPORT",
+
+    DOT = "DOT",
 }
 
 class Lexer {
@@ -146,6 +149,9 @@ class Lexer {
                     tokens.push({ type: TokenType.MOD, value: c, line: this.line });
                     this.advance();
                 }
+            } else if (c === ":") {
+                tokens.push({ type: TokenType.COLON, value: ":", line: this.line});
+                this.advance();
             } else if (c === "/") {
                 if (this.peek(1) === "/") {
                     while (this.peek() !== "\n" && this.peek() !== "\0") {
@@ -241,8 +247,7 @@ class Lexer {
                 let value = "";
                 this.advance();
                 while (this.peek() !== '"') {
-                    if (this.peek() === "\\")
-                    {
+                    if (this.peek() === "\\") {
                         this.advance();
                         if (this.peek() === "n") {
                             value += "\n";
@@ -271,13 +276,17 @@ class Lexer {
             } else if (c === '.') {
                 let value = c;
                 this.advance();
-                
+
                 while (/[0-9]/.test(this.peek())) {
                     value += this.peek();
                     this.advance();
                 }
 
-                tokens.push({ type: TokenType.NUMBER, value, line: this.line });
+                if (value === ".") {
+                    tokens.push({ type: TokenType.DOT, value, line: this.line });
+                } else {
+                    tokens.push({ type: TokenType.NUMBER, value, line: this.line });
+                }
             }
             else if (/[0-9]/.test(c)) {
                 let value = "";
@@ -326,7 +335,7 @@ class Lexer {
                     tokens.push({ type: TokenType.LET, value, line: this.line });
                 } else if (value === "null") {
                     tokens.push({ type: TokenType.NULL, value, line: this.line });
-                } else if(value === "import") {
+                } else if (value === "import") {
                     tokens.push({ type: TokenType.IMPORT, value, line: this.line });
                 } else {
                     tokens.push({ type: TokenType.IDENTIFIER, value, line: this.line });
