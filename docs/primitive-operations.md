@@ -470,16 +470,16 @@ let my_dict = {"name": "Alice", "age": 30};
    ```
 
 10. **Checking Existence of Key (`has()` method)**
-   - You can check if a dictionary contains a key by using `has` method. Returns a boolean value.
-
-   **Example:**
-   ```melon
-   let my_dict = {"name": "John"};
+      - You can check if a dictionary contains a key by using `has` method. Returns a boolean value.
    
-   if(!my_dict.has("name")){
-      print("invalid dictionary!");
-      exit();
-   }
-   
-   print("Hello ", my_dict["name"]);
-   ```
+      **Example:**
+      ```melon
+      let my_dict = {"name": "John"};
+      
+      if(!my_dict.has("name")){
+         print("invalid dictionary!");
+         exit();
+      }
+      
+      print("Hello ", my_dict["name"]);
+      ```
