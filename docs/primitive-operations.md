@@ -332,6 +332,13 @@ let my_list = [1, 2, 3, "hello", [4, 5]];
    my_list.append(6);  // my_list becomes [1, 10, 3, "hello", [4, 5], 6]
    my_list += [7];     // my_list becomes [1, 10, 3, "hello", [4, 5], 6, 7]
    ```
+   - Beware that += operator adds the items to `my_list`. If you use + operator for two lists, you get a new list with the items.
+   **Example:**
+   ```melon
+   let old_list = [1,2,3];
+
+   old_list  + [4,4,4]; // items don't get added to old_list. This creates a new list.
+   ```
 
 5. **Extending Lists (`extend()` method or `+` operator)**
    - The `extend()` method or the `+` operator can be used to concatenate two lists.
@@ -339,7 +346,6 @@ let my_list = [1, 2, 3, "hello", [4, 5]];
    **Example:**
    ```melon
    my_list.extend([8, 9]);  // my_list becomes [1, 10, 3, "hello", [4, 5], 6, 7, 8, 9]
-   let new_list = my_list + [10, 11];  // new_list becomes [1, 10, 3, "hello", [4, 5], 6, 7, 8, 9, 10, 11]
    ```
 
 6. **Inserting Elements (`insert()` method)**
