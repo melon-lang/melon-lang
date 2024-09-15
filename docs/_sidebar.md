@@ -7,3 +7,4 @@
 * [Control Flow](control-flow.md)
 * [Native Functions](natives.md)
 * [Functions](functions.md)
+* [Contribution](contribute.md)
