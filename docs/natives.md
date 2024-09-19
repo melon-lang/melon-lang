@@ -117,3 +117,12 @@ The `tts` function is used to read out text (using `Speak Text` action in Siri S
 ```melon
 void = tts(value1: str|list|tuple, value2?: str|list|tuple, ..., valueN?: str|list|tuple)
 ```
+
+### `stt`
+
+The `stt` function transcribes what is spoken to text (using `Dictate Text` action in Siri Shortcuts). It has two options determining when it stops: ontap and short. If ontap is true, you will need to push the stop button for it to stop (`On Tap` option in Siri Shortcuts). If ontap is false, it will wait for a pause (`After Pause` option in Siri Shortcuts) which can be short if short is true (`After Short Pause` option in Siri Shortcuts). Defaults to waiting on a normal pause.
+
+**Syntax:**
+```melon
+str = stt(ontap?: boolean, short?: boolean)
+```

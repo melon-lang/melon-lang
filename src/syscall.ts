@@ -1,6 +1,6 @@
 import { InvalidType, SycallArgumentNumberMismatch } from "./error";
 import { List } from "./parser";
-import {Value, StringValue, ListValue} from './value'
+import {Value, StringValue, ListValue, BooleanValue} from './value'
 
 export default {
     'syscall': {
@@ -48,6 +48,26 @@ export default {
         syscallId: 'is.workflow.actions.speaktext',
         preprocessor: (args: Value[], lineNumber: number) => {
             return [new StringValue(args.map(arg => arg.str).join(' '))];
+        }
+    },
+    'stt': {
+        syscallId: 'is.workflow.actions.dictatetext',
+        preprocessor: (args : Value[], lineNumber: number) => {
+            if (args.length > 1) {
+                if (args.length > 2)
+                    throw new SycallArgumentNumberMismatch(lineNumber, 'stt', 2, args.length);
+                if (!(args[0] instanceof BooleanValue))
+                    throw new InvalidType(lineNumber, BooleanValue.typeName, args[0].typeName, 'First argument of input must be a boolean.');
+                if (args[0])
+                    return new StringValue("On Tap")
+                if (args.length === 2) {
+                    if (!(args[1] instanceof BooleanValue))
+                        throw new InvalidType(lineNumber, BooleanValue.typeName, args[1].typeName, 'Second argument of input must be a boolean.');
+                    if(args[1])
+                        return new StringValue('After Short Pause');
+                }
+            }
+            return new StringValue("After Pause");
         }
     }
 }
