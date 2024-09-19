@@ -18,11 +18,7 @@ export default {
     'print': {
         syscallId: 'is.workflow.actions.showresult',
         preprocessor: (args: Value[], lineNumber: number) => {
-            return [new StringValue(args.map(arg => {
-                if (arg.typeName === "list" || arg.typeName === "tuple")
-                    return new Array(arg).map(val => val.str).join(' ');
-                return arg.str;
-            }).join(' '))];
+            return [new StringValue(args.map(arg => arg.str).join(' '))];
         }
     },
     'input': {
@@ -51,15 +47,7 @@ export default {
     'tts': {
         syscallId: 'is.workflow.actions.speaktext',
         preprocessor: (args: Value[], lineNumber: number) => {
-            return [new StringValue(args.map(arg => {
-                if (arg.typeName === "list" || arg.typeName === "tuple") {
-                    let string = arg[0].str;
-                    for (let i = 1; i < Number(arg.__len__); i++)
-                        string = string + " " + arg[i].str;
-                    return string;
-                }
-                return arg.str;
-            }).join(' '))];
+            return [new StringValue(args.map(arg => arg.str).join(' '))];
         }
     }
 }
