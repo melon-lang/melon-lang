@@ -49,9 +49,9 @@ export default {
         preprocessor: (args: Value[], lineNumber: number) => {
             return [new StringValue(args.map(arg => {
                 if (arg.typeName === "list" || arg.typeName === "tuple") {
-                    let string = arg[0];
+                    let string = arg[0].str;
                     for (let i = 1; i < Number(arg.__len__); i++)
-                        string += " " + arg[i];
+                        string = string + " " + arg[i].str;
                     return string;
                 }
                 return arg.str;
