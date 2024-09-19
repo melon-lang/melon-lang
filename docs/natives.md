@@ -111,7 +111,7 @@ print("This message will not be shown."); // This line will not be executed
 
 ### `tts`
 
-The `tts` function is used to read out text (using `Speak Text` action in Siri Shortcuts). Requires a strings as an input.
+The `tts` function is used to read out text (using `Speak Text` action in Siri Shortcuts). It can handle various data types, including strings, numbers, and lists, and can accept multiple arguments, which will be read out sequentially.
 
 **Syntax:**
 ```melon
