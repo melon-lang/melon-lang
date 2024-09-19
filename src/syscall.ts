@@ -53,7 +53,7 @@ export default {
     'stt': {
         syscallId: 'is.workflow.actions.dictatetext',
         preprocessor: (args : Value[], lineNumber: number) => {
-            if (args.length > 1) {
+            if (args.length > 0) {
                 if (args.length > 2)
                     throw new SycallArgumentNumberMismatch(lineNumber, 'stt', 2, args.length);
                 if (!(args[0] instanceof BooleanValue))
