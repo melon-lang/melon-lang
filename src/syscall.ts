@@ -1,5 +1,6 @@
 import { InvalidType, SycallArgumentNumberMismatch } from "./error";
-import {Value, StringValue} from './value'
+import { List } from "./parser";
+import {Value, StringValue, ListValue} from './value'
 
 export default {
     'syscall': {
@@ -46,7 +47,15 @@ export default {
     'tts': {
         syscallId: 'is.workflow.actions.speaktext',
         preprocessor: (args: Value[], lineNumber: number) => {
-            return [new StringValue(args.map(arg => arg.str).join(' '))];
+            return [new StringValue(args.map(arg => {
+                if (arg.typeName === "list" || arg.typeName === "tuple") {
+                    let string = arg[0];
+                    for (let i = 1; i < Number(arg.__len__); i++)
+                        string += " " + arg[i];
+                    return string;
+                }
+                return arg.str;
+            }).join(' '))];
         }
     }
 }
