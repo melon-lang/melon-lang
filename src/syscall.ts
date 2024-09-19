@@ -58,16 +58,16 @@ export default {
                     throw new SycallArgumentNumberMismatch(lineNumber, 'stt', 2, args.length);
                 if (!(args[0] instanceof BooleanValue))
                     throw new InvalidType(lineNumber, BooleanValue.typeName, args[0].typeName, 'First argument of input must be a boolean.');
-                if (args[0].value)
-                    return [new StringValue("On Tap")];
+                if (args[0].value === true)
+                    return [new StringValue("On Tap"), args];
                 if (args.length === 2) {
                     if (!(args[1] instanceof BooleanValue))
                         throw new InvalidType(lineNumber, BooleanValue.typeName, args[1].typeName, 'Second argument of input must be a boolean.');
-                    if(args[1].value)
-                        return [new StringValue('After Short Pause')];
+                    if(args[1].value === true)
+                        return [new StringValue('After Short Pause'), args];
                 }
             }
-            return [new StringValue("After Pause")];
+            return [new StringValue("After Pause"), args];
         }
     }
 }
