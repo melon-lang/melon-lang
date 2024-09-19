@@ -33,7 +33,6 @@ export enum Opcode {
     HALT = "halt",
     PRINT = "print",
     INPUT = "input",
-    // SPEAK = "speak",
     SYSCALL = "syscall",
     DATA = "data",
     INC = "inc",

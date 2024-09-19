@@ -43,15 +43,10 @@ export default {
                 return [new StringValue("")];
         }
     },
-    'speak': {
+    'tts': {
         syscallId: 'is.workflow.actions.speaktext',
         preprocessor: (args: Value[], lineNumber: number) => {
-            if (args.length > 1)
-                throw new SycallArgumentNumberMismatch(lineNumber, 'dictate', 1, args.length);
-            else if (args.length === 1 && !(args[0] instanceof StringValue))
-                throw new InvalidType(lineNumber, StringValue.typeName, args[0].typeName, 'First argument of input must be a string.');
-            
-            return args;
+            return [new StringValue(args.map(arg => arg.str).join(' '))];
         }
     }
 }

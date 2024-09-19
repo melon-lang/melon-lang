@@ -8,7 +8,7 @@ The `print` function is used to output data to the standard output (using `Show 
 
 **Syntax:**
 ```melon
-print(value1, value2, ..., valueN);
+void = print(value1: str|num|list, value2?: str|num|list, ..., valueN?: str|num|list)
 ```
 
 **Example:**
@@ -18,7 +18,7 @@ let number = 42;
 let my_list = [1, 2, 3];
 
 print(message); // Outputs: Hello, Melon!
-print(number); // Outputs: 42
+print(number);  // Outputs: 42
 print(my_list); // Outputs: [1, 2, 3]
 print("The number is", number, "and the list is", my_list);
 // Outputs: The number is 42 and the list is [1, 2, 3]
@@ -30,7 +30,7 @@ The `input` function is used to receive input from the user. It waits for the us
 
 **Syntax:**
 ```melon
-let user_input = input(prompt?);
+str = input(prompt?: str)
 ```
 
 **Example:**
@@ -59,17 +59,37 @@ else {
 
 The `number` function accepts a string, and parses it as a number.
 
+**Syntax:**
+```melon
+num = number(text: str)
+```
+
 ### `str`
 
 The `str` function accepts a value, and converts it into a string.
+
+**Syntax:**
+```melon
+str = str(value: any)
+```
 
 ### `len`
 
 It returns the length of a given string, list or tuple.
 
+**Syntax:**
+```melon
+num = len(value: str|list|tuple)
+```
+
 ### `random`
 
 The `random` function generates and returns a random number between 0 and 1.
+
+**Syntax:**
+```melon
+num = random()
+```
 
 ### `exit`
 
@@ -79,7 +99,7 @@ You can also return back a value to Shortcut using `exit`.
 
 **Syntax:**
 ```melon
-exit(optional_return_value?);
+void = exit(value?: any)
 ```
 
 **Example:**
@@ -87,4 +107,13 @@ exit(optional_return_value?);
 print("This message will be shown.");
 exit("I love you"); // Terminates the program. 'I love you' is returned to the shortcut.
 print("This message will not be shown."); // This line will not be executed
+```
+
+### `tts`
+
+The `tts` function is used to read out text (using `Speak Text` action in Siri Shortcuts). Requires a strings as an input.
+
+**Syntax:**
+```melon
+void = tts(value1: str|list|tuple, value2?: str|list|tuple, ..., valueN?: str|list|tuple)
 ```
