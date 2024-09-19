@@ -1,4 +1,8 @@
+# Ignore
 dist
 node_modules
 .DS_Store
 coverage
+
+# Don't ignore
+!./dist/webport/index.html
