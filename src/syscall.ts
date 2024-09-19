@@ -19,12 +19,8 @@ export default {
         syscallId: 'is.workflow.actions.showresult',
         preprocessor: (args: Value[], lineNumber: number) => {
             return [new StringValue(args.map(arg => {
-                if (arg.typeName === "list" || arg.typeName === "tuple") {
-                    let string = arg[0].str;
-                    for (let i = 1; i < Number(arg.__len__); i++)
-                        string = string + " " + arg[i].str;
-                    return string;
-                }
+                if (arg.typeName === "list" || arg.typeName === "tuple")
+                    return new Array(arg).map(val => val.str).join(' ');
                 return arg.str;
             }).join(' '))];
         }
