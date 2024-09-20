@@ -76,15 +76,17 @@ export default {
             if (args.length < 1 && args.length > 3)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'alert', 3, args.length);
             let text = args[0].str;
+            let title = "";
+            let showCancel = true;
             if (args.length > 1) {
+                title = args[1].str;
                 if (args.length === 3) {
                     if (!(args[2] instanceof BooleanValue))
                         throw new InvalidType(lineNumber, BooleanValue.typeName, args[2].typeName, 'Thrid argument of alert must be a boolean.');
-                    return [new StringValue(text), new StringValue(args[1].str), args[2]];
+                    showCancel = args[2].value;
                 }
-                return [new StringValue(text), new StringValue(args[1].str), new BooleanValue(true)];
             }
-            return [new StringValue(text), new StringValue(""), new BooleanValue(true)];
+            return [new StringValue(text), new StringValue(title), new BooleanValue(showCancel)];
         }
     }
 }
