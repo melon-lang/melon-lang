@@ -94,7 +94,7 @@ export default {
         preprocessor: (args: Value[], lineNumber: number) => {
             if (args.length < 1 || args.length > 4)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'choose', 4, args.length);
-            let list = args[0];
+            let list = args[0].value.map(item => item.str);
             let prompt = "";
             let canMultiple = false;
             let allSelected = false;
