@@ -66,20 +66,20 @@ export default {
             if (!(args[1] instanceof BooleanValue))
                 throw new InvalidType(lineNumber, BooleanValue.typeName, args[1].typeName, 'Second argument of stt must be a boolean.');
             if(args[1].value === true)
-                return [new StringValue('After Short Pause')];
+                return [new StringValue("After Short Pause")];
             return [new StringValue("After Pause")];
         }
     },
     'alert': {
         syscallId: 'is.workflow.actions.alert',
         preprocessor: (args: Value[], lineNumber: number) => {
-            var title = new StringValue("");
-            var showCancel = new BooleanValue(true);
             if (args.length < 1 && args.length > 3)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'alert', 3, args.length);
             if (!(args[0] instanceof StringValue))
                 throw new InvalidType(lineNumber, StringValue.typeName, args[0].typeName, 'First argument of alert must be a string.')
             let text = new StringValue(args[0].str);
+            let title = new StringValue("");
+            let showCancel = new BooleanValue(true);
             if (args.length > 1)
                 if (!(args[1] instanceof StringValue))
                     throw new InvalidType(lineNumber, StringValue.typeName, args[1].typeName, 'Second argument of alert must be a string.');
