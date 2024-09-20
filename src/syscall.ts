@@ -73,8 +73,8 @@ export default {
     'alert': {
         syscallId: 'is.workflow.actions.alert',
         preprocessor: (args: Value[], lineNumber: number) => {
-            let title = new StringValue(" ");
-            let showCancel = new BooleanValue(true);
+            var title = new StringValue("");
+            var showCancel = new BooleanValue(true);
             if (args.length < 1 && args.length > 3)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'alert', 3, args.length);
             if (!(args[0] instanceof StringValue))
