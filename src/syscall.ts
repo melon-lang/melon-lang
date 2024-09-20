@@ -1,7 +1,7 @@
 import { error } from "console";
 import { InvalidType, MelonError, SycallArgumentNumberMismatch } from "./error";
 import { List } from "./parser";
-import {Value, StringValue, ListValue, BooleanValue} from './value'
+import {Value, StringValue, ListValue, BooleanValue, TupleValue} from './value'
 import { normalize } from "path";
 
 export default {
@@ -94,6 +94,8 @@ export default {
         preprocessor: (args: Value[], lineNumber: number) => {
             if (args.length < 1 || args.length > 3)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'choose', 3, args.length);
+            if (!(args[0] instanceof ListValue) && !(args[0] instanceof TupleValue))
+                throw new InvalidType(lineNumber, ListValue.typeName, args[0].typeName, 'First argument of choose must be a list or tuple.');
             let list = args[0].value.map(item => item.str);
             let prompt = "";
             let canMultiple = false;
