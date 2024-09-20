@@ -8,7 +8,7 @@ The `print` function is used to output data to the standard output (using `Show 
 
 **Syntax:**
 ```melon
-void = print(value1: str|num|list, value2?: str|num|list, ..., valueN?: str|num|list)
+void = print(value1: any, value2?: any, ..., valueN?: any)
 ```
 
 **Example:**
@@ -115,7 +115,7 @@ The `tts` function is used to read out text (using `Speak Text` action in Siri S
 
 **Syntax:**
 ```melon
-void = tts(value1: str|list|tuple, value2?: str|list|tuple, ..., valueN?: str|list|tuple)
+void = tts(value1: any, value2?: any, ..., valueN?: any)
 ```
 
 ### `stt`
@@ -124,5 +124,22 @@ The `stt` function transcribes what is spoken to text (using `Dictate Text` acti
 
 **Syntax:**
 ```melon
-str = stt(ontap?: boolean, short?: boolean)
+str = stt(ontap?: bool, short?: bool)
+```
+
+### `alert`
+
+The `alert` function is used to output data with more control (using `Show Alert` action in Siri Shortcuts). It can take any data type as an input as well as two other parameters. The first one is the title wich can be any data type and the second one is showCancel wich determines whether or not to show the cancel button. It must be a boolean.
+
+**Syntax:**
+```melon
+void = alert(text: any, title?: any, showCancel?: bool)
+```
+
+### `choose`
+The `choose` function is used to choose between different items of a list (using `Choose from List` action in Siri Shortcuts). It takes a list or tuple as input and outputs a str or list (to do). It has two extra parameters. The first one is the prompt which be any data type and the second one is canMultiple wich determines wether or not to let the user select multiple items returning a list (to do). It must be a boolean.
+
+**Syntax:**
+```melo,
+str|list = choose(list: list|tuple, prompt?: any, canMultiple?: bool)
 ```
