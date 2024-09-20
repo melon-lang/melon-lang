@@ -73,7 +73,7 @@ export default {
     'alert': {
         syscallId: 'is.workflow.actions.alert',
         preprocessor: (args: Value[], lineNumber: number) => {
-            if (args.length < 1 && args.length > 3)
+            if (args.length < 1 || args.length > 3)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'alert', 3, args.length);
             let text = args[0].str;
             let title = "";
@@ -92,7 +92,7 @@ export default {
     'choose': {
         syscallId: 'is.workflow.actions.choosefromlist',
         preprocessor: (args: Value[], lineNumber: number) => {
-            if (args.length < 1 && args.length > 4)
+            if (args.length < 1 || args.length > 4)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'choose', 4, args.length);
             let list = args[0].value;
             let prompt = "";
