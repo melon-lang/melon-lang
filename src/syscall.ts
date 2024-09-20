@@ -1,4 +1,5 @@
-import { InvalidType, SycallArgumentNumberMismatch } from "./error";
+import { error } from "console";
+import { InvalidType, MelonError, SycallArgumentNumberMismatch } from "./error";
 import { List } from "./parser";
 import {Value, StringValue, ListValue, BooleanValue} from './value'
 
@@ -52,22 +53,36 @@ export default {
     },
     'stt': {
         syscallId: 'is.workflow.actions.dictatetext',
-        preprocessor: (args : Value[], lineNumber: number) => {
-            if (args.length > 0) {
-                if (args.length > 2)
-                    throw new SycallArgumentNumberMismatch(lineNumber, 'stt', 2, args.length);
-                if (!(args[0] instanceof BooleanValue))
-                    throw new InvalidType(lineNumber, BooleanValue.typeName, args[0].typeName, 'First argument of input must be a boolean.');
-                if (args[0].value === true)
-                    return [new StringValue("On Tap")];
-                if (args.length === 2) {
-                    if (!(args[1] instanceof BooleanValue))
-                        throw new InvalidType(lineNumber, BooleanValue.typeName, args[1].typeName, 'Second argument of input must be a boolean.');
-                    if(args[1].value === true)
-                        return [new StringValue('After Short Pause')];
-                }
-            }
+        preprocessor: (args: Value[], lineNumber: number) => {
+            if (args.length < 1 || args.length > 2)
+                throw new SycallArgumentNumberMismatch(lineNumber, 'stt', 1, args.length);
+            if (!(args[0] instanceof BooleanValue))
+                throw new InvalidType(lineNumber, BooleanValue.typeName, args[0].typeName, 'First argument of input must be a boolean.');
+            if (args[0].value === true)
+                return [new StringValue("On Tap")];
+            if (args.length != 2)
+                return [new StringValue("After Pause")];
+            if (!(args[1] instanceof BooleanValue))
+                throw new InvalidType(lineNumber, BooleanValue.typeName, args[1].typeName, 'Second argument of input must be a boolean.');
+            if(args[1].value === true)
+                return [new StringValue('After Short Pause')];
             return [new StringValue("After Pause")];
+        }
+    },
+    'alert': {
+        syscallId: 'is.workflow.actions.alert',
+        preprocessor: (args: Value[], lineNumber: number) => {
+            let output = [];
+            output[1] = "";
+            output[2] = true;
+            if (args.length < 1 && args.length > 3)
+                throw new SycallArgumentNumberMismatch(lineNumber, 'alert', 1, args.length);
+            output[0] = args[0];
+            if (args.length > 1)
+                output[1] = args[1];
+            if (args.length === 3)
+                output[2] = args[2];
+            return output;
         }
     }
 }
