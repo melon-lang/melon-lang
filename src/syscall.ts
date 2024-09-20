@@ -99,7 +99,7 @@ export default {
             let canMultiple = false;
             let allSelected = false;
             if (args.length > 1) {
-                let prompt = args[1].str;
+                prompt = args[1].str;
                 if (args.length > 2) {
                     if(!(args[2] instanceof BooleanValue))
                         throw new InvalidType(lineNumber, BooleanValue.typeName, args[2].typeName, 'Thrid argument of choose must be a boolean.');
