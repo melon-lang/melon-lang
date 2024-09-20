@@ -6,4 +6,4 @@ node_modules
 coverage
 
 # Don't ignore
-!dist/webport/index.html
+# !dist/webport/index.html
