@@ -56,7 +56,7 @@ export default {
         syscallId: 'is.workflow.actions.dictatetext',
         preprocessor: (args: Value[], lineNumber: number) => {
             if (args.length < 1 || args.length > 2)
-                throw new SycallArgumentNumberMismatch(lineNumber, 'stt', 1, args.length);
+                throw new SycallArgumentNumberMismatch(lineNumber, 'stt', 2, args.length);
             if (!(args[0] instanceof BooleanValue))
                 throw new InvalidType(lineNumber, BooleanValue.typeName, args[0].typeName, 'First argument of stt must be a boolean.');
             if (args[0].value === true)
@@ -73,10 +73,10 @@ export default {
     'alert': {
         syscallId: 'is.workflow.actions.alert',
         preprocessor: (args: Value[], lineNumber: number) => {
-            let title = new StringValue("");
+            let title = new StringValue(" ");
             let showCancel = new BooleanValue(true);
             if (args.length < 1 && args.length > 3)
-                throw new SycallArgumentNumberMismatch(lineNumber, 'alert', 1, args.length);
+                throw new SycallArgumentNumberMismatch(lineNumber, 'alert', 3, args.length);
             if (!(args[0] instanceof StringValue))
                 throw new InvalidType(lineNumber, StringValue.typeName, args[0].typeName, 'First argument of alert must be a string.')
             let text = new StringValue(args[0].str);
@@ -84,10 +84,10 @@ export default {
                 if (!(args[1] instanceof StringValue))
                     throw new InvalidType(lineNumber, StringValue.typeName, args[1].typeName, 'Second argument of alert must be a string.');
                 title = new StringValue(args[1].str);
-            if (args.length === 3)
-                if (!(args[2] instanceof BooleanValue))
-                    throw new InvalidType(lineNumber, BooleanValue.typeName, args[2].typeName, 'Thrid argument of alert must be a boolean.');
-                showCancel = args[2];
+                if (args.length === 3)
+                    if (!(args[2] instanceof BooleanValue))
+                        throw new InvalidType(lineNumber, BooleanValue.typeName, args[2].typeName, 'Thrid argument of alert must be a boolean.');
+                    showCancel = args[2];
             return [text, title, showCancel];
         }
     }
