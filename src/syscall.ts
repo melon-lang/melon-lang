@@ -2,6 +2,7 @@ import { error } from "console";
 import { InvalidType, MelonError, SycallArgumentNumberMismatch } from "./error";
 import { List } from "./parser";
 import {Value, StringValue, ListValue, BooleanValue} from './value'
+import { normalize } from "path";
 
 export default {
     'syscall': {
@@ -76,6 +77,8 @@ export default {
             let showCancel = new BooleanValue(true);
             if (args.length < 1 && args.length > 3)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'alert', 1, args.length);
+            if (!(args[0] instanceof StringValue))
+                throw new InvalidType(lineNumber, StringValue.typeName, args[0].typeName, 'First argument of alert must be a string.')
             let text = new StringValue(args[0].str);
             if (args.length > 1)
                 if (!(args[1] instanceof StringValue))
