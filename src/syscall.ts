@@ -92,26 +92,20 @@ export default {
     'choose': {
         syscallId: 'is.workflow.actions.choosefromlist',
         preprocessor: (args: Value[], lineNumber: number) => {
-            if (args.length < 1 || args.length > 4)
-                throw new SycallArgumentNumberMismatch(lineNumber, 'choose', 4, args.length);
+            if (args.length < 1 || args.length > 3)
+                throw new SycallArgumentNumberMismatch(lineNumber, 'choose', 3, args.length);
             let list = args[0].value.map(item => item.str);
             let prompt = "";
             let canMultiple = false;
-            let allSelected = false;
             if (args.length > 1) {
                 prompt = args[1].str;
                 if (args.length > 2) {
                     if(!(args[2] instanceof BooleanValue))
                         throw new InvalidType(lineNumber, BooleanValue.typeName, args[2].typeName, 'Thrid argument of choose must be a boolean.');
                     canMultiple = args[2].value;
-                    if (args.length > 3) {
-                        if (!(args[3] instanceof BooleanValue))
-                            throw new InvalidType(lineNumber, BooleanValue.typeName, args[3].typeName, 'Fourth argument of choose must be a boolean.');
-                        allSelected = args[3].value;
-                    }
                 }
             }
-            return [new StringValue(list), new StringValue(prompt), new BooleanValue(canMultiple), new BooleanValue(allSelected)]
+            return [new StringValue(list), new StringValue(prompt), new BooleanValue(canMultiple)]
         }
     }
 }
