@@ -111,7 +111,7 @@ export default {
                     }
                 }
             }
-            return [list, new StringValue(prompt), new BooleanValue(canMultiple), new BooleanValue(allSelected)]
+            return [new ListValue(list), new StringValue(prompt), new BooleanValue(canMultiple), new BooleanValue(allSelected)]
         }
     }
 }
