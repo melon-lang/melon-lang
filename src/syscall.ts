@@ -79,11 +79,11 @@ export default {
             let text = new StringValue(args[0].str);
             if (args.length > 1)
                 if (!(args[1] instanceof StringValue))
-                    throw new InvalidType(lineNumber, StringValue.typeName, args[1].typeName, 'Second argument of alert must be a string.')
+                    throw new InvalidType(lineNumber, StringValue.typeName, args[1].typeName, 'Second argument of alert must be a string.');
                 title = new StringValue(args[1].str);
             if (args.length === 3)
                 if (!(args[2] instanceof BooleanValue))
-                    throw new InvalidType(lineNumber, BooleanValue.typeName, args[2].typeName, 'Thrid argument of alert must be a boolean.')
+                    throw new InvalidType(lineNumber, BooleanValue.typeName, args[2].typeName, 'Thrid argument of alert must be a boolean.');
                 showCancel = args[2];
             return [text, title, showCancel];
         }
