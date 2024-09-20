@@ -75,20 +75,16 @@ export default {
         preprocessor: (args: Value[], lineNumber: number) => {
             if (args.length < 1 && args.length > 3)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'alert', 3, args.length);
-            if (!(args[0] instanceof StringValue))
-                throw new InvalidType(lineNumber, StringValue.typeName, args[0].typeName, 'First argument of alert must be a string.')
-            let text = new StringValue(args[0].str);
-            let title = new StringValue("");
-            let showCancel: BooleanValue;
+            let text = args[0].str;
+            let title = "";
+            let showCancel = true;
             if (args.length > 1)
-                if (!(args[1] instanceof StringValue))
-                    throw new InvalidType(lineNumber, StringValue.typeName, args[1].typeName, 'Second argument of alert must be a string.');
-                title = new StringValue(args[1].str);
+                title = args[1].str;
                 if (args.length === 3)
                     if (!(args[2] instanceof BooleanValue))
                         throw new InvalidType(lineNumber, BooleanValue.typeName, args[2].typeName, 'Thrid argument of alert must be a boolean.');
-                    showCancel = args[2];
-            return [text, title, showCancel = new BooleanValue(true)];
+                    showCancel = args[2].value;
+            return [new StringValue(text), new StringValue(title), new BooleanValue(showCancel)];
         }
     }
 }
