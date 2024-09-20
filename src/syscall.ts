@@ -76,7 +76,7 @@ export default {
             if (args.length < 1 && args.length > 3)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'alert', 3, args.length);
             let text = args[0].str;
-            let title = "";
+            let title = " ";
             let showCancel = true;
             if (args.length > 1)
                 title = args[1].str;
