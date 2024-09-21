@@ -8,7 +8,7 @@ The `print` function is used to output data to the standard output (using `Show 
 
 **Syntax:**
 ```melon
-void = print(value1: any, value2?: any, ..., valueN?: any)
+print(value1: any, value2?: any, ..., valueN?: any): void
 ```
 
 **Example:**
@@ -30,7 +30,7 @@ The `input` function is used to receive input from the user. It waits for the us
 
 **Syntax:**
 ```melon
-str = input(prompt?: str)
+input(prompt?: string): string
 ```
 
 **Example:**
@@ -61,7 +61,7 @@ The `number` function accepts a string, and parses it as a number.
 
 **Syntax:**
 ```melon
-num = number(text: str)
+number(text: string): number
 ```
 
 ### `str`
@@ -70,7 +70,7 @@ The `str` function accepts a value, and converts it into a string.
 
 **Syntax:**
 ```melon
-str = str(value: any)
+str(value: any): string
 ```
 
 ### `len`
@@ -79,7 +79,7 @@ It returns the length of a given string, list or tuple.
 
 **Syntax:**
 ```melon
-num = len(value: str|list|tuple)
+len(value: string|list|tuple): number
 ```
 
 ### `random`
@@ -88,7 +88,7 @@ The `random` function generates and returns a random number between 0 and 1.
 
 **Syntax:**
 ```melon
-num = random()
+random(): number
 ```
 
 ### `exit`
@@ -99,7 +99,7 @@ You can also return back a value to Shortcut using `exit`.
 
 **Syntax:**
 ```melon
-void = exit(value?: any)
+exit(value?: any): void
 ```
 
 **Example:**
@@ -115,7 +115,7 @@ The `tts` function is used to read out text (using `Speak Text` action in Siri S
 
 **Syntax:**
 ```melon
-void = tts(value1: any, value2?: any, ..., valueN?: any)
+tts(value1: any, value2?: any, ..., valueN?: any): void
 ```
 
 ### `stt`
@@ -124,7 +124,7 @@ The `stt` function transcribes what is spoken to text (using `Dictate Text` acti
 
 **Syntax:**
 ```melon
-str = stt(ontap?: bool, short?: bool)
+stt(ontap?: boolean, short?: boolean): string
 ```
 
 ### `alert`
@@ -133,7 +133,7 @@ The `alert` function is used to output data with more control (using `Show Alert
 
 **Syntax:**
 ```melon
-void = alert(text: any, title?: any, showCancel?: bool)
+alert(text: any, title?: any, showCancel?: boolean): void
 ```
 
 ### `choose`
@@ -141,5 +141,5 @@ The `choose` function is used to choose between different items of a list (using
 
 **Syntax:**
 ```melo,
-str|list = choose(list: list|tuple, prompt?: any, canMultiple?: bool)
+choose(list: list|tuple, prompt?: any, canMultiple?: boolean): string|list
 ```
