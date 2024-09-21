@@ -1,5 +1,8 @@
-import { InvalidType, SycallArgumentNumberMismatch } from "./error";
-import {Value, StringValue} from './value'
+import { error } from "console";
+import { InvalidType, MelonError, SycallArgumentNumberMismatch } from "./error";
+import { List } from "./parser";
+import {Value, StringValue, ListValue, BooleanValue, TupleValue} from './value'
+import { normalize } from "path";
 
 export default {
     'syscall': {
@@ -43,4 +46,68 @@ export default {
                 return [new StringValue("")];
         }
     },
+    'tts': {
+        syscallId: 'is.workflow.actions.speaktext',
+        preprocessor: (args: Value[], lineNumber: number) => {
+            return [new StringValue(args.map(arg => arg.str).join(' '))];
+        }
+    },
+    'stt': {
+        syscallId: 'is.workflow.actions.dictatetext',
+        preprocessor: (args: Value[], lineNumber: number) => {
+            if (args.length < 1 || args.length > 2)
+                throw new SycallArgumentNumberMismatch(lineNumber, 'stt', 2, args.length);
+            if (!(args[0] instanceof BooleanValue))
+                throw new InvalidType(lineNumber, BooleanValue.typeName, args[0].typeName, 'First argument of stt must be a boolean.');
+            if (args[0].value === true)
+                return [new StringValue("On Tap")];
+            if (args.length != 2)
+                return [new StringValue("After Pause")];
+            if (!(args[1] instanceof BooleanValue))
+                throw new InvalidType(lineNumber, BooleanValue.typeName, args[1].typeName, 'Second argument of stt must be a boolean.');
+            if(args[1].value === true)
+                return [new StringValue("After Short Pause")];
+            return [new StringValue("After Pause")];
+        }
+    },
+    'alert': {
+        syscallId: 'is.workflow.actions.alert',
+        preprocessor: (args: Value[], lineNumber: number) => {
+            if (args.length < 1 || args.length > 3)
+                throw new SycallArgumentNumberMismatch(lineNumber, 'alert', 3, args.length);
+            let text = args[0].str;
+            let title = "";
+            let showCancel = true;
+            if (args.length > 1) {
+                title = args[1].str;
+                if (args.length > 2) {
+                    if (!(args[2] instanceof BooleanValue))
+                        throw new InvalidType(lineNumber, BooleanValue.typeName, args[2].typeName, 'Thrid argument of alert must be a boolean.');
+                    showCancel = args[2].value;
+                }
+            }
+            return [new StringValue(text), new StringValue(title), new BooleanValue(showCancel)];
+        }
+    },
+    'choose': {
+        syscallId: 'is.workflow.actions.choosefromlist',
+        preprocessor: (args: Value[], lineNumber: number) => {
+            if (args.length < 1 || args.length > 3)
+                throw new SycallArgumentNumberMismatch(lineNumber, 'choose', 3, args.length);
+            if (!(args[0] instanceof ListValue) && !(args[0] instanceof TupleValue))
+                throw new InvalidType(lineNumber, ListValue.typeName, args[0].typeName, 'First argument of choose must be a list or tuple.');
+            let list = args[0].value.map(item => item.str);
+            let prompt = "";
+            let canMultiple = false;
+            if (args.length > 1) {
+                prompt = args[1].str;
+                if (args.length > 2) {
+                    if(!(args[2] instanceof BooleanValue))
+                        throw new InvalidType(lineNumber, BooleanValue.typeName, args[2].typeName, 'Thrid argument of choose must be a boolean.');
+                    canMultiple = args[2].value;
+                }
+            }
+            return [new StringValue(list), new StringValue(prompt), new BooleanValue(canMultiple)]
+        }
+    }
 }
