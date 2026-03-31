@@ -1,0 +1,253 @@
+#include 'actions/documents'
+#include 'actions/shortcuts'
+#include 'actions/scripting'
+#include 'actions/sharing'
+#include 'actions/settings'
+#include 'actions/text'
+#include 'actions/crypto'
+#include 'actions/web'
+#include 'actions/device'
+#include 'actions/location'
+#define color red
+#define glyph timeLapse
+
+/*
+melon 🍉 Shortcut
+
+    melon is an orthogonally persistent language designed for creating blazing fast automations for Apple devices. It uses Siri Shortcuts as a backend, but allows for more complex and performant automations to be created compared to Shortcuts application itself.
+
+https://github.com/melon-lang/melon-lang
+
+*/
+const MELON_VERSION = "1.0.0"
+const MELON_MAX_PERSISTANCE = 2147483647
+const MELON_VM_STATUS_SYSCALL = "syscall"
+const MELON_VM_STATUS_HALTED = "halted"
+const MELON_SYSCALL_ARG_COUNTS = {
+	"is.workflow.actions.showresult": 1,
+	"is.workflow.actions.prompt": 1,
+	"is.workflow.actions.stop": 1,
+	"is.workflow.actions.alert": 2,
+	"is.workflow.actions.confirm": 2,
+	"is.workflow.actions.notification": 2,
+	"is.workflow.actions.speaktext": 1,
+	"is.workflow.actions.getclipboard": 0,
+	"is.workflow.actions.setclipboard": 1,
+	"is.workflow.actions.share": 1,
+	"is.workflow.actions.setbrightness": 1,
+	"is.workflow.actions.setvolume": 1,
+	"is.workflow.actions.darkmode": 0,
+	"is.workflow.actions.lightmode": 0,
+	"is.workflow.actions.vibrate": 0,
+	"is.workflow.actions.lock": 0,
+	"is.workflow.actions.getbatterylevel": 0,
+	"is.workflow.actions.getdevicedetail": 1,
+	"is.workflow.actions.downloadurl": 1,
+	"is.workflow.actions.openurl": 1,
+	"is.workflow.actions.getwebpagecontents": 1,
+	"is.workflow.actions.documentpicker.save": 2,
+	"is.workflow.actions.documentpicker.open": 1,
+	"is.workflow.actions.appendtofile": 2,
+	"is.workflow.actions.delay": 1,
+	"is.workflow.actions.runworkflow": 2,
+	"is.workflow.actions.hash": 2,
+	"is.workflow.actions.getcurrentlocation": 0,
+	"is.workflow.actions.weather.currentconditions": 1
+}
+/*
+Download melon source code from Github.
+
+Currently, it downloads the source code every time you run the shortcut. There is no cache mechanism. It will be added later.
+*/
+const MELON_SOURCE_CODE_URL = url("http://127.0.0.1:5500/dist/webport/index.html")
+const MELON_SOURCE_CODE_ = downloadURL(MELON_SOURCE_CODE_URL)
+@MELON_SOURCE_CODE = MELON_SOURCE_CODE_
+@MELON_SOURCE_CODE = base64Encode(MELON_SOURCE_CODE)
+@code = ShortcutInput
+const b64code = base64Encode(code)
+@url = url("data:text/html;begin={b64code};base64,{MELON_SOURCE_CODE}")
+
+repeat _ for MELON_MAX_PERSISTANCE {
+	const response_ = getWebpageContents(url)
+	@response = response_
+	const response1 = getText(response)
+	@response = response1
+	@image = response
+	const response2 = base64Decode(response1)
+	@response = response2
+	@response = getDictionary(response2)
+	const error = getValue(response, "error")
+	const error1 = getText(error)
+	if error1 {
+		alert(error1, "melon execution failed.")
+		stop()
+	}
+	const status = getValue(response, "status")
+	const status1 = getText(status)
+	const state = getValue(response, "state")
+	const state1 = getText(state)
+	if status1 == MELON_VM_STATUS_HALTED {
+		stop()
+	}
+	if status1 == MELON_VM_STATUS_SYSCALL {
+		const syscall = getValue(response, "syscall")
+		const syscall1 = getDictionary(syscall)
+		const syscall_name = getValue(syscall1, "name")
+		const syscall_name1 = getText(syscall_name)
+		const syscall_args = getValue(syscall1, "argsSerialized")
+		@syscall_out = ""
+
+		/* --- Pre-extract args --- */
+		@syscall_arg_count_raw = getValue(MELON_SYSCALL_ARG_COUNTS, syscall_name1)
+		if !syscall_arg_count_raw {
+			@syscall_arg_count = 0
+		} else {
+			@syscall_arg_count = getNumbers(syscall_arg_count_raw)
+		}
+
+		if syscall_arg_count > 0 {
+			@syscall_arg_0 = getListItem(syscall_args, 1)
+		}
+		if syscall_arg_count > 1 {
+			@syscall_arg_1 = getListItem(syscall_args, 2)
+		}
+
+		/* --- Dispatch --- */
+
+		if syscall_name1 == "is.workflow.actions.showresult" {
+			show(syscall_arg_0.text)
+		}
+		if syscall_name1 == "is.workflow.actions.prompt" {
+			@syscall_out = prompt(syscall_arg_0)
+		}
+		if syscall_name1 == "is.workflow.actions.stop" {
+			output(syscall_arg_0)
+		}
+
+		/* --- UI / Notifications --- */
+
+		if syscall_name1 == "is.workflow.actions.alert" {
+			alert(syscall_arg_0, syscall_arg_1)
+		}
+		if syscall_name1 == "is.workflow.actions.confirm" {
+			confirm(syscall_arg_0, syscall_arg_1)
+		}
+		if syscall_name1 == "is.workflow.actions.notification" {
+			showNotification(syscall_arg_0, syscall_arg_1)
+		}
+		if syscall_name1 == "is.workflow.actions.speaktext" {
+			speak(syscall_arg_0)
+		}
+
+		/* --- Clipboard --- */
+
+		if syscall_name1 == "is.workflow.actions.getclipboard" {
+			@syscall_out = getClipboard()
+			@syscall_out = getText(syscall_out)
+		}
+		if syscall_name1 == "is.workflow.actions.setclipboard" {
+			setClipboard(syscall_arg_0)
+		}
+
+		/* --- Sharing --- */
+
+		if syscall_name1 == "is.workflow.actions.share" {
+			share(syscall_arg_0)
+		}
+
+		/* --- Device Settings --- */
+
+		if syscall_name1 == "is.workflow.actions.setbrightness" {
+			setBrightness(syscall_arg_0.float)
+		}
+		if syscall_name1 == "is.workflow.actions.setvolume" {
+			setVolume(syscall_arg_0.float)
+		}
+		if syscall_name1 == "is.workflow.actions.darkmode" {
+			darkMode()
+		}
+		if syscall_name1 == "is.workflow.actions.lightmode" {
+			lightMode()
+		}
+
+		/* --- Device Hardware --- */
+
+		if syscall_name1 == "is.workflow.actions.vibrate" {
+			vibrate()
+		}
+		if syscall_name1 == "is.workflow.actions.lock" {
+			lockScreen()
+		}
+		if syscall_name1 == "is.workflow.actions.getbatterylevel" {
+			@syscall_out = getBatteryLevel()
+			@syscall_out = getText(syscall_out)
+		}
+		if syscall_name1 == "is.workflow.actions.getdevicedetail" {
+			@syscall_out = getDeviceDetail(syscall_arg_0)
+			@syscall_out = getText(syscall_out)
+		}
+
+		/* --- Web / Network --- */
+
+		if syscall_name1 == "is.workflow.actions.downloadurl" {
+			@syscall_out = downloadURL(syscall_arg_0)
+			@syscall_out = getText(syscall_out)
+		}
+		if syscall_name1 == "is.workflow.actions.openurl" {
+			openURL(syscall_arg_0)
+		}
+		if syscall_name1 == "is.workflow.actions.getwebpagecontents" {
+			@syscall_out = getWebpageContents(syscall_arg_0)
+			@syscall_out = getText(syscall_out)
+		}
+
+		/* --- Files --- */
+
+		if syscall_name1 == "is.workflow.actions.documentpicker.save" {
+			saveFile(syscall_arg_0, syscall_arg_1)
+		}
+		if syscall_name1 == "is.workflow.actions.documentpicker.open" {
+			@syscall_out = getFile(syscall_arg_0)
+			@syscall_out = getText(syscall_out)
+		}
+		if syscall_name1 == "is.workflow.actions.appendtofile" {
+			appendToFile(syscall_arg_0, syscall_arg_1)
+		}
+
+		/* --- Control --- */
+
+		if syscall_name1 == "is.workflow.actions.delay" {
+			@syscall_arg_0_num = getNumbers(syscall_arg_0)
+			wait(syscall_arg_0_num)
+		}
+
+		/* --- Shortcuts --- */
+
+		if syscall_name1 == "is.workflow.actions.runworkflow" {
+			@syscall_out = run(syscall_arg_0, syscall_arg_1)
+			@syscall_out = getText(syscall_out)
+		}
+
+		/* --- Crypto --- */
+
+		if syscall_name1 == "is.workflow.actions.hash" {
+			@syscall_out = hash(syscall_arg_0, syscall_arg_1)
+			@syscall_out = getText(syscall_out)
+		}
+
+		/* --- Location / Weather --- */
+
+		if syscall_name1 == "is.workflow.actions.getcurrentlocation" {
+			@syscall_out = getCurrentLocation()
+			@syscall_out = getText(syscall_out)
+		}
+		if syscall_name1 == "is.workflow.actions.weather.currentconditions" {
+			@syscall_out = getCurrentWeather(syscall_arg_0)
+			@syscall_out = getText(syscall_out)
+		}
+	}
+	@syscall_out = base64Encode(syscall_out)
+	@url = url("data:text/html;resume={image};value={syscall_out};base64,{MELON_SOURCE_CODE}")
+}
+const Text = "nil"
+saveFile("", Text)

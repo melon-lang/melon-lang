@@ -130,10 +130,12 @@ export class Syscall {
     @ValueTransform()
     @Type(()=>Value)
     args: Value[];
+    argsSerialized: Array<string | number | boolean | null>;
 
-    constructor(name = "", args = []){
+    constructor(name = "", args: Value[] = []){
         this.name = name;
         this.args = args;
+        this.argsSerialized = args.map(arg => arg.value);
     }
 }
 
