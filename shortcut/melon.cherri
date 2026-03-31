@@ -70,27 +70,36 @@ const b64code = base64Encode(code)
 repeat _ for MELON_MAX_PERSISTANCE {
 	@response = getWebpageContents(url)
 	@image = response
+	
 	@response = base64Decode(response)
 	@response = getDictionary(response)
-	const error = getValue(response, "error").text
+	
+	@error = getValue(response, "error")
+	@error = error.text
+
 	if error {
 		alert(error, "melon execution failed.")
 		stop()
 	}
-	const status = getValue(response, "status").text
-	if status == MELON_VM_STATUS_HALTED {
+	
+	@status = getValue(response, "status")
+
+	if status.text == MELON_VM_STATUS_HALTED {
 		stop()
 	}
-	if status == MELON_VM_STATUS_SYSCALL {
-		const syscall = getValue(response, "syscall")
-		const syscall1 = getDictionary(syscall)
-		const syscall_name = getValue(syscall1, "name")
-		const syscall_name1 = syscall_name.text
-		const syscall_args = getValue(syscall1, "argsSerialized")
+
+	if status.text == MELON_VM_STATUS_SYSCALL {
+		@syscall = getValue(response, "syscall")
+		@syscall = getDictionary(syscall)
+		
+		@syscall_name = getValue(syscall, "name")
+		@syscall_name = syscall_name.text
+
+		@syscall_args = getValue(syscall, "argsSerialized")
 		@syscall_out = ""
 
 		/* --- Pre-extract args --- */
-		@syscall_arg_count_raw = getValue(MELON_SYSCALL_ARG_COUNTS, syscall_name1)
+		@syscall_arg_count_raw = getValue(MELON_SYSCALL_ARG_COUNTS, syscall_name)
 		if !syscall_arg_count_raw {
 			@syscall_arg_count = 0
 		} else {
@@ -106,128 +115,128 @@ repeat _ for MELON_MAX_PERSISTANCE {
 
 		/* --- Dispatch --- */
 
-		if syscall_name1 == "is.workflow.actions.showresult" {
+		if syscall_name.text == "is.workflow.actions.showresult" {
 			show(syscall_arg_0.text)
 		}
-		if syscall_name1 == "is.workflow.actions.prompt" {
+		if syscall_name.text == "is.workflow.actions.prompt" {
 			@syscall_out = prompt(syscall_arg_0)
 		}
-		if syscall_name1 == "is.workflow.actions.stop" {
+		if syscall_name.text == "is.workflow.actions.stop" {
 			output(syscall_arg_0)
 		}
 
 		/* --- UI / Notifications --- */
 
-		if syscall_name1 == "is.workflow.actions.alert" {
+		if syscall_name.text == "is.workflow.actions.alert" {
 			alert(syscall_arg_0, syscall_arg_1)
 		}
-		if syscall_name1 == "is.workflow.actions.confirm" {
+		if syscall_name.text == "is.workflow.actions.confirm" {
 			confirm(syscall_arg_0, syscall_arg_1)
 		}
-		if syscall_name1 == "is.workflow.actions.notification" {
+		if syscall_name.text == "is.workflow.actions.notification" {
 			showNotification(syscall_arg_0, syscall_arg_1)
 		}
-		if syscall_name1 == "is.workflow.actions.speaktext" {
+		if syscall_name.text == "is.workflow.actions.speaktext" {
 			speak(syscall_arg_0)
 		}
 
 		/* --- Clipboard --- */
 
-		if syscall_name1 == "is.workflow.actions.getclipboard" {
-			@syscall_out = getClipboard().text
+		if syscall_name.text == "is.workflow.actions.getclipboard" {
+			@syscall_out = getClipboard()
 		}
-		if syscall_name1 == "is.workflow.actions.setclipboard" {
+		if syscall_name.text == "is.workflow.actions.setclipboard" {
 			setClipboard(syscall_arg_0)
 		}
 
 		/* --- Sharing --- */
 
-		if syscall_name1 == "is.workflow.actions.share" {
+		if syscall_name.text == "is.workflow.actions.share" {
 			share(syscall_arg_0)
 		}
 
 		/* --- Device Settings --- */
 
-		if syscall_name1 == "is.workflow.actions.setbrightness" {
+		if syscall_name.text == "is.workflow.actions.setbrightness" {
 			setBrightness(syscall_arg_0.float)
 		}
-		if syscall_name1 == "is.workflow.actions.setvolume" {
+		if syscall_name.text == "is.workflow.actions.setvolume" {
 			setVolume(syscall_arg_0.float)
 		}
-		if syscall_name1 == "is.workflow.actions.darkmode" {
+		if syscall_name.text == "is.workflow.actions.darkmode" {
 			darkMode()
 		}
-		if syscall_name1 == "is.workflow.actions.lightmode" {
+		if syscall_name.text == "is.workflow.actions.lightmode" {
 			lightMode()
 		}
 
 		/* --- Device Hardware --- */
 
-		if syscall_name1 == "is.workflow.actions.vibrate" {
+		if syscall_name.text == "is.workflow.actions.vibrate" {
 			vibrate()
 		}
-		if syscall_name1 == "is.workflow.actions.lock" {
+		if syscall_name.text == "is.workflow.actions.lock" {
 			lockScreen()
 		}
-		if syscall_name1 == "is.workflow.actions.getbatterylevel" {
-			@syscall_out = getBatteryLevel().text
+		if syscall_name.text == "is.workflow.actions.getbatterylevel" {
+			@syscall_out = getBatteryLevel()
 		}
-		if syscall_name1 == "is.workflow.actions.getdevicedetail" {
-			@syscall_out = getDeviceDetail(syscall_arg_0).text
+		if syscall_name.text == "is.workflow.actions.getdevicedetail" {
+			@syscall_out = getDeviceDetail(syscall_arg_0)
 		}
 
 		/* --- Web / Network --- */
 
-		if syscall_name1 == "is.workflow.actions.downloadurl" {
-			@syscall_out = downloadURL(syscall_arg_0).text
+		if syscall_name.text == "is.workflow.actions.downloadurl" {
+			@syscall_out = downloadURL(syscall_arg_0)
 		}
-		if syscall_name1 == "is.workflow.actions.openurl" {
+		if syscall_name.text == "is.workflow.actions.openurl" {
 			openURL(syscall_arg_0)
 		}
-		if syscall_name1 == "is.workflow.actions.getwebpagecontents" {
-			@syscall_out = getWebpageContents(syscall_arg_0).text
+		if syscall_name.text == "is.workflow.actions.getwebpagecontents" {
+			@syscall_out = getWebpageContents(syscall_arg_0)
 		}
 
 		/* --- Files --- */
 
-		if syscall_name1 == "is.workflow.actions.documentpicker.save" {
+		if syscall_name.text == "is.workflow.actions.documentpicker.save" {
 			saveFile(syscall_arg_0, syscall_arg_1)
 		}
-		if syscall_name1 == "is.workflow.actions.documentpicker.open" {
-			@syscall_out = getFile(syscall_arg_0).text
+		if syscall_name.text == "is.workflow.actions.documentpicker.open" {
+			@syscall_out = getFile(syscall_arg_0)
 		}
-		if syscall_name1 == "is.workflow.actions.appendtofile" {
+		if syscall_name.text == "is.workflow.actions.appendtofile" {
 			appendToFile(syscall_arg_0, syscall_arg_1)
 		}
 
 		/* --- Control --- */
 
-		if syscall_name1 == "is.workflow.actions.delay" {
+		if syscall_name.text == "is.workflow.actions.delay" {
 			wait(syscall_arg_0.number)
 		}
 
 		/* --- Shortcuts --- */
 
-		if syscall_name1 == "is.workflow.actions.runworkflow" {
-			@syscall_out = run(syscall_arg_0, syscall_arg_1).text
+		if syscall_name.text == "is.workflow.actions.runworkflow" {
+			@syscall_out = run(syscall_arg_0, syscall_arg_1)
 		}
 
 		/* --- Crypto --- */
 
-		if syscall_name1 == "is.workflow.actions.hash" {
-			@syscall_out = hash(syscall_arg_0, syscall_arg_1).text
+		if syscall_name.text == "is.workflow.actions.hash" {
+			@syscall_out = hash(syscall_arg_0, syscall_arg_1)
 		}
 
 		/* --- Location / Weather --- */
 
-		if syscall_name1 == "is.workflow.actions.getcurrentlocation" {
-			@syscall_out = getCurrentLocation().text
+		if syscall_name.text == "is.workflow.actions.getcurrentlocation" {
+			@syscall_out = getCurrentLocation()
 		}
-		if syscall_name1 == "is.workflow.actions.weather.currentconditions" {
-			@syscall_out = getCurrentWeather(syscall_arg_0).text
+		if syscall_name.text == "is.workflow.actions.weather.currentconditions" {
+			@syscall_out = getCurrentWeather(syscall_arg_0)
 		}
 	}
-	@syscall_out = base64Encode(syscall_out)
+	@syscall_out = base64Encode(syscall_out.text)
 	@url = url("data:text/html;resume={image};value={syscall_out};base64,{MELON_SOURCE_CODE}")
 }
 const Text = "nil"
