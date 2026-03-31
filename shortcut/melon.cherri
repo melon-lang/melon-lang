@@ -68,32 +68,24 @@ const b64code = base64Encode(code)
 @url = url("data:text/html;begin={b64code};base64,{MELON_SOURCE_CODE}")
 
 repeat _ for MELON_MAX_PERSISTANCE {
-	const response_ = getWebpageContents(url)
-	@response = response_
-	const response1 = getText(response)
-	@response = response1
+	@response = getWebpageContents(url)
 	@image = response
-	const response2 = base64Decode(response1)
-	@response = response2
-	@response = getDictionary(response2)
-	const error = getValue(response, "error")
-	const error1 = getText(error)
-	if error1 {
-		alert(error1, "melon execution failed.")
+	@response = base64Decode(response)
+	@response = getDictionary(response)
+	const error = getValue(response, "error").text
+	if error {
+		alert(error, "melon execution failed.")
 		stop()
 	}
-	const status = getValue(response, "status")
-	const status1 = getText(status)
-	const state = getValue(response, "state")
-	const state1 = getText(state)
-	if status1 == MELON_VM_STATUS_HALTED {
+	const status = getValue(response, "status").text
+	if status == MELON_VM_STATUS_HALTED {
 		stop()
 	}
-	if status1 == MELON_VM_STATUS_SYSCALL {
+	if status == MELON_VM_STATUS_SYSCALL {
 		const syscall = getValue(response, "syscall")
 		const syscall1 = getDictionary(syscall)
 		const syscall_name = getValue(syscall1, "name")
-		const syscall_name1 = getText(syscall_name)
+		const syscall_name1 = syscall_name.text
 		const syscall_args = getValue(syscall1, "argsSerialized")
 		@syscall_out = ""
 
@@ -142,8 +134,7 @@ repeat _ for MELON_MAX_PERSISTANCE {
 		/* --- Clipboard --- */
 
 		if syscall_name1 == "is.workflow.actions.getclipboard" {
-			@syscall_out = getClipboard()
-			@syscall_out = getText(syscall_out)
+			@syscall_out = getClipboard().text
 		}
 		if syscall_name1 == "is.workflow.actions.setclipboard" {
 			setClipboard(syscall_arg_0)
@@ -179,26 +170,22 @@ repeat _ for MELON_MAX_PERSISTANCE {
 			lockScreen()
 		}
 		if syscall_name1 == "is.workflow.actions.getbatterylevel" {
-			@syscall_out = getBatteryLevel()
-			@syscall_out = getText(syscall_out)
+			@syscall_out = getBatteryLevel().text
 		}
 		if syscall_name1 == "is.workflow.actions.getdevicedetail" {
-			@syscall_out = getDeviceDetail(syscall_arg_0)
-			@syscall_out = getText(syscall_out)
+			@syscall_out = getDeviceDetail(syscall_arg_0).text
 		}
 
 		/* --- Web / Network --- */
 
 		if syscall_name1 == "is.workflow.actions.downloadurl" {
-			@syscall_out = downloadURL(syscall_arg_0)
-			@syscall_out = getText(syscall_out)
+			@syscall_out = downloadURL(syscall_arg_0).text
 		}
 		if syscall_name1 == "is.workflow.actions.openurl" {
 			openURL(syscall_arg_0)
 		}
 		if syscall_name1 == "is.workflow.actions.getwebpagecontents" {
-			@syscall_out = getWebpageContents(syscall_arg_0)
-			@syscall_out = getText(syscall_out)
+			@syscall_out = getWebpageContents(syscall_arg_0).text
 		}
 
 		/* --- Files --- */
@@ -207,8 +194,7 @@ repeat _ for MELON_MAX_PERSISTANCE {
 			saveFile(syscall_arg_0, syscall_arg_1)
 		}
 		if syscall_name1 == "is.workflow.actions.documentpicker.open" {
-			@syscall_out = getFile(syscall_arg_0)
-			@syscall_out = getText(syscall_out)
+			@syscall_out = getFile(syscall_arg_0).text
 		}
 		if syscall_name1 == "is.workflow.actions.appendtofile" {
 			appendToFile(syscall_arg_0, syscall_arg_1)
@@ -217,33 +203,28 @@ repeat _ for MELON_MAX_PERSISTANCE {
 		/* --- Control --- */
 
 		if syscall_name1 == "is.workflow.actions.delay" {
-			@syscall_arg_0_num = getNumbers(syscall_arg_0)
-			wait(syscall_arg_0_num)
+			wait(syscall_arg_0.number)
 		}
 
 		/* --- Shortcuts --- */
 
 		if syscall_name1 == "is.workflow.actions.runworkflow" {
-			@syscall_out = run(syscall_arg_0, syscall_arg_1)
-			@syscall_out = getText(syscall_out)
+			@syscall_out = run(syscall_arg_0, syscall_arg_1).text
 		}
 
 		/* --- Crypto --- */
 
 		if syscall_name1 == "is.workflow.actions.hash" {
-			@syscall_out = hash(syscall_arg_0, syscall_arg_1)
-			@syscall_out = getText(syscall_out)
+			@syscall_out = hash(syscall_arg_0, syscall_arg_1).text
 		}
 
 		/* --- Location / Weather --- */
 
 		if syscall_name1 == "is.workflow.actions.getcurrentlocation" {
-			@syscall_out = getCurrentLocation()
-			@syscall_out = getText(syscall_out)
+			@syscall_out = getCurrentLocation().text
 		}
 		if syscall_name1 == "is.workflow.actions.weather.currentconditions" {
-			@syscall_out = getCurrentWeather(syscall_arg_0)
-			@syscall_out = getText(syscall_out)
+			@syscall_out = getCurrentWeather(syscall_arg_0).text
 		}
 	}
 	@syscall_out = base64Encode(syscall_out)
