@@ -22,7 +22,7 @@ melon 🍉 Shortcut
 https://github.com/melon-lang/melon-lang
 
 */
-const MELON_VERSION = "1.0.0"
+const MELON_VERSION = "1.0.10"
 const MELON_MAX_PERSISTANCE = 2147483647
 const MELON_VM_STATUS_SYSCALL = "syscall"
 const MELON_VM_STATUS_HALTED = "halted"
@@ -149,7 +149,7 @@ Download melon source code from Github.
 
 Currently, it downloads the source code every time you run the shortcut. There is no cache mechanism. It will be added later.
 */
-const MELON_SOURCE_CODE_URL = url("http://127.0.0.1:5500/dist/webport/index.html")
+const MELON_SOURCE_CODE_URL = url("https://github.com/melon-lang/melon-lang/releases/download/v1.0.10/build.html")
 const MELON_SOURCE_CODE_ = downloadURL(MELON_SOURCE_CODE_URL)
 @MELON_SOURCE_CODE = MELON_SOURCE_CODE_
 @MELON_SOURCE_CODE = base64Encode(MELON_SOURCE_CODE)
@@ -607,5 +607,3 @@ repeat _ for MELON_MAX_PERSISTANCE {
 	@syscall_out = base64Encode(syscall_out)
 	@url = url("data:text/html;resume={image};value={syscall_out};base64,{MELON_SOURCE_CODE}")
 }
-const Text = "nil"
-saveFile("", Text)

@@ -22,6 +22,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: 'npm'
+
       - name: Tap Cherri repository
         run: |
           brew update
@@ -41,6 +47,9 @@ jobs:
       - name: Verify Cherri
         run: cherri --version
 
+      - name: Inject version
+        run: node scripts/inject-version.mjs
+
       - name: Compile shortcut
         working-directory: shortcut
         run: cherri melon.cherri
@@ -51,3 +60,21 @@ jobs:
           name: melon-shortcut
           path: shortcut/melon.shortcut
           if-no-files-found: error
+
+      - name: Read package version
+        id: package_version
+        run: |
+          VERSION=$(node -e "console.log(require('./package.json').version)")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          tag_name: "v${{ steps.package_version.outputs.version }}"
+          name: "Melon Shortcut v${{ steps.package_version.outputs.version }}"
+          files: shortcut/melon.shortcut
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

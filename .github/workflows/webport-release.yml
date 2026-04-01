@@ -25,24 +25,12 @@ jobs:
       - run: npm run build:webport
       - run: mv dist/webport/index.html dist/webport/build.html
 
-      - name: "call action"
-        id: last_release
-        uses: InsonusK/get-latest-release@v1.0.1
-        with:
-          myToken: "${{ secrets.GITHUB_TOKEN }}"
-          view_top: 100
-          exclude_types: "prerelease"
-      
-      - name: Bump release version
-        id: bump_version
-        uses: christian-draeger/increment-semantic-version@1.1.0
-        with:
-          current-version: "${{ steps.last_release.outputs.tag_name }}" # also accepted: 'v2.11.7-alpha.3' | '2.11.7-alpha3'
-          version-fragment: 'bug'
-      
-      - name: Do something with your bumped release version
-        run: echo ${{ steps.bump_version.outputs.next-version }}
-        # will print 2.12.0
+      - name: Read package version
+        id: package_version
+        run: |
+          VERSION=$(node -e "console.log(require('./package.json').version)")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
      
       - name: Generate checksum
         uses: jmgilman/actions-generate-checksum@v1
@@ -53,8 +41,8 @@ jobs:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          title: "Melon v${{ steps.bump_version.outputs.next-version }}"
-          automatic_release_tag: "${{ steps.bump_version.outputs.next-version }}"
+          title: "Melon v${{ steps.package_version.outputs.version }}"
+          automatic_release_tag: "v${{ steps.package_version.outputs.version }}"
           prerelease: false
           files: |
             dist/webport/build.html
