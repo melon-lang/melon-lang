@@ -1,5 +1,8 @@
 name: Build Shortcut Artifact
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
   push:
@@ -75,6 +78,4 @@ jobs:
           tag_name: "v${{ steps.package_version.outputs.version }}"
           name: "Melon Shortcut v${{ steps.package_version.outputs.version }}"
           files: shortcut/melon.shortcut
-          make_latest: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
