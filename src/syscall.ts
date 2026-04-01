@@ -1,7 +1,9 @@
 import { InvalidType, SycallArgumentNumberMismatch } from "./error";
-import {Value, StringValue, NumberValue} from './value'
+import {Value, StringValue, NumberValue, BooleanValue, HostRefValue, LocationRefValue, ImageRefValue, AudioRefValue, VideoRefValue, FileRefValue} from './value'
 
-type ParamType = 'string' | 'number' | 'any';
+type HostRefConstructor = new (value: string) => HostRefValue;
+type ParamType = 'string' | 'number' | 'any' | 'host_ref';
+type ReturnType = 'string' | 'number' | 'boolean' | HostRefConstructor;
 
 interface SyscallParam {
     type: ParamType;
@@ -9,10 +11,17 @@ interface SyscallParam {
     default?: Value;
 }
 
-function defineSyscall(name: string, syscallId: string, params: SyscallParam[]) {
+interface SyscallDefinition {
+    syscallId: string;
+    preprocessor: (args: Value[], lineNumber: number) => Value[];
+    returnType: ReturnType;
+}
+
+function defineSyscall(name: string, syscallId: string, params: SyscallParam[], returnType: ReturnType = 'string'): SyscallDefinition {
     const requiredCount = params.filter(p => !p.optional).length;
     return {
         syscallId,
+        returnType,
         preprocessor: (args: Value[], lineNumber: number): Value[] => {
             if (args.length < requiredCount || args.length > params.length)
                 throw new SycallArgumentNumberMismatch(lineNumber, name, requiredCount, args.length);
@@ -29,7 +38,11 @@ function defineSyscall(name: string, syscallId: string, params: SyscallParam[]) 
                                 throw new InvalidType(lineNumber, NumberValue.typeName, arg.typeName, `Argument ${i + 1} of ${name} must be a number.`);
                             return [arg];
                         case 'any':
-                            return [new StringValue(arg.str)];
+                            return [arg];
+                        case 'host_ref':
+                            if (!(arg instanceof HostRefValue))
+                                throw new InvalidType(lineNumber, HostRefValue.typeName, arg.typeName, `Argument ${i + 1} of ${name} must be a host reference.`);
+                            return [arg];
                     }
                 }
                 return param.default !== undefined ? [param.default] : [];
@@ -38,9 +51,10 @@ function defineSyscall(name: string, syscallId: string, params: SyscallParam[]) 
     };
 }
 
-export default {
+const syscallDefinitions: Record<string, SyscallDefinition> = {
     'syscall': {
         syscallId: 'is.melon.syscall',
+        returnType: 'string',
         preprocessor: (args: Value[], lineNumber: number) => {
             if (args.length < 2)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'syscall', 2, args.length);
@@ -53,6 +67,7 @@ export default {
     },
     'print': {
         syscallId: 'is.workflow.actions.showresult',
+        returnType: 'string',
         preprocessor: (args: Value[], lineNumber: number) => {
             return [new StringValue(args.map(arg => arg.str).join(' '))];
         }
@@ -62,6 +77,7 @@ export default {
     ]),
     'exit': {
         syscallId: 'is.workflow.actions.stop',
+        returnType: 'string',
         preprocessor: (args: Value[], lineNumber: number) => {
             if (args.length > 1)
                 throw new SycallArgumentNumberMismatch(lineNumber, 'exit', 1, args.length);
@@ -161,7 +177,7 @@ export default {
         { type: 'any', optional: true, default: new StringValue('true') },
         { type: 'any', optional: true, default: new StringValue('true') }
     ]),
-    'getWallpaper': defineSyscall('getWallpaper', 'is.workflow.actions.getwallpaper', []),
+    'getWallpaper': defineSyscall('getWallpaper', 'is.workflow.actions.getwallpaper', [], ImageRefValue),
     'getAllWallpapers': defineSyscall('getAllWallpapers', 'is.workflow.actions.getallwallpapers', []),
 
     // --- Device Hardware ---
@@ -174,11 +190,11 @@ export default {
         { type: 'any' }
     ]),
     'toggleAirplaneMode': defineSyscall('toggleAirplaneMode', 'is.workflow.actions.toggleairplanemode', []),
-    'connectedToCharger': defineSyscall('connectedToCharger', 'is.workflow.actions.connectedtocharger', []),
-    'isCharging': defineSyscall('isCharging', 'is.workflow.actions.ischarging', []),
-    'getOnScreenContent': defineSyscall('getOnScreenContent', 'is.workflow.actions.getonscreencontent', []),
+    'connectedToCharger': defineSyscall('connectedToCharger', 'is.workflow.actions.connectedtocharger', [], 'boolean'),
+    'isCharging': defineSyscall('isCharging', 'is.workflow.actions.ischarging', [], 'boolean'),
+    'getOnScreenContent': defineSyscall('getOnScreenContent', 'is.workflow.actions.getonscreencontent', [], ImageRefValue),
     'getOrientation': defineSyscall('getOrientation', 'is.workflow.actions.getorientation', []),
-    'getBatteryLevel': defineSyscall('getBatteryLevel', 'is.workflow.actions.getbatterylevel', []),
+    'getBatteryLevel': defineSyscall('getBatteryLevel', 'is.workflow.actions.getbatterylevel', [], 'number'),
     'getDeviceDetail': defineSyscall('getDeviceDetail', 'is.workflow.actions.getdevicedetail', [
         { type: 'string' }
     ]),
@@ -187,7 +203,7 @@ export default {
 
     'downloadURL': defineSyscall('downloadURL', 'is.workflow.actions.downloadurl', [
         { type: 'string' }
-    ]),
+    ], FileRefValue),
     'openURL': defineSyscall('openURL', 'is.workflow.actions.openurl', [
         { type: 'string' }
     ]),
@@ -199,7 +215,7 @@ export default {
     ]),
     'searchGiphy': defineSyscall('searchGiphy', 'is.workflow.actions.searchgiphy', [
         { type: 'string' }
-    ]),
+    ], ImageRefValue),
     'expandURL': defineSyscall('expandURL', 'is.workflow.actions.expandurl', [
         { type: 'string' }
     ]),
@@ -207,7 +223,7 @@ export default {
     'showWebpage': defineSyscall('showWebpage', 'is.workflow.actions.showwebpage', [
         { type: 'string' }
     ]),
-    'isOnline': defineSyscall('isOnline', 'is.workflow.actions.isonline', []),
+    'isOnline': defineSyscall('isOnline', 'is.workflow.actions.isonline', [], 'boolean'),
     'connectToServer': defineSyscall('connectToServer', 'is.workflow.actions.connecttoserver', [
         { type: 'string' }
     ]),
@@ -254,11 +270,11 @@ export default {
     'showIniTunes': defineSyscall('showIniTunes', 'is.workflow.actions.showinitunes', [
         { type: 'any' }
     ]),
-    'takeScreenshot': defineSyscall('takeScreenshot', 'is.workflow.actions.takescreenshot', []),
+    'takeScreenshot': defineSyscall('takeScreenshot', 'is.workflow.actions.takescreenshot', [], ImageRefValue),
     'playSound': defineSyscall('playSound', 'is.workflow.actions.playsound', [
-        { type: 'any' }
+        { type: 'host_ref' }
     ]),
-    'recordAudio': defineSyscall('recordAudio', 'is.workflow.actions.recordaudio', []),
+    'recordAudio': defineSyscall('recordAudio', 'is.workflow.actions.recordaudio', [], AudioRefValue),
     'getPodcasts': defineSyscall('getPodcasts', 'is.workflow.actions.getpodcasts', []),
     'searchPodcasts': defineSyscall('searchPodcasts', 'is.workflow.actions.searchpodcasts', [
         { type: 'string' }
@@ -267,23 +283,23 @@ export default {
         { type: 'any' }
     ]),
     'startShazam': defineSyscall('startShazam', 'is.workflow.actions.startshazam', []),
-    'takePhoto': defineSyscall('takePhoto', 'is.workflow.actions.takephoto', []),
-    'takeVideo': defineSyscall('takeVideo', 'is.workflow.actions.takevideo', []),
+    'takePhoto': defineSyscall('takePhoto', 'is.workflow.actions.takephoto', [], ImageRefValue),
+    'takeVideo': defineSyscall('takeVideo', 'is.workflow.actions.takevideo', [], VideoRefValue),
     'trimVideo': defineSyscall('trimVideo', 'is.workflow.actions.trimvideo', [
-        { type: 'any' }
-    ]),
+        { type: 'host_ref' }
+    ], VideoRefValue),
     'searchVoiceMemos': defineSyscall('searchVoiceMemos', 'is.workflow.actions.searchvoicememos', [
         { type: 'string' }
-    ]),
+    ], AudioRefValue),
     'stripMediaMetadata': defineSyscall('stripMediaMetadata', 'is.workflow.actions.stripmediametadata', [
-        { type: 'any' }
-    ]),
+        { type: 'host_ref' }
+    ], HostRefValue),
     'encodeAudio': defineSyscall('encodeAudio', 'is.workflow.actions.encodeaudio', [
-        { type: 'any' }
-    ]),
+        { type: 'host_ref' }
+    ], AudioRefValue),
     'encodeVideo': defineSyscall('encodeVideo', 'is.workflow.actions.encodevideo', [
-        { type: 'any' }
-    ]),
+        { type: 'host_ref' }
+    ], VideoRefValue),
 
     // --- Contacts ---
 
@@ -324,10 +340,10 @@ export default {
         { type: 'string' }
     ]),
     'getTextFromImage': defineSyscall('getTextFromImage', 'is.workflow.actions.gettextfromimage', [
-        { type: 'any' }
+        { type: 'host_ref' }
     ]),
     'transcribeText': defineSyscall('transcribeText', 'is.workflow.actions.transcribetext', [
-        { type: 'any' }
+        { type: 'host_ref' }
     ]),
     'getRichTextFromMarkdown': defineSyscall('getRichTextFromMarkdown', 'is.workflow.actions.getrichtextfrommarkdown', [
         { type: 'string' }
@@ -356,7 +372,7 @@ export default {
     ]),
     'getFile': defineSyscall('getFile', 'is.workflow.actions.documentpicker.open', [
         { type: 'string' }
-    ]),
+    ], FileRefValue),
     'appendFile': defineSyscall('appendFile', 'is.workflow.actions.appendtofile', [
         { type: 'any' },
         { type: 'any' }
@@ -391,8 +407,41 @@ export default {
 
     // --- Location / Weather ---
 
-    'getCurrentLocation': defineSyscall('getCurrentLocation', 'is.workflow.actions.getcurrentlocation', []),
+    'getCurrentLocation': defineSyscall('getCurrentLocation', 'is.workflow.actions.getcurrentlocation', [], LocationRefValue),
     'getCurrentWeather': defineSyscall('getCurrentWeather', 'is.workflow.actions.weather.currentconditions', [
-        { type: 'string', optional: true, default: new StringValue('Current Location') }
+        { type: 'any', optional: true, default: new StringValue('Current Location') }
     ]),
 }
+
+const syscallReturnTypeById: Record<string, ReturnType> = Object.fromEntries(
+    Object.values(syscallDefinitions).map((definition) => [definition.syscallId, definition.returnType])
+) as Record<string, ReturnType>;
+
+
+export function coerceSyscallReturnValue(syscallId: string, rawValue: string): Value {
+    const returnType = syscallReturnTypeById[syscallId] || 'string';
+
+    if (typeof returnType === 'function')
+        return new returnType(rawValue);
+
+    if (returnType === 'boolean') {
+        const normalized = rawValue.trim().toLowerCase();
+        if (normalized === 'true' || normalized === '1' || normalized === 'yes')
+            return new BooleanValue(true);
+        if (normalized === 'false' || normalized === '0' || normalized === 'no')
+            return new BooleanValue(false);
+        return new StringValue(rawValue);
+    }
+
+    if (returnType === 'number') {
+        const normalized = rawValue.trim();
+        const parsed = Number(normalized);
+        if (normalized !== '' && Number.isFinite(parsed))
+            return new NumberValue(parsed);
+        return new StringValue(rawValue);
+    }
+
+    return new StringValue(rawValue);
+}
+
+export default syscallDefinitions;

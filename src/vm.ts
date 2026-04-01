@@ -3,7 +3,7 @@ import { Type, serialize, deserialize, Transform } from 'class-transformer';
 import { CompilerBug, DivisionByZero, FunctionArgumentNumberMismatch, IndexError, InvalidFormat, InvalidType, NativeFunctionArgumentNumberMismatch, NoSuchMemberMethod, VariableAlreadyDeclared, VariableNotDeclared } from './error';
 import natives from './native';
 import syscalls from './syscall';
-import { BooleanValue, Function, FunctionValue, NativeValue, ListValue, NullValue, NumberValue, StringValue, SyscallValue, TupleValue, Value, ValueTransform, MemberMethodValue, DictValue } from './value';
+import { BooleanValue, Function, FunctionValue, HostRefValue, NativeValue, ListValue, NullValue, NumberValue, StringValue, SyscallValue, TupleValue, Value, ValueTransform, MemberMethodValue, DictValue } from './value';
 
 export enum Opcode {
     PUSH = "push",
@@ -131,11 +131,13 @@ export class Syscall {
     @Type(()=>Value)
     args: Value[];
     argsSerialized: Array<string | number | boolean | null>;
+    argTypes: string[];
 
     constructor(name = "", args: Value[] = []){
         this.name = name;
         this.args = args;
         this.argsSerialized = args.map(arg => arg.value);
+        this.argTypes = args.map(arg => arg.typeName);
     }
 }
 

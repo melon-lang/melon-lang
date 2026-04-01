@@ -22,6 +22,18 @@ const getAsValue = (value) => {
             return new TupleValue(value.value.map(v => getAsValue(v)));
         case SyscallValue.typeName:
             return new SyscallValue(value.value);
+        case HostRefValue.typeName:
+            return new HostRefValue(value.value);
+        case LocationRefValue.typeName:
+            return new LocationRefValue(value.value);
+        case ImageRefValue.typeName:
+            return new ImageRefValue(value.value);
+        case AudioRefValue.typeName:
+            return new AudioRefValue(value.value);
+        case VideoRefValue.typeName:
+            return new VideoRefValue(value.value);
+        case FileRefValue.typeName:
+            return new FileRefValue(value.value);
         case FunctionValue.typeName:
             return new FunctionValue(value.value)
         case MemberMethodValue.typeName:
@@ -844,6 +856,52 @@ export class SyscallValue extends Value {
     equals(other: Value): boolean {
         return other instanceof SyscallValue && this.value === other.value;
     }
+}
+
+export class HostRefValue extends Value {
+
+    public static readonly typeName: string = 'host_ref';
+
+    constructor(value: string) {
+        super(value);
+    }
+
+    get repr(): string {
+        return `<HostReference:${this.value}>`;
+    }
+
+    get str(): string {
+        return `<HostReference:${this.value}>`;
+    }
+
+    equals(other: Value): boolean {
+        return other.constructor === this.constructor && this.value === other.value;
+    }
+}
+
+export class LocationRefValue extends HostRefValue {
+    get repr(): string { return `<Location:${this.value}>`; }
+    get str(): string  { return `<Location:${this.value}>`; }
+}
+
+export class ImageRefValue extends HostRefValue {
+    get repr(): string { return `<Image:${this.value}>`; }
+    get str(): string  { return `<Image:${this.value}>`; }
+}
+
+export class AudioRefValue extends HostRefValue {
+    get repr(): string { return `<Audio:${this.value}>`; }
+    get str(): string  { return `<Audio:${this.value}>`; }
+}
+
+export class VideoRefValue extends HostRefValue {
+    get repr(): string { return `<Video:${this.value}>`; }
+    get str(): string  { return `<Video:${this.value}>`; }
+}
+
+export class FileRefValue extends HostRefValue {
+    get repr(): string { return `<File:${this.value}>`; }
+    get str(): string  { return `<File:${this.value}>`; }
 }
 
 export class NullValue extends Value {
