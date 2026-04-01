@@ -37,4 +37,5 @@ In melon, you use native `print` function to display text or other types of data
 ## Contribution and More
 
 Guides on how to contribute are available in docs under [Contribution](https://melon-lang.github.io/melon-lang/#/contribute) section.
+Shortcut runtime (written in Cherri) setup and workflow guide is available in [shortcut/README.md](shortcut/README.md).
 You can join our [Discord server](https://discord.gg/5WS2PBEJcn) to discuss about anything related to melon. 
