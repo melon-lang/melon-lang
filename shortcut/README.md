@@ -39,13 +39,28 @@ Or use VS Code Live Server as long as it serves the same URL path expected by me
 
 ## Build The Shortcut
 
-From this folder:
+From repository root:
 
 ```bash
-cherri melon.cherri
+npm run build:shortcut
 ```
 
-This generates `melon.shortcut`.
+This is the release build path. It injects:
+
+1. `MELON_VERSION` from `package.json`
+2. `MELON_SOURCE_CODE_URL` to the matching GitHub release webport artifact (`.../releases/download/v<version>/build.html`)
+
+Then it compiles `shortcut/melon.cherri`.
+
+For local development without replacing version or URL:
+
+```bash
+npm run build:shortcut:dev
+```
+
+This compiles the shortcut as-is and preserves the current values already present in `melon.cherri`.
+
+Both commands generate `shortcut/melon.shortcut`.
 
 To compile and open quickly on macOS:
 
@@ -63,11 +78,10 @@ cherri melon.cherri && open melon.shortcut
 npm run build:webport
 ```
 
-4. Recompile shortcut:
+4. Recompile shortcut in dev mode (no version/URL injection):
 
 ```bash
-cd shortcut
-cherri melon.cherri
+npm run build:shortcut:dev
 ```
 
 5. Run the shortcut and test behavior.

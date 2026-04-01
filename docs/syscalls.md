@@ -1,245 +1,214 @@
 # Syscall Reference
 
-Syscalls are the bridge between melon programs and Siri Shortcuts actions. When a melon program calls a syscall function, the VM pauses, serializes the call into the VM state, and the host Siri Shortcut executes the corresponding Shortcuts action. The result (if any) is serialized back and pushed onto the VM stack as a string.
+Syscalls are the bridge between melon programs and Siri Shortcuts actions.
+
+This page is aligned with the current implementation in:
+
+1. `src/syscall.ts` (melon function to syscall id mapping and argument validation)
+2. `shortcut/melon.cherri` (runtime dispatch that executes the native action)
 
 ## How Syscalls Work
 
-1. A melon program calls a syscall function (e.g. `alert("Hello")`).
-2. The melon VM halts with `status = "syscall"` and includes a `syscall` object in the state containing `name` (the syscall ID) and `args` (the argument list).
-3. The host Siri Shortcut inspects `syscall.name` and dispatches to the matching `if` block.
-4. The Shortcuts action runs. If it produces a return value, it is stored in `syscall_out`.
-5. `syscall_out` is base64-encoded and passed back in the next VM resume URL.
-6. The VM resumes and the return value is pushed onto the stack.
+1. A melon program calls a function that maps to a syscall.
+2. The VM yields with `status = "syscall"` and emits the syscall id and serialized args.
+3. `shortcut/melon.cherri` dispatches on syscall id and runs the corresponding Shortcuts action.
+4. Any output is serialized back to the VM as text.
+5. The VM resumes execution.
 
----
+## Core Built-ins
 
-## Built-in Syscalls (original)
-
-| melon function | Syscall ID | Shortcuts action | Returns |
-|---|---|---|---|
-| `print(value, ...)` | `is.workflow.actions.showresult` | Show Result | no |
-| `input(prompt?)` | `is.workflow.actions.prompt` | Ask for Input | string |
-| `exit(value?)` | `is.workflow.actions.stop` | Stop and Output | no |
-
----
-
-## New Syscalls
-
-### UI / Notifications
-
-| melon function | Syscall ID | Shortcuts action | Returns |
-|---|---|---|---|
-| `alert(message, title?)` | `is.workflow.actions.alert` | Show Alert | no |
-| `confirm(message, title?)` | `is.workflow.actions.confirm` | Show Alert (with cancel) | no |
-| `notify(body, title?)` | `is.workflow.actions.notification` | Show Notification | no |
-| `speak(text)` | `is.workflow.actions.speaktext` | Speak Text | no |
-
-**Usage examples:**
-```melon
-alert("Something went wrong!", "Error");
-confirm("Are you sure?");
-notify("Download complete", "melon");
-speak("Hello from melon!");
-```
-
----
-
-### Clipboard
-
-| melon function | Syscall ID | Shortcuts action | Returns |
-|---|---|---|---|
-| `getClipboard()` | `is.workflow.actions.getclipboard` | Get Clipboard | string |
-| `setClipboard(value)` | `is.workflow.actions.setclipboard` | Set Clipboard | no |
-
-**Usage examples:**
-```melon
-let clip = getClipboard();
-print("Clipboard:", clip);
-
-setClipboard("copied by melon");
-```
-
----
-
-### Sharing
-
-| melon function | Syscall ID | Shortcuts action | Returns |
-|---|---|---|---|
-| `share(value)` | `is.workflow.actions.share` | Share | no |
-
-**Usage examples:**
-```melon
-share("Check this out!");
-```
-
----
-
-### Device Settings
-
-| melon function | Syscall ID | Shortcuts action | Returns |
-|---|---|---|---|
-| `setBrightness(value)` | `is.workflow.actions.setbrightness` | Set Brightness | no |
-| `setVolume(value)` | `is.workflow.actions.setvolume` | Set Volume | no |
-| `darkMode()` | `is.workflow.actions.darkmode` | Set Appearance Dark | no |
-| `lightMode()` | `is.workflow.actions.lightmode` | Set Appearance Light | no |
-
-`value` for brightness and volume is a float between `0` and `1`.
-
-**Usage examples:**
-```melon
-setBrightness(0.5);
-setVolume(0.8);
-darkMode();
-```
-
----
-
-### Device Hardware
-
-| melon function | Syscall ID | Shortcuts action | Returns |
-|---|---|---|---|
-| `vibrate()` | `is.workflow.actions.vibrate` | Vibrate Device | no |
-| `lockScreen()` | `is.workflow.actions.lock` | Lock Screen | no |
-| `getBatteryLevel()` | `is.workflow.actions.getbatterylevel` | Get Battery Level | string (number) |
-| `getDeviceDetail(detail)` | `is.workflow.actions.getdevicedetail` | Get Device Detail | string |
-
-Valid values for `detail` in `getDeviceDetail`:
-- `"Device Name"`, `"Device Hostname"`, `"Device Model"`, `"Device Is Watch"`
-- `"System Version"`, `"Screen Width"`, `"Screen Height"`
-- `"Current Volume"`, `"Current Brightness"`, `"Current Appearance"`
-
-**Usage examples:**
-```melon
-vibrate();
-lockScreen();
-let battery = getBatteryLevel();
-print("Battery:", battery);
-let model = getDeviceDetail("Device Model");
-print("Device:", model);
-```
-
----
-
-### Web / Network
-
-| melon function | Syscall ID | Shortcuts action | Returns |
-|---|---|---|---|
-| `downloadURL(url)` | `is.workflow.actions.downloadurl` | Get Contents of URL | string |
-| `openURL(url)` | `is.workflow.actions.openurl` | Open URL | no |
-| `getWebContents(url)` | `is.workflow.actions.getwebpagecontents` | Get Webpage Contents | string |
-
-**Usage examples:**
-```melon
-let html = downloadURL("https://example.com/api/data");
-print(html);
-
-openURL("https://melon-lang.github.io/melon-lang");
-
-let page = getWebContents("https://example.com");
-print(page);
-```
-
----
-
-### Files
-
-| melon function | Syscall ID | Shortcuts action | Returns |
-|---|---|---|---|
-| `saveFile(path, content)` | `is.workflow.actions.documentpicker.save` | Save File | no |
-| `getFile(path)` | `is.workflow.actions.documentpicker.open` | Get File | string |
-| `appendFile(path, content)` | `is.workflow.actions.appendtofile` | Append to File | no |
-
-Paths are relative to the Shortcuts folder on the device.
-
-**Usage examples:**
-```melon
-saveFile("notes.txt", "Hello from melon!");
-let content = getFile("notes.txt");
-print(content);
-appendFile("notes.txt", "\nAnother line");
-```
-
----
-
-### Control
-
-| melon function | Syscall ID | Shortcuts action | Returns |
-|---|---|---|---|
-| `wait(seconds)` | `is.workflow.actions.delay` | Wait | no |
-
-**Usage examples:**
-```melon
-print("Waiting 3 seconds...");
-wait(3);
-print("Done!");
-```
-
----
-
-### Shortcuts
-
-| melon function | Syscall ID | Shortcuts action | Returns |
-|---|---|---|---|
-| `runShortcut(name, input?)` | `is.workflow.actions.runworkflow` | Run Shortcut | string |
-
-**Usage examples:**
-```melon
-let result = runShortcut("My Automation", "some input");
-print("Shortcut returned:", result);
-```
-
----
-
-### Cryptography
-
-| melon function | Syscall ID | Shortcuts action | Returns |
-|---|---|---|---|
-| `hash(input, type?)` | `is.workflow.actions.hash` | Hash | string |
-
-Valid values for `type`: `"MD5"` (default), `"SHA1"`, `"SHA256"`, `"SHA512"`.
-
-**Usage examples:**
-```melon
-let md5 = hash("hello world");
-let sha256 = hash("hello world", "SHA256");
-print(sha256);
-```
-
----
-
-### Location / Weather
-
-| melon function | Syscall ID | Shortcuts action | Returns |
-|---|---|---|---|
-| `getCurrentLocation()` | `is.workflow.actions.getcurrentlocation` | Get Current Location | string |
-| `getCurrentWeather(location?)` | `is.workflow.actions.weather.currentconditions` | Get Current Weather | string |
-
-If `location` is omitted, `getCurrentWeather` uses the current device location.
-
-**Usage examples:**
-```melon
-let loc = getCurrentLocation();
-print("You are at:", loc);
-
-let weather = getCurrentWeather();
-print("Weather:", weather);
-
-let nyWeather = getCurrentWeather("New York, NY");
-print(nyWeather);
-```
-
----
-
-## Implementation Notes
-
-- All arguments sent to the Shortcuts side are serialized as strings. Shortcuts coerces them to the required type (number, float, etc.) as needed.
-- Return values from Shortcuts actions are retrieved via `getText()` and returned to the VM as strings. If the VM needs a number, use melon's `number()` native.
-- The `syscall()` built-in allows calling any arbitrary Shortcuts action ID directly: `syscall("is.workflow.actions.someaction", arg1, arg2)`.
-- New syscalls required adding `#include 'actions/device'` and `#include 'actions/location'` to `shortcut/main.cherri`.
-
-## Files Changed
-
-| File | Change |
+| melon function | Syscall ID |
 |---|---|
-| `src/syscall.ts` | Added 26 new syscall entries across 9 categories |
-| `shortcut/main.cherri` | Added 2 new `#include` directives + 26 new syscall `if` blocks |
+| `syscall(...)` | `is.melon.syscall` |
+| `print(...)` | `is.workflow.actions.showresult` |
+| `input(prompt?)` | `is.workflow.actions.prompt` |
+| `exit(value?)` | `is.workflow.actions.stop` |
+
+## UI / Notifications
+
+| melon function | Syscall ID |
+|---|---|
+| `alert(message, title?)` | `is.workflow.actions.alert` |
+| `confirm(message, title?)` | `is.workflow.actions.confirm` |
+| `notify(body, title?)` | `is.workflow.actions.notification` |
+| `speak(text)` | `is.workflow.actions.speaktext` |
+
+## Clipboard
+
+| melon function | Syscall ID |
+|---|---|
+| `getClipboard()` | `is.workflow.actions.getclipboard` |
+| `setClipboard(value)` | `is.workflow.actions.setclipboard` |
+
+## Sharing
+
+| melon function | Syscall ID |
+|---|---|
+| `share(value)` | `is.workflow.actions.share` |
+| `airdrop(value)` | `is.workflow.actions.airdrop` |
+| `findEmail(filter)` | `is.workflow.actions.findemail` |
+| `findMessage(filter)` | `is.workflow.actions.findmessage` |
+| `findConversation(filter)` | `is.workflow.actions.findconversation` |
+
+## Device Settings
+
+| melon function | Syscall ID |
+|---|---|
+| `setBrightness(value)` | `is.workflow.actions.setbrightness` |
+| `setVolume(value)` | `is.workflow.actions.setvolume` |
+| `darkMode()` | `is.workflow.actions.darkmode` |
+| `lightMode()` | `is.workflow.actions.lightmode` |
+| `toggleAppearance()` | `is.workflow.actions.toggleappearance` |
+| `setNightShift(value)` | `is.workflow.actions.setnightshift` |
+| `setTrueTone(value)` | `is.workflow.actions.settruetone` |
+| `toggleNightShift()` | `is.workflow.actions.togglenightshift` |
+| `toggleTrueTone()` | `is.workflow.actions.toggletruetone` |
+| `setBluetooth(value)` | `is.workflow.actions.setbluetooth` |
+| `setCellularData(value)` | `is.workflow.actions.setcellulardata` |
+| `setWifi(value)` | `is.workflow.actions.setwifi` |
+| `toggleBluetooth()` | `is.workflow.actions.togglebluetooth` |
+| `toggleCellularData()` | `is.workflow.actions.togglecellulardata` |
+| `toggleWifi()` | `is.workflow.actions.togglewifi` |
+| `getFocusMode()` | `is.workflow.actions.getfocusmode` |
+| `toggleDND()` | `is.workflow.actions.togglednd` |
+| `DNDOff()` | `is.workflow.actions.dndoff` |
+| `DNDOn()` | `is.workflow.actions.dndon` |
+| `setWallpaper(value)` | `is.workflow.actions.setwallpaper` |
+| `setStageManager(enabled, recentApps?)` | `is.workflow.actions.setstagemanager` |
+| `toggleStageManager(enabled?, recentApps?)` | `is.workflow.actions.togglestagemanager` |
+| `getWallpaper()` | `is.workflow.actions.getwallpaper` |
+| `getAllWallpapers()` | `is.workflow.actions.getallwallpapers` |
+
+## Device Hardware
+
+| melon function | Syscall ID |
+|---|---|
+| `vibrate()` | `is.workflow.actions.vibrate` |
+| `lockScreen()` | `is.workflow.actions.lock` |
+| `reboot()` | `is.workflow.actions.reboot` |
+| `shutdown()` | `is.workflow.actions.shutdown` |
+| `setAirplaneMode(value)` | `is.workflow.actions.setairplanemode` |
+| `toggleAirplaneMode()` | `is.workflow.actions.toggleairplanemode` |
+| `connectedToCharger()` | `is.workflow.actions.connectedtocharger` |
+| `isCharging()` | `is.workflow.actions.ischarging` |
+| `getOnScreenContent()` | `is.workflow.actions.getonscreencontent` |
+| `getOrientation()` | `is.workflow.actions.getorientation` |
+| `getBatteryLevel()` | `is.workflow.actions.getbatterylevel` |
+| `getDeviceDetail(detail)` | `is.workflow.actions.getdevicedetail` |
+
+## Web / Network
+
+| melon function | Syscall ID |
+|---|---|
+| `downloadURL(url)` | `is.workflow.actions.downloadurl` |
+| `openURL(url)` | `is.workflow.actions.openurl` |
+| `getWebContents(url)` | `is.workflow.actions.getwebpagecontents` |
+| `getArticle(url)` | `is.workflow.actions.getarticle` |
+| `searchGiphy(query)` | `is.workflow.actions.searchgiphy` |
+| `expandURL(url)` | `is.workflow.actions.expandurl` |
+| `getCurrentURL()` | `is.workflow.actions.getcurrenturl` |
+| `showWebpage(url)` | `is.workflow.actions.showwebpage` |
+| `isOnline()` | `is.workflow.actions.isonline` |
+| `connectToServer(host)` | `is.workflow.actions.connecttoserver` |
+| `getRSS(count, feed)` | `is.workflow.actions.getrss` |
+| `getRSSFeeds(filter)` | `is.workflow.actions.getrssfeeds` |
+| `addToReadingList(url)` | `is.workflow.actions.addtoreadinglist` |
+| `runJavaScriptOnWebpage(code)` | `is.workflow.actions.runjavascriptonwebpage` |
+| `searchWeb(query, engine)` | `is.workflow.actions.searchweb` |
+| `getURLDetail(url, detail)` | `is.workflow.actions.geturldetail` |
+| `getURLHeaders(url)` | `is.workflow.actions.geturlheaders` |
+| `getURLs(text)` | `is.workflow.actions.geturls` |
+| `openXCallbackURL(url)` | `is.workflow.actions.openxcallbackurl` |
+| `getWebPageDetail(page, detail)` | `is.workflow.actions.getwebpagedetail` |
+
+## Media
+
+| melon function | Syscall ID |
+|---|---|
+| `searchAppStore(query)` | `is.workflow.actions.searchappstore` |
+| `showIniTunes(item)` | `is.workflow.actions.showinitunes` |
+| `takeScreenshot()` | `is.workflow.actions.takescreenshot` |
+| `playSound(sound)` | `is.workflow.actions.playsound` |
+| `recordAudio()` | `is.workflow.actions.recordaudio` |
+| `getPodcasts()` | `is.workflow.actions.getpodcasts` |
+| `searchPodcasts(query)` | `is.workflow.actions.searchpodcasts` |
+| `playPodcast(item)` | `is.workflow.actions.playpodcast` |
+| `startShazam()` | `is.workflow.actions.startshazam` |
+| `takePhoto()` | `is.workflow.actions.takephoto` |
+| `takeVideo()` | `is.workflow.actions.takevideo` |
+| `trimVideo(video)` | `is.workflow.actions.trimvideo` |
+| `searchVoiceMemos(query)` | `is.workflow.actions.searchvoicememos` |
+| `stripMediaMetadata(media)` | `is.workflow.actions.stripmediametadata` |
+| `encodeAudio(audio)` | `is.workflow.actions.encodeaudio` |
+| `encodeVideo(video)` | `is.workflow.actions.encodevideo` |
+
+## Contacts
+
+| melon function | Syscall ID |
+|---|---|
+| `getContacts(filter)` | `is.workflow.actions.getcontacts` |
+| `selectContact(multiple?)` | `is.workflow.actions.selectcontact` |
+| `selectEmailAddress()` | `is.workflow.actions.selectemailaddress` |
+| `call(contact)` | `is.workflow.actions.call` |
+| `getEmails(contact)` | `is.workflow.actions.getemails` |
+| `getPhoneNumbers(contact)` | `is.workflow.actions.getphonenumbers` |
+| `selectPhoneNumber()` | `is.workflow.actions.selectphonenumber` |
+| `emailAddress(text)` | `is.workflow.actions.emailaddress` |
+| `phoneNumber(text)` | `is.workflow.actions.phonenumber` |
+| `getContactDetail(contact, detail)` | `is.workflow.actions.getcontactdetail` |
+
+## Text
+
+| melon function | Syscall ID |
+|---|---|
+| `define(word)` | `is.workflow.actions.define` |
+| `getEmojiName(emoji)` | `is.workflow.actions.getemojiname` |
+| `getTextFromImage(image)` | `is.workflow.actions.gettextfromimage` |
+| `transcribeText(audio)` | `is.workflow.actions.transcribetext` |
+| `getRichTextFromMarkdown(markdown)` | `is.workflow.actions.getrichtextfrommarkdown` |
+| `makeHTML(text)` | `is.workflow.actions.makehtml` |
+| `makeMarkdown(text)` | `is.workflow.actions.makemarkdown` |
+| `getRichTextFromHTML(html)` | `is.workflow.actions.getrichtextfromhtml` |
+| `lowercase(text)` | `is.workflow.actions.lowercase` |
+| `uppercase(text)` | `is.workflow.actions.uppercase` |
+
+## Files
+
+| melon function | Syscall ID |
+|---|---|
+| `saveFile(path, content)` | `is.workflow.actions.documentpicker.save` |
+| `getFile(path)` | `is.workflow.actions.documentpicker.open` |
+| `appendFile(path, content)` | `is.workflow.actions.appendtofile` |
+
+## Control
+
+| melon function | Syscall ID |
+|---|---|
+| `wait(seconds)` | `is.workflow.actions.delay` |
+
+## Shortcuts
+
+| melon function | Syscall ID |
+|---|---|
+| `runShortcut(name, input?)` | `is.workflow.actions.runworkflow` |
+
+## Crypto
+
+| melon function | Syscall ID |
+|---|---|
+| `hash(value, algorithm?)` | `is.workflow.actions.hash` |
+| `base64Encode(value)` | `is.workflow.actions.base64encode` |
+| `base64Decode(value)` | `is.workflow.actions.base64decode` |
+
+## Location / Weather
+
+| melon function | Syscall ID |
+|---|---|
+| `getCurrentLocation()` | `is.workflow.actions.getcurrentlocation` |
+| `getCurrentWeather(location?)` | `is.workflow.actions.weather.currentconditions` |
+
+## Notes
+
+1. `src/syscall.ts` is the source of truth for function names, syscall ids, argument types, and default values.
+2. `shortcut/melon.cherri` must include matching syscall id dispatch blocks and argument counts.
+3. Most syscall outputs are returned as text and may require conversion in melon (`number(...)`, parsing, etc.).

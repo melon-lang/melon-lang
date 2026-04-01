@@ -27,11 +27,16 @@ npm run build:webport
 
 `http://127.0.0.1:5500/dist/webport/index.html`
 
-3. Compile shortcut runtime:
+3. Compile shortcut runtime for local development (no version/URL injection):
 
 ```bash
-cd shortcut
-cherri melon.cherri
+npm run build:shortcut:dev
+```
+
+For release-oriented builds that inject version and release webport URL into `shortcut/melon.cherri` before compile:
+
+```bash
+npm run build:shortcut
 ```
 
 4. Open and test:
