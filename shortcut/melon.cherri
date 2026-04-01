@@ -22,7 +22,7 @@ melon 🍉 Shortcut
 https://github.com/melon-lang/melon-lang
 
 */
-const MELON_VERSION = "1.0.10"
+const MELON_VERSION = "1.0.11"
 const MELON_MAX_PERSISTANCE = 2147483647
 const MELON_VM_STATUS_SYSCALL = "syscall"
 const MELON_VM_STATUS_HALTED = "halted"
@@ -149,13 +149,16 @@ Download melon source code from Github.
 
 Currently, it downloads the source code every time you run the shortcut. There is no cache mechanism. It will be added later.
 */
-const MELON_SOURCE_CODE_URL = url("https://github.com/melon-lang/melon-lang/releases/download/v1.0.10/build.html")
+const MELON_SOURCE_CODE_URL = url("http://127.0.0.1:5500/dist/webport/index.html")
 const MELON_SOURCE_CODE_ = downloadURL(MELON_SOURCE_CODE_URL)
 @MELON_SOURCE_CODE = MELON_SOURCE_CODE_
 @MELON_SOURCE_CODE = base64Encode(MELON_SOURCE_CODE)
 @code = ShortcutInput
 const b64code = base64Encode(code)
 @url = url("data:text/html;begin={b64code};base64,{MELON_SOURCE_CODE}")
+
+@MELON_HOST_STORE: array
+@MELON_HOST_STORE_COUNTER = 0
 
 repeat _ for MELON_MAX_PERSISTANCE {
 	@response = getWebpageContents(url)
@@ -186,7 +189,9 @@ repeat _ for MELON_MAX_PERSISTANCE {
 		@syscall_name = syscall_name.text
 
 		@syscall_args = getValue(syscall, "argsSerialized")
+		@syscall_arg_types = getValue(syscall, "argTypes")
 		@syscall_out = ""
+		@_is_host_ref_out = false
 
 		/* --- Pre-extract args --- */
 		@syscall_arg_count_raw = getValue(MELON_SYSCALL_ARG_COUNTS, syscall_name)
@@ -198,9 +203,17 @@ repeat _ for MELON_MAX_PERSISTANCE {
 
 		if syscall_arg_count.number > 0 {
 			@syscall_arg_0 = getListItem(syscall_args, 1)
+			@syscall_arg_0_type = getListItem(syscall_arg_types, 1)
+			if syscall_arg_0_type.text == "host_ref" {
+				@syscall_arg_0 = getListItem(MELON_HOST_STORE, syscall_arg_0.number)
+			}
 		}
 		if syscall_arg_count.number > 1 {
 			@syscall_arg_1 = getListItem(syscall_args, 2)
+			@syscall_arg_1_type = getListItem(syscall_arg_types, 2)
+			if syscall_arg_1_type.text == "host_ref" {
+				@syscall_arg_1 = getListItem(MELON_HOST_STORE, syscall_arg_1.number)
+			}
 		}
 
 		/* --- Dispatch --- */
@@ -450,13 +463,15 @@ repeat _ for MELON_MAX_PERSISTANCE {
 			showIniTunes(syscall_arg_0)
 		}
 		if syscall_name.text == "is.workflow.actions.takescreenshot" {
-			@syscall_out = takeScreenshot()
+			@_host_ref_val = takeScreenshot()
+			@_is_host_ref_out = true
 		}
 		if syscall_name.text == "is.workflow.actions.playsound" {
 			playSound(syscall_arg_0)
 		}
 		if syscall_name.text == "is.workflow.actions.recordaudio" {
-			@syscall_out = recordAudio()
+			@_host_ref_val = recordAudio()
+			@_is_host_ref_out = true
 		}
 		if syscall_name.text == "is.workflow.actions.getpodcasts" {
 			@syscall_out = getPodcasts()
@@ -471,10 +486,12 @@ repeat _ for MELON_MAX_PERSISTANCE {
 			@syscall_out = startShazam()
 		}
 		if syscall_name.text == "is.workflow.actions.takephoto" {
-			@syscall_out = takePhoto()
+			@_host_ref_val = takePhoto()
+			@_is_host_ref_out = true
 		}
 		if syscall_name.text == "is.workflow.actions.takevideo" {
-			@syscall_out = takeVideo()
+			@_host_ref_val = takeVideo()
+			@_is_host_ref_out = true
 		}
 		if syscall_name.text == "is.workflow.actions.trimvideo" {
 			@syscall_out = trimVideo(syscall_arg_0)
@@ -565,7 +582,8 @@ repeat _ for MELON_MAX_PERSISTANCE {
 			saveFile(syscall_arg_0, syscall_arg_1)
 		}
 		if syscall_name.text == "is.workflow.actions.documentpicker.open" {
-			@syscall_out = getFile(syscall_arg_0)
+			@_host_ref_val = getFile(syscall_arg_0)
+			@_is_host_ref_out = true
 		}
 		if syscall_name.text == "is.workflow.actions.appendtofile" {
 			appendToFile(syscall_arg_0, syscall_arg_1)
@@ -598,10 +616,19 @@ repeat _ for MELON_MAX_PERSISTANCE {
 		/* --- Location / Weather --- */
 
 		if syscall_name.text == "is.workflow.actions.getcurrentlocation" {
-			@syscall_out = getCurrentLocation()
+			@_host_ref_val = getCurrentLocation()
+			@_is_host_ref_out = true
 		}
 		if syscall_name.text == "is.workflow.actions.weather.currentconditions" {
-			@syscall_out = getCurrentWeather(syscall_arg_0.location)
+			@syscall_out = getCurrentWeather(syscall_arg_0)
+		}
+
+		/* --- Host store allocation --- */
+
+		if _is_host_ref_out {
+			@MELON_HOST_STORE += _host_ref_val
+			@MELON_HOST_STORE_COUNTER = MELON_HOST_STORE_COUNTER + 1
+			@syscall_out = "{MELON_HOST_STORE_COUNTER}"
 		}
 	}
 	@syscall_out = base64Encode(syscall_out)

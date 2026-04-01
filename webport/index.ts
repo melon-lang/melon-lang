@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import interpret from './interpret';
 import VM, { VMImage } from '../src/vm';
 import {StringValue, Value} from '../src/value';
+import { coerceSyscallReturnValue } from '../src/syscall';
 
 const VM_TIME_LIMIT_FOR_EXECUTION = 150;
 
@@ -41,7 +42,12 @@ const begin = (sourceCode: string): void => {
 
 const resume = (save: string, value): void => {
 	const image = JSON.parse(atob(save)) as VMImage;
-	const vm = VM.deserialize(image, new StringValue(atob(value)));
+	const decodedValue = value ? atob(value) : '';
+	const syscallId = image?.syscall?.name;
+	const coercedValue = syscallId
+		? coerceSyscallReturnValue(syscallId, decodedValue)
+		: new StringValue(decodedValue);
+	const vm = VM.deserialize(image, coercedValue);
 	const result = vm.run(VM_TIME_LIMIT_FOR_EXECUTION);
 
 	document.write(btoa(JSON.stringify(result)));
