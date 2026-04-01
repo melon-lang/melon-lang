@@ -1,36 +1,45 @@
 
-# Introduction
+# Melon
 
-**melon** is an **orthogonally-persistent** programming language designed for creating **blazingly fast** automations for Apple devices.
+**Write automations for iPhone, iPad, and Mac** - directly in code.
 
-It is similar to Scriptable, but it is **open source** and **built only using Siri Shortcuts**. You don't need to install an app to use melon.
+Melon is a simple programming language that runs on Siri Shortcuts. Create powerful automations without installing an app.
 
-## Installation
+## What can you do?
 
-Start by installing `melon` Shortcut to your device from [here](https://github.com/melon-lang/melon-lang/releases/latest/download/melon.shortcut). 
+- **Automate anything** - control settings, send messages, manage files
+- **Pure code** - no complex UI builder
+- **Always with you** - runs natively on your device
+- **100% open source** - free to use and modify
 
-This shortcut will serve as our interpreter. 
+## Get Started in 60 Seconds
 
-## Quickstart
+1. **Install** the melon Shortcut from [here](https://github.com/melon-lang/melon-lang/releases/latest/download/melon.shortcut)
+2. **Try the playground** at [melon-lang.github.io/playground](https://melon-lang.github.io/playground/)
+3. **Run your first code:**
 
-### How to use
-
-You can go to the [web playground](https://melon-lang.github.io/playground/) to experiment with melon language features. This playground contains a web editor. Whenever you press **Run** button, it sends your code to `melon` Shortcut that you installed on your device. Then your code gets executed locally by the shortcut.
-
-Or, if you want to use melon within your own Shortcut, just input your code as text to `Run Shortcut (melon)` action in your shortcut as down below.
-
-<div align="center">
-    <img src="how-to-use.png" />
-</div>
-
-### Hello world program
-
-Try running this snippet.
-
-```
+```melon
 print("Hello world!");
 ```
 
-In melon, you use native `print` function to display text or other types of data. melon uses `Show Result` action to achieve this.
+That's it! Press Run and you'll see the output.
 
-Usage of semicolons at the end of each statement is optional, just like in Javascript. You don't have to use semicolons.
+## 📚 Learn
+
+The docs are organized to take you from beginner to advanced:
+
+- **New to programming?** Start with [Get Started](getting-started.md)
+- **Know programming already?** Jump to [Language Basics](types.md)
+- **Want to build something?** Check out the [Standard Library](syscalls.md)
+
+## 💡 How it Works
+
+**melon** is an orthogonally persistent language. It uses **Siri Shortcuts** as a backend, but allows for more complex and performant automations to be created compared to **Shortcuts** application itself.
+
+It has two main components:
+1. **TypeScript VM/runtime** - runs in the web playground and processes your code
+2. **Host Shortcut** - hosts the VM, handles system calls, and executes native actions on your device
+
+When you run code, it gets compiled to bytecode and executed by the VM. Whenever your code calls a native function (like `print()`), the VM sends a syscall request to the Host Shortcut. The Shortcut then executes the corresponding native action (like `Show Result`) and sends any results back to the VM.
+
+VM is executed via [JavaScript execution trick](https://talk.automators.fm/t/tip-running-javascript-in-shortcuts-ios-macos/16575). It is written in TypeScript.

@@ -191,7 +191,7 @@ repeat _ for MELON_MAX_PERSISTANCE {
 		@syscall_args = getValue(syscall, "argsSerialized")
 		@syscall_arg_types = getValue(syscall, "argTypes")
 		@syscall_out = ""
-		@_is_host_ref_out = false
+		@_is_host_ref_out = 0
 
 		/* --- Pre-extract args --- */
 		@syscall_arg_count_raw = getValue(MELON_SYSCALL_ARG_COUNTS, syscall_name)
@@ -348,7 +348,8 @@ repeat _ for MELON_MAX_PERSISTANCE {
 			toggleStageManager(syscall_arg_0_bool, syscall_arg_1_bool)
 		}
 		if syscall_name.text == "is.workflow.actions.getwallpaper" {
-			@syscall_out = getWallpaper()
+			@_host_ref_val = getWallpaper()
+			@_is_host_ref_out = 1
 		}
 		if syscall_name.text == "is.workflow.actions.getallwallpapers" {
 			@syscall_out = getAllWallpapers()
@@ -382,7 +383,8 @@ repeat _ for MELON_MAX_PERSISTANCE {
 			@syscall_out = isCharging()
 		}
 		if syscall_name.text == "is.workflow.actions.getonscreencontent" {
-			@syscall_out = getOnScreenContent()
+			@_host_ref_val = getOnScreenContent()
+			@_is_host_ref_out = 1
 		}
 		if syscall_name.text == "is.workflow.actions.getorientation" {
 			@syscall_out = getOrientation()
@@ -397,7 +399,8 @@ repeat _ for MELON_MAX_PERSISTANCE {
 		/* --- Web / Network --- */
 
 		if syscall_name.text == "is.workflow.actions.downloadurl" {
-			@syscall_out = downloadURL(syscall_arg_0)
+			@_host_ref_val = downloadURL(syscall_arg_0)
+			@_is_host_ref_out = 1
 		}
 		if syscall_name.text == "is.workflow.actions.openurl" {
 			openURL(syscall_arg_0)
@@ -409,7 +412,8 @@ repeat _ for MELON_MAX_PERSISTANCE {
 			@syscall_out = getArticle(syscall_arg_0)
 		}
 		if syscall_name.text == "is.workflow.actions.searchgiphy" {
-			@syscall_out = searchGiphy(syscall_arg_0)
+			@_host_ref_val = searchGiphy(syscall_arg_0)
+			@_is_host_ref_out = 1
 		}
 		if syscall_name.text == "is.workflow.actions.expandurl" {
 			@syscall_out = expandURL(syscall_arg_0)
@@ -464,14 +468,14 @@ repeat _ for MELON_MAX_PERSISTANCE {
 		}
 		if syscall_name.text == "is.workflow.actions.takescreenshot" {
 			@_host_ref_val = takeScreenshot()
-			@_is_host_ref_out = true
+			@_is_host_ref_out = 1
 		}
 		if syscall_name.text == "is.workflow.actions.playsound" {
 			playSound(syscall_arg_0)
 		}
 		if syscall_name.text == "is.workflow.actions.recordaudio" {
 			@_host_ref_val = recordAudio()
-			@_is_host_ref_out = true
+			@_is_host_ref_out = 1
 		}
 		if syscall_name.text == "is.workflow.actions.getpodcasts" {
 			@syscall_out = getPodcasts()
@@ -487,26 +491,31 @@ repeat _ for MELON_MAX_PERSISTANCE {
 		}
 		if syscall_name.text == "is.workflow.actions.takephoto" {
 			@_host_ref_val = takePhoto()
-			@_is_host_ref_out = true
+			@_is_host_ref_out = 1
 		}
 		if syscall_name.text == "is.workflow.actions.takevideo" {
 			@_host_ref_val = takeVideo()
-			@_is_host_ref_out = true
+			@_is_host_ref_out = 1
 		}
 		if syscall_name.text == "is.workflow.actions.trimvideo" {
-			@syscall_out = trimVideo(syscall_arg_0)
+			@_host_ref_val = trimVideo(syscall_arg_0)
+			@_is_host_ref_out = 1
 		}
 		if syscall_name.text == "is.workflow.actions.searchvoicememos" {
-			@syscall_out = searchVoiceMemos(syscall_arg_0)
+			@_host_ref_val = searchVoiceMemos(syscall_arg_0)
+			@_is_host_ref_out = 1
 		}
 		if syscall_name.text == "is.workflow.actions.stripmediametadata" {
-			@syscall_out = stripMediaMetadata(syscall_arg_0)
+			@_host_ref_val = stripMediaMetadata(syscall_arg_0)
+			@_is_host_ref_out = 1
 		}
 		if syscall_name.text == "is.workflow.actions.encodeaudio" {
-			@syscall_out = encodeAudio(syscall_arg_0)
+			@_host_ref_val = encodeAudio(syscall_arg_0)
+			@_is_host_ref_out = 1
 		}
 		if syscall_name.text == "is.workflow.actions.encodevideo" {
-			@syscall_out = encodeVideo(syscall_arg_0)
+			@_host_ref_val = encodeVideo(syscall_arg_0)
+			@_is_host_ref_out = 1
 		}
 
 		/* --- Contacts --- */
@@ -583,7 +592,7 @@ repeat _ for MELON_MAX_PERSISTANCE {
 		}
 		if syscall_name.text == "is.workflow.actions.documentpicker.open" {
 			@_host_ref_val = getFile(syscall_arg_0)
-			@_is_host_ref_out = true
+			@_is_host_ref_out = 1
 		}
 		if syscall_name.text == "is.workflow.actions.appendtofile" {
 			appendToFile(syscall_arg_0, syscall_arg_1)
@@ -617,7 +626,7 @@ repeat _ for MELON_MAX_PERSISTANCE {
 
 		if syscall_name.text == "is.workflow.actions.getcurrentlocation" {
 			@_host_ref_val = getCurrentLocation()
-			@_is_host_ref_out = true
+			@_is_host_ref_out = 1
 		}
 		if syscall_name.text == "is.workflow.actions.weather.currentconditions" {
 			@syscall_out = getCurrentWeather(syscall_arg_0)
@@ -625,7 +634,7 @@ repeat _ for MELON_MAX_PERSISTANCE {
 
 		/* --- Host store allocation --- */
 
-		if _is_host_ref_out {
+		if _is_host_ref_out.number == 1 {
 			@MELON_HOST_STORE += _host_ref_val
 			@MELON_HOST_STORE_COUNTER = MELON_HOST_STORE_COUNTER + 1
 			@syscall_out = "{MELON_HOST_STORE_COUNTER}"

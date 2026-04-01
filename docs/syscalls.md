@@ -1,59 +1,272 @@
-# Native Functions
+# Standard Library
 
-The bridge between melon programs and Siri Shortcuts actions.
+Built-in functions for interacting with your device and the system.
 
-This page is aligned with the current implementation in:
+These functions let you access device features, interact with the user, and integrate with system services. Think of them as the "standard library" that comes with melon.
 
-1. `src/syscall.ts` (melon function to syscall id mapping and argument validation)
-2. `shortcut/melon.cherri` (runtime dispatch that executes the native action)
+> **Note:** These functions bridge melon to Siri Shortcuts actions. Under the hood, melon yields to the Shortcuts runtime to execute these operations.
 
-## How Syscalls Work
+## Display & Input
 
-1. A melon program calls a function that maps to a syscall.
-2. The VM yields with `status = "syscall"` and emits the syscall id and serialized args.
-3. `shortcut/melon.cherri` dispatches on syscall id and runs the corresponding Shortcuts action.
-4. Any output is serialized back to the VM as text.
-5. The VM resumes execution.
+Output text to the user and ask for input.
 
-## Core Built-ins
-
-| melon function | Syscall ID |
+| Function | Description |
 |---|---|
-| `syscall(...)` | `is.melon.syscall` |
+| `print(value)` | Display text on screen |
+| `input(prompt?)` | Ask user for text input |
+| `alert(message, title?)` | Show an alert dialog |
+| `confirm(message, title?)` | Ask user yes/no question |
+| `exit(value?)` | Stop execution |
+
+## Notifications & Audio
+
+Show notifications and play/record sounds.
+
+| Function | Description |
+|---|---|
+| `notify(body, title?)` | Send a notification |
+| `speak(text)` | Read text aloud |
+| `playSound(sound)` | Play an audio file |
+| `recordAudio()` | Record audio from the mic |
+| `vibrate()` | Make the device vibrate |
+
+## Clipboard
+
+Copy and paste operations.
+
+| Function | Description |
+|---|---|
+| `getClipboard()` | Get text from clipboard |
+| `setClipboard(value)` | Copy text to clipboard |
+
+## Sharing
+
+Share data with other apps and people.
+
+| Function | Description |
+|---|---|
+| `share(value)` | Share content (opens share sheet) |
+| `airdrop(value)` | Send via AirDrop |
+| `findEmail(filter)` | Find email addresses |
+| `findMessage(filter)` | Find SMS messages |
+| `findConversation(filter)` | Find conversations |
+
+## Display Settings
+
+Control screen brightness, appearance, and display modes.
+
+| Function | Description |
+|---|---|
+| `setBrightness(value)` | Set screen brightness (0-1) |
+| `darkMode()` | Switch to dark mode |
+| `lightMode()` | Switch to light mode |
+| `toggleAppearance()` | Toggle between dark/light |
+| `setNightShift(value)` | Enable/disable Night Shift |
+| `toggleNightShift()` | Toggle Night Shift |
+| `setTrueTone(value)` | Enable/disable True Tone |
+| `toggleTrueTone()` | Toggle True Tone |
+| `setWallpaper(value)` | Change wallpaper |
+| `getWallpaper()` | Get current wallpaper |
+| `getAllWallpapers()` | List all wallpapers |
+
+## Connectivity
+
+Control wireless connections and check network status.
+
+| Function | Description |
+|---|---|
+| `setBluetooth(value)` | Enable/disable Bluetooth |
+| `setCellularData(value)` | Enable/disable cellular |
+| `setWifi(value)` | Enable/disable Wi-Fi |
+| `toggleBluetooth()` | Toggle Bluetooth |
+| `toggleCellularData()` | Toggle cellular data |
+| `toggleWifi()` | Toggle Wi-Fi |
+| `setAirplaneMode(value)` | Enable/disable Airplane Mode |
+| `toggleAirplaneMode()` | Toggle Airplane Mode |
+| `isOnline()` | Check if connected to internet |
+| `connectToServer(host)` | Connect to server |
+
+## Device Info
+
+Check battery, orientation, and other device details.
+
+| Function | Description |
+|---|---|
+| `isCharging()` | Is device plugged in? |
+| `connectedToCharger()` | Is charger connected? |
+| `getBatteryLevel()` | Get battery percentage (0-1) |
+| `getOrientation()` | Get device orientation |
+| `getOnScreenContent()` | Get current screen content |
+| `getDeviceDetail(detail)` | Get specific device info |
+
+## Focus & Do Not Disturb
+
+Manage Focus Mode and notifications.
+
+| Function | Description |
+|---|---|
+| `getFocusMode()` | Get active Focus Mode |
+| `toggleDND()` | Toggle Do Not Disturb |
+| `DNDOn()` | Turn on Do Not Disturb |
+| `DNDOff()` | Turn off Do Not Disturb |
+
+## Power & System
+
+Lock, reboot, and shutdown device.
+
+| Function | Description |
+|---|---|
+| `lockScreen()` | Lock the device |
+| `reboot()` | Restart the device |
+| `shutdown()` | Shut down the device |
+| `setStageManager(enabled, recentApps?)` | Configure Stage Manager |
+| `toggleStageManager(enabled?, recentApps?)` | Toggle Stage Manager |
+
+## Web & Internet
+
+Download and interact with web content.
+
+| Function | Description |
+|---|---|
+| `downloadURL(url)` | Download file from URL |
+| `openURL(url)` | Open URL in browser |
+| `getWebContents(url)` | Get HTML content of page |
+| `getArticle(url)` | Extract article content |
+| `showWebpage(url)` | Display webpage inline |
+| `expandURL(url)` | Expand shortened URL |
+| `getCurrentURL()` | Get current browser URL |
+| `searchWeb(query, engine)` | Search the web |
+| `getURLDetail(url, detail)` | Get URL metadata |
+| `getURLHeaders(url)` | Get HTTP headers |
+| `getURLs(text)` | Extract URLs from text |
+| `openXCallbackURL(url)` | Call URL scheme |
+| `getWebPageDetail(page, detail)` | Get page details |
+| `searchGiphy(query)` | Search GIFs |
+| `getRSS(count, feed)` | Get RSS feed items |
+| `getRSSFeeds(filter)` | List RSS feeds |
+| `addToReadingList(url)` | Save to Reading List |
+| `runJavaScriptOnWebpage(code)` | Execute JavaScript on page |
+
+## Media
+
+Take photos/videos and manage media files.
+
+| Function | Description |
+|---|---|
+| `takeScreenshot()` | Capture screenshot |
+| `takePhoto()` | Take a photo |
+| `takeVideo()` | Record a video |
+| `trimVideo(video)` | Trim video file |
+| `stripMediaMetadata(media)` | Remove metadata from file |
+| `encodeAudio(audio)` | Encode audio file |
+| `encodeVideo(video)` | Encode video file |
+| `searchVoiceMemos(query)` | Find voice memos |
+
+## Music & Podcasts
+
+Search and manage music and podcast content.
+
+| Function | Description |
+|---|---|
+| `searchAppStore(query)` | Search App Store |
+| `showIniTunes(item)` | Open iTunes/Music |
+| `getPodcasts()` | Get subscribed podcasts |
+| `searchPodcasts(query)` | Search for podcasts |
+| `playPodcast(item)` | Play podcast episode |
+| `startShazam()` | Identify song with Shazam |
+
+## Contacts
+
+Access contacts and phone/email info.
+
+| Function | Description |
+|---|---|
+| `getContacts(filter)` | Get contacts matching filter |
+| `selectContact(multiple?)` | Let user pick contact(s) |
+| `getEmails(contact)` | Get emails from contact |
+| `getPhoneNumbers(contact)` | Get phone numbers from contact |
+| `selectEmailAddress()` | Let user pick email |
+| `selectPhoneNumber()` | Let user pick phone number |
+| `emailAddress(text)` | Parse email from text |
+| `phoneNumber(text)` | Parse phone number from text |
+| `getContactDetail(contact, detail)` | Get contact's detail |
+| `call(contact)` | Initiate a call |
+
+## Text Processing
+
+Convert and process text data.
+
+| Function | Description |
+|---|---|
+| `define(word)` | Get word definition |
+| `getEmojiName(emoji)` | Get emoji description |
+| `getTextFromImage(image)` | OCR - extract text from image |
+| `transcribeText(audio)` | Convert speech to text |
+| `getRichTextFromMarkdown(markdown)` | Convert Markdown to rich text |
+| `getRichTextFromHTML(html)` | Convert HTML to rich text |
+| `makeHTML(text)` | Convert text to HTML |
+| `makeMarkdown(text)` | Convert text to Markdown |
+| `lowercase(text)` | Convert to lowercase |
+| `uppercase(text)` | Convert to uppercase |
+
+## Files
+
+Read and write files.
+
+| Function | Description |
+|---|---|
+| `saveFile(path, content)` | Save content to file |
+| `getFile(path)` | Read file content |
+| `appendFile(path, content)` | Append to file |
+
+## Encryption & Encoding
+
+Hash and encode data.
+
+| Function | Description |
+|---|---|
+| `hash(value, algorithm?)` | Hash text (MD5, SHA1, SHA256, etc.) |
+| `base64Encode(value)` | Encode to Base64 |
+| `base64Decode(value)` | Decode from Base64 |
+
+## Location & Weather
+
+Get location and weather information.
+
+| Function | Description |
+|---|---|
+| `getCurrentLocation()` | Get current GPS location |
+| `getCurrentWeather(location?)` | Get weather forecast |
+
+## Shortcuts
+
+Run and interact with Siri Shortcuts.
+
+| Function | Description |
+|---|---|
+| `runShortcut(name, input?)` | Run another shortcut |
+| `wait(seconds)` | Pause execution |
+
+## Advanced: Syscall IDs
+
+Melon functions map to Siri Shortcuts actions via syscall IDs. This is mostly internal, but useful for debugging.
+
+| Function | Syscall ID |
+|---|---|
 | `print(...)` | `is.workflow.actions.showresult` |
 | `input(prompt?)` | `is.workflow.actions.prompt` |
 | `exit(value?)` | `is.workflow.actions.stop` |
-
-## UI / Notifications
-
-| melon function | Syscall ID |
-|---|---|
 | `alert(message, title?)` | `is.workflow.actions.alert` |
 | `confirm(message, title?)` | `is.workflow.actions.confirm` |
 | `notify(body, title?)` | `is.workflow.actions.notification` |
 | `speak(text)` | `is.workflow.actions.speaktext` |
-
-## Clipboard
-
-| melon function | Syscall ID |
-|---|---|
 | `getClipboard()` | `is.workflow.actions.getclipboard` |
 | `setClipboard(value)` | `is.workflow.actions.setclipboard` |
-
-## Sharing
-
-| melon function | Syscall ID |
-|---|---|
 | `share(value)` | `is.workflow.actions.share` |
 | `airdrop(value)` | `is.workflow.actions.airdrop` |
 | `findEmail(filter)` | `is.workflow.actions.findemail` |
 | `findMessage(filter)` | `is.workflow.actions.findmessage` |
 | `findConversation(filter)` | `is.workflow.actions.findconversation` |
-
-## Device Settings
-
-| melon function | Syscall ID |
-|---|---|
 | `setBrightness(value)` | `is.workflow.actions.setbrightness` |
 | `setVolume(value)` | `is.workflow.actions.setvolume` |
 | `darkMode()` | `is.workflow.actions.darkmode` |
@@ -78,11 +291,6 @@ This page is aligned with the current implementation in:
 | `toggleStageManager(enabled?, recentApps?)` | `is.workflow.actions.togglestagemanager` |
 | `getWallpaper()` | `is.workflow.actions.getwallpaper` |
 | `getAllWallpapers()` | `is.workflow.actions.getallwallpapers` |
-
-## Device Hardware
-
-| melon function | Syscall ID |
-|---|---|
 | `vibrate()` | `is.workflow.actions.vibrate` |
 | `lockScreen()` | `is.workflow.actions.lock` |
 | `reboot()` | `is.workflow.actions.reboot` |
@@ -95,11 +303,6 @@ This page is aligned with the current implementation in:
 | `getOrientation()` | `is.workflow.actions.getorientation` |
 | `getBatteryLevel()` | `is.workflow.actions.getbatterylevel` |
 | `getDeviceDetail(detail)` | `is.workflow.actions.getdevicedetail` |
-
-## Web / Network
-
-| melon function | Syscall ID |
-|---|---|
 | `downloadURL(url)` | `is.workflow.actions.downloadurl` |
 | `openURL(url)` | `is.workflow.actions.openurl` |
 | `getWebContents(url)` | `is.workflow.actions.getwebpagecontents` |
@@ -120,11 +323,6 @@ This page is aligned with the current implementation in:
 | `getURLs(text)` | `is.workflow.actions.geturls` |
 | `openXCallbackURL(url)` | `is.workflow.actions.openxcallbackurl` |
 | `getWebPageDetail(page, detail)` | `is.workflow.actions.getwebpagedetail` |
-
-## Media
-
-| melon function | Syscall ID |
-|---|---|
 | `searchAppStore(query)` | `is.workflow.actions.searchappstore` |
 | `showIniTunes(item)` | `is.workflow.actions.showinitunes` |
 | `takeScreenshot()` | `is.workflow.actions.takescreenshot` |
@@ -141,11 +339,6 @@ This page is aligned with the current implementation in:
 | `stripMediaMetadata(media)` | `is.workflow.actions.stripmediametadata` |
 | `encodeAudio(audio)` | `is.workflow.actions.encodeaudio` |
 | `encodeVideo(video)` | `is.workflow.actions.encodevideo` |
-
-## Contacts
-
-| melon function | Syscall ID |
-|---|---|
 | `getContacts(filter)` | `is.workflow.actions.getcontacts` |
 | `selectContact(multiple?)` | `is.workflow.actions.selectcontact` |
 | `selectEmailAddress()` | `is.workflow.actions.selectemailaddress` |
@@ -156,11 +349,6 @@ This page is aligned with the current implementation in:
 | `emailAddress(text)` | `is.workflow.actions.emailaddress` |
 | `phoneNumber(text)` | `is.workflow.actions.phonenumber` |
 | `getContactDetail(contact, detail)` | `is.workflow.actions.getcontactdetail` |
-
-## Text
-
-| melon function | Syscall ID |
-|---|---|
 | `define(word)` | `is.workflow.actions.define` |
 | `getEmojiName(emoji)` | `is.workflow.actions.getemojiname` |
 | `getTextFromImage(image)` | `is.workflow.actions.gettextfromimage` |
@@ -171,44 +359,13 @@ This page is aligned with the current implementation in:
 | `getRichTextFromHTML(html)` | `is.workflow.actions.getrichtextfromhtml` |
 | `lowercase(text)` | `is.workflow.actions.lowercase` |
 | `uppercase(text)` | `is.workflow.actions.uppercase` |
-
-## Files
-
-| melon function | Syscall ID |
-|---|---|
 | `saveFile(path, content)` | `is.workflow.actions.documentpicker.save` |
 | `getFile(path)` | `is.workflow.actions.documentpicker.open` |
 | `appendFile(path, content)` | `is.workflow.actions.appendtofile` |
-
-## Control
-
-| melon function | Syscall ID |
-|---|---|
 | `wait(seconds)` | `is.workflow.actions.delay` |
-
-## Shortcuts
-
-| melon function | Syscall ID |
-|---|---|
 | `runShortcut(name, input?)` | `is.workflow.actions.runworkflow` |
-
-## Crypto
-
-| melon function | Syscall ID |
-|---|---|
 | `hash(value, algorithm?)` | `is.workflow.actions.hash` |
 | `base64Encode(value)` | `is.workflow.actions.base64encode` |
 | `base64Decode(value)` | `is.workflow.actions.base64decode` |
-
-## Location / Weather
-
-| melon function | Syscall ID |
-|---|---|
 | `getCurrentLocation()` | `is.workflow.actions.getcurrentlocation` |
 | `getCurrentWeather(location?)` | `is.workflow.actions.weather.currentconditions` |
-
-## Notes
-
-1. `src/syscall.ts` is the source of truth for function names, syscall ids, argument types, and default values.
-2. `shortcut/melon.cherri` must include matching syscall id dispatch blocks and argument counts.
-3. Most syscall outputs are returned as text and may require conversion in melon (`number(...)`, parsing, etc.).

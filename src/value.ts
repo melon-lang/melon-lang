@@ -867,11 +867,11 @@ export class HostRefValue extends Value {
     }
 
     get repr(): string {
-        return `<ref:${this.value}>`;
+        return `<HostReference:${this.value}>`;
     }
 
     get str(): string {
-        return `<ref:${this.value}>`;
+        return `<HostReference:${this.value}>`;
     }
 
     equals(other: Value): boolean {
@@ -880,28 +880,28 @@ export class HostRefValue extends Value {
 }
 
 export class LocationRefValue extends HostRefValue {
-    get repr(): string { return `<locationRef:${this.value}>`; }
-    get str(): string  { return `<locationRef:${this.value}>`; }
+    get repr(): string { return `<Location:${this.value}>`; }
+    get str(): string  { return `<Location:${this.value}>`; }
 }
 
 export class ImageRefValue extends HostRefValue {
-    get repr(): string { return `<imageRef:${this.value}>`; }
-    get str(): string  { return `<imageRef:${this.value}>`; }
+    get repr(): string { return `<Image:${this.value}>`; }
+    get str(): string  { return `<Image:${this.value}>`; }
 }
 
 export class AudioRefValue extends HostRefValue {
-    get repr(): string { return `<audioRef:${this.value}>`; }
-    get str(): string  { return `<audioRef:${this.value}>`; }
+    get repr(): string { return `<Audio:${this.value}>`; }
+    get str(): string  { return `<Audio:${this.value}>`; }
 }
 
 export class VideoRefValue extends HostRefValue {
-    get repr(): string { return `<videoRef:${this.value}>`; }
-    get str(): string  { return `<videoRef:${this.value}>`; }
+    get repr(): string { return `<Video:${this.value}>`; }
+    get str(): string  { return `<Video:${this.value}>`; }
 }
 
 export class FileRefValue extends HostRefValue {
-    get repr(): string { return `<fileRef:${this.value}>`; }
-    get str(): string  { return `<fileRef:${this.value}>`; }
+    get repr(): string { return `<File:${this.value}>`; }
+    get str(): string  { return `<File:${this.value}>`; }
 }
 
 export class NullValue extends Value {

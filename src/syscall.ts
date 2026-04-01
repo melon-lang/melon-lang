@@ -177,7 +177,7 @@ const syscallDefinitions: Record<string, SyscallDefinition> = {
         { type: 'any', optional: true, default: new StringValue('true') },
         { type: 'any', optional: true, default: new StringValue('true') }
     ]),
-    'getWallpaper': defineSyscall('getWallpaper', 'is.workflow.actions.getwallpaper', []),
+    'getWallpaper': defineSyscall('getWallpaper', 'is.workflow.actions.getwallpaper', [], ImageRefValue),
     'getAllWallpapers': defineSyscall('getAllWallpapers', 'is.workflow.actions.getallwallpapers', []),
 
     // --- Device Hardware ---
@@ -192,7 +192,7 @@ const syscallDefinitions: Record<string, SyscallDefinition> = {
     'toggleAirplaneMode': defineSyscall('toggleAirplaneMode', 'is.workflow.actions.toggleairplanemode', []),
     'connectedToCharger': defineSyscall('connectedToCharger', 'is.workflow.actions.connectedtocharger', [], 'boolean'),
     'isCharging': defineSyscall('isCharging', 'is.workflow.actions.ischarging', [], 'boolean'),
-    'getOnScreenContent': defineSyscall('getOnScreenContent', 'is.workflow.actions.getonscreencontent', []),
+    'getOnScreenContent': defineSyscall('getOnScreenContent', 'is.workflow.actions.getonscreencontent', [], ImageRefValue),
     'getOrientation': defineSyscall('getOrientation', 'is.workflow.actions.getorientation', []),
     'getBatteryLevel': defineSyscall('getBatteryLevel', 'is.workflow.actions.getbatterylevel', [], 'number'),
     'getDeviceDetail': defineSyscall('getDeviceDetail', 'is.workflow.actions.getdevicedetail', [
@@ -203,7 +203,7 @@ const syscallDefinitions: Record<string, SyscallDefinition> = {
 
     'downloadURL': defineSyscall('downloadURL', 'is.workflow.actions.downloadurl', [
         { type: 'string' }
-    ]),
+    ], FileRefValue),
     'openURL': defineSyscall('openURL', 'is.workflow.actions.openurl', [
         { type: 'string' }
     ]),
@@ -215,7 +215,7 @@ const syscallDefinitions: Record<string, SyscallDefinition> = {
     ]),
     'searchGiphy': defineSyscall('searchGiphy', 'is.workflow.actions.searchgiphy', [
         { type: 'string' }
-    ]),
+    ], ImageRefValue),
     'expandURL': defineSyscall('expandURL', 'is.workflow.actions.expandurl', [
         { type: 'string' }
     ]),
@@ -287,19 +287,19 @@ const syscallDefinitions: Record<string, SyscallDefinition> = {
     'takeVideo': defineSyscall('takeVideo', 'is.workflow.actions.takevideo', [], VideoRefValue),
     'trimVideo': defineSyscall('trimVideo', 'is.workflow.actions.trimvideo', [
         { type: 'host_ref' }
-    ]),
+    ], VideoRefValue),
     'searchVoiceMemos': defineSyscall('searchVoiceMemos', 'is.workflow.actions.searchvoicememos', [
         { type: 'string' }
-    ]),
+    ], AudioRefValue),
     'stripMediaMetadata': defineSyscall('stripMediaMetadata', 'is.workflow.actions.stripmediametadata', [
         { type: 'host_ref' }
-    ]),
+    ], HostRefValue),
     'encodeAudio': defineSyscall('encodeAudio', 'is.workflow.actions.encodeaudio', [
         { type: 'host_ref' }
-    ]),
+    ], AudioRefValue),
     'encodeVideo': defineSyscall('encodeVideo', 'is.workflow.actions.encodevideo', [
         { type: 'host_ref' }
-    ]),
+    ], VideoRefValue),
 
     // --- Contacts ---
 
