@@ -16,19 +16,14 @@ on:
 
 jobs:
   build-shortcut:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
       - name: Install Cherri CLI
-        run: npm install -g cherri
+        run: brew install electrikmilk/cherri/cherri
 
       - name: Verify Cherri
         run: cherri --version
