@@ -22,8 +22,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Tap Cherri repository
+        run: |
+          brew update
+          brew tap electrikmilk/cherri
+
       - name: Install Cherri CLI
-        run: brew install electrikmilk/cherri/cherri
+        run: |
+          set -euo pipefail
+          if brew install electrikmilk/cherri/cherri; then
+            echo "Installed stable Cherri formula"
+          else
+            echo "Stable install failed (likely checksum drift). Retrying with --HEAD..."
+            brew uninstall electrikmilk/cherri/cherri || true
+            brew install --HEAD electrikmilk/cherri/cherri
+          fi
 
       - name: Verify Cherri
         run: cherri --version
