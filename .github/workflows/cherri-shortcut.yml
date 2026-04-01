@@ -7,15 +7,7 @@ on:
   workflow_dispatch:
   push:
     branches: [ "main" ]
-    paths:
-      - "shortcut/**"
-      - "src/syscall.ts"
-      - ".github/workflows/cherri-shortcut.yml"
   pull_request:
-    paths:
-      - "shortcut/**"
-      - "src/syscall.ts"
-      - ".github/workflows/cherri-shortcut.yml"
 
 jobs:
   build-shortcut:
