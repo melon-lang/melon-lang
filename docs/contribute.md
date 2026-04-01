@@ -1,5 +1,10 @@
 # Contribution  <!-- {docsify-all} -->
 
+Quick links:
+
+- Shortcut runtime contributor guide (repo): [shortcut/README.md](../shortcut/README.md)
+- Shortcut runtime docs page: [Shortcut Runtime Guide](shortcut-runtime.md)
+
 Melon consists of several parts that anyone can contribute. This document explains how each component of Melon works. Some parts may require knowledge in interpreter design, though you other parts don't require this knowledge, so there is always somewhere you can contribute to.
 
 ## Shortcut Design

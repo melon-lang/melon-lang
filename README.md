@@ -8,7 +8,7 @@ You can learn about melon language features from [here](https://melon-lang.githu
 
 ## Installation
 
-Start by installing `melon` Shortcut to your device from [here](https://www.icloud.com/shortcuts/0752d222cc764d1b959d5a27c5784491). 
+Start by installing `melon` Shortcut to your device from [here](https://github.com/melon-lang/melon-lang/releases/latest/download/melon.shortcut). 
 
 This shortcut will serve as our interpreter. 
 
@@ -37,4 +37,5 @@ In melon, you use native `print` function to display text or other types of data
 ## Contribution and More
 
 Guides on how to contribute are available in docs under [Contribution](https://melon-lang.github.io/melon-lang/#/contribute) section.
+Shortcut runtime (written in Cherri) setup and workflow guide is available in [shortcut/README.md](shortcut/README.md).
 You can join our [Discord server](https://discord.gg/5WS2PBEJcn) to discuss about anything related to melon. 

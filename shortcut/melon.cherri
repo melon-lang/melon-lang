@@ -1,0 +1,609 @@
+#include 'actions/documents'
+#include 'actions/shortcuts'
+#include 'actions/scripting'
+#include 'actions/sharing'
+#include 'actions/settings'
+#include 'actions/text'
+#include 'actions/crypto'
+#include 'actions/web'
+#include 'actions/device'
+#include 'actions/location'
+#include 'actions/media'
+#include 'actions/network'
+#include 'actions/contacts'
+#define color red
+#define glyph timeLapse
+
+/*
+melon 🍉 Shortcut
+
+    melon is an orthogonally persistent language designed for creating blazing fast automations for Apple devices. It uses Siri Shortcuts as a backend, but allows for more complex and performant automations to be created compared to Shortcuts application itself.
+
+https://github.com/melon-lang/melon-lang
+
+*/
+const MELON_VERSION = "1.0.10"
+const MELON_MAX_PERSISTANCE = 2147483647
+const MELON_VM_STATUS_SYSCALL = "syscall"
+const MELON_VM_STATUS_HALTED = "halted"
+const MELON_SYSCALL_ARG_COUNTS = {
+	"is.workflow.actions.showresult": 1,
+	"is.workflow.actions.prompt": 1,
+	"is.workflow.actions.stop": 1,
+	"is.workflow.actions.alert": 2,
+	"is.workflow.actions.confirm": 2,
+	"is.workflow.actions.notification": 2,
+	"is.workflow.actions.speaktext": 1,
+	"is.workflow.actions.getclipboard": 0,
+	"is.workflow.actions.setclipboard": 1,
+	"is.workflow.actions.share": 1,
+	"is.workflow.actions.airdrop": 1,
+	"is.workflow.actions.findemail": 1,
+	"is.workflow.actions.findmessage": 1,
+	"is.workflow.actions.findconversation": 1,
+	"is.workflow.actions.setbrightness": 1,
+	"is.workflow.actions.setvolume": 1,
+	"is.workflow.actions.darkmode": 0,
+	"is.workflow.actions.lightmode": 0,
+	"is.workflow.actions.toggleappearance": 0,
+	"is.workflow.actions.setnightshift": 1,
+	"is.workflow.actions.settruetone": 1,
+	"is.workflow.actions.togglenightshift": 0,
+	"is.workflow.actions.toggletruetone": 0,
+	"is.workflow.actions.setbluetooth": 1,
+	"is.workflow.actions.setcellulardata": 1,
+	"is.workflow.actions.setwifi": 1,
+	"is.workflow.actions.togglebluetooth": 0,
+	"is.workflow.actions.togglecellulardata": 0,
+	"is.workflow.actions.togglewifi": 0,
+	"is.workflow.actions.getfocusmode": 0,
+	"is.workflow.actions.togglednd": 0,
+	"is.workflow.actions.dndoff": 0,
+	"is.workflow.actions.dndon": 0,
+	"is.workflow.actions.setwallpaper": 1,
+	"is.workflow.actions.setstagemanager": 2,
+	"is.workflow.actions.togglestagemanager": 2,
+	"is.workflow.actions.getwallpaper": 0,
+	"is.workflow.actions.getallwallpapers": 0,
+	"is.workflow.actions.vibrate": 0,
+	"is.workflow.actions.lock": 0,
+	"is.workflow.actions.reboot": 0,
+	"is.workflow.actions.shutdown": 0,
+	"is.workflow.actions.setairplanemode": 1,
+	"is.workflow.actions.toggleairplanemode": 0,
+	"is.workflow.actions.connectedtocharger": 0,
+	"is.workflow.actions.ischarging": 0,
+	"is.workflow.actions.getonscreencontent": 0,
+	"is.workflow.actions.getorientation": 0,
+	"is.workflow.actions.getbatterylevel": 0,
+	"is.workflow.actions.getdevicedetail": 1,
+	"is.workflow.actions.downloadurl": 1,
+	"is.workflow.actions.openurl": 1,
+	"is.workflow.actions.getwebpagecontents": 1,
+	"is.workflow.actions.getarticle": 1,
+	"is.workflow.actions.searchgiphy": 1,
+	"is.workflow.actions.expandurl": 1,
+	"is.workflow.actions.getcurrenturl": 0,
+	"is.workflow.actions.showwebpage": 1,
+	"is.workflow.actions.isonline": 0,
+	"is.workflow.actions.connecttoserver": 1,
+	"is.workflow.actions.getrss": 2,
+	"is.workflow.actions.getrssfeeds": 1,
+	"is.workflow.actions.addtoreadinglist": 1,
+	"is.workflow.actions.runjavascriptonwebpage": 1,
+	"is.workflow.actions.searchweb": 2,
+	"is.workflow.actions.geturldetail": 2,
+	"is.workflow.actions.geturlheaders": 1,
+	"is.workflow.actions.geturls": 1,
+	"is.workflow.actions.openxcallbackurl": 1,
+	"is.workflow.actions.getwebpagedetail": 2,
+	"is.workflow.actions.searchappstore": 1,
+	"is.workflow.actions.showinitunes": 1,
+	"is.workflow.actions.takescreenshot": 0,
+	"is.workflow.actions.playsound": 1,
+	"is.workflow.actions.recordaudio": 0,
+	"is.workflow.actions.getpodcasts": 0,
+	"is.workflow.actions.searchpodcasts": 1,
+	"is.workflow.actions.playpodcast": 1,
+	"is.workflow.actions.startshazam": 0,
+	"is.workflow.actions.takephoto": 0,
+	"is.workflow.actions.takevideo": 0,
+	"is.workflow.actions.trimvideo": 1,
+	"is.workflow.actions.searchvoicememos": 1,
+	"is.workflow.actions.stripmediametadata": 1,
+	"is.workflow.actions.encodeaudio": 1,
+	"is.workflow.actions.encodevideo": 1,
+	"is.workflow.actions.getcontacts": 1,
+	"is.workflow.actions.selectcontact": 1,
+	"is.workflow.actions.selectemailaddress": 0,
+	"is.workflow.actions.call": 1,
+	"is.workflow.actions.getemails": 1,
+	"is.workflow.actions.getphonenumbers": 1,
+	"is.workflow.actions.selectphonenumber": 0,
+	"is.workflow.actions.emailaddress": 1,
+	"is.workflow.actions.phonenumber": 1,
+	"is.workflow.actions.getcontactdetail": 2,
+	"is.workflow.actions.define": 1,
+	"is.workflow.actions.getemojiname": 1,
+	"is.workflow.actions.gettextfromimage": 1,
+	"is.workflow.actions.transcribetext": 1,
+	"is.workflow.actions.getrichtextfrommarkdown": 1,
+	"is.workflow.actions.makehtml": 1,
+	"is.workflow.actions.makemarkdown": 1,
+	"is.workflow.actions.getrichtextfromhtml": 1,
+	"is.workflow.actions.lowercase": 1,
+	"is.workflow.actions.uppercase": 1,
+	"is.workflow.actions.documentpicker.save": 2,
+	"is.workflow.actions.documentpicker.open": 1,
+	"is.workflow.actions.appendtofile": 2,
+	"is.workflow.actions.delay": 1,
+	"is.workflow.actions.runworkflow": 2,
+	"is.workflow.actions.hash": 2,
+	"is.workflow.actions.base64encode": 1,
+	"is.workflow.actions.base64decode": 1,
+	"is.workflow.actions.getcurrentlocation": 0,
+	"is.workflow.actions.weather.currentconditions": 1
+}
+/*
+Download melon source code from Github.
+
+Currently, it downloads the source code every time you run the shortcut. There is no cache mechanism. It will be added later.
+*/
+const MELON_SOURCE_CODE_URL = url("https://github.com/melon-lang/melon-lang/releases/download/v1.0.10/build.html")
+const MELON_SOURCE_CODE_ = downloadURL(MELON_SOURCE_CODE_URL)
+@MELON_SOURCE_CODE = MELON_SOURCE_CODE_
+@MELON_SOURCE_CODE = base64Encode(MELON_SOURCE_CODE)
+@code = ShortcutInput
+const b64code = base64Encode(code)
+@url = url("data:text/html;begin={b64code};base64,{MELON_SOURCE_CODE}")
+
+repeat _ for MELON_MAX_PERSISTANCE {
+	@response = getWebpageContents(url)
+	@image = response
+	
+	@response = base64Decode(response)
+	@response = getDictionary(response)
+	
+	@error = getValue(response, "error")
+	@error = error.text
+
+	if error {
+		alert(error, "melon execution failed.")
+		stop()
+	}
+	
+	@status = getValue(response, "status")
+
+	if status.text == MELON_VM_STATUS_HALTED {
+		stop()
+	}
+
+	if status.text == MELON_VM_STATUS_SYSCALL {
+		@syscall = getValue(response, "syscall")
+		@syscall = getDictionary(syscall)
+		
+		@syscall_name = getValue(syscall, "name")
+		@syscall_name = syscall_name.text
+
+		@syscall_args = getValue(syscall, "argsSerialized")
+		@syscall_out = ""
+
+		/* --- Pre-extract args --- */
+		@syscall_arg_count_raw = getValue(MELON_SYSCALL_ARG_COUNTS, syscall_name)
+		if !syscall_arg_count_raw {
+			@syscall_arg_count = 0
+		} else {
+			@syscall_arg_count = getNumbers(syscall_arg_count_raw)
+		}
+
+		if syscall_arg_count.number > 0 {
+			@syscall_arg_0 = getListItem(syscall_args, 1)
+		}
+		if syscall_arg_count.number > 1 {
+			@syscall_arg_1 = getListItem(syscall_args, 2)
+		}
+
+		/* --- Dispatch --- */
+
+		if syscall_name.text == "is.workflow.actions.showresult" {
+			show(syscall_arg_0.text)
+		}
+		if syscall_name.text == "is.workflow.actions.prompt" {
+			@syscall_out = prompt(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.stop" {
+			output(syscall_arg_0)
+		}
+
+		/* --- UI / Notifications --- */
+
+		if syscall_name.text == "is.workflow.actions.alert" {
+			alert(syscall_arg_0, syscall_arg_1)
+		}
+		if syscall_name.text == "is.workflow.actions.confirm" {
+			confirm(syscall_arg_0, syscall_arg_1)
+		}
+		if syscall_name.text == "is.workflow.actions.notification" {
+			showNotification(syscall_arg_0, syscall_arg_1)
+		}
+		if syscall_name.text == "is.workflow.actions.speaktext" {
+			speak(syscall_arg_0)
+		}
+
+		/* --- Clipboard --- */
+
+		if syscall_name.text == "is.workflow.actions.getclipboard" {
+			@syscall_out = getClipboard()
+		}
+		if syscall_name.text == "is.workflow.actions.setclipboard" {
+			setClipboard(syscall_arg_0)
+		}
+
+		/* --- Sharing --- */
+
+		if syscall_name.text == "is.workflow.actions.share" {
+			share(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.airdrop" {
+			airdrop(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.findemail" {
+			@syscall_out = findEmail(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.findmessage" {
+			@syscall_out = findMessage(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.findconversation" {
+			@syscall_out = findConversation(syscall_arg_0)
+		}
+
+		/* --- Device Settings --- */
+
+		if syscall_name.text == "is.workflow.actions.setbrightness" {
+			setBrightness(syscall_arg_0.float)
+		}
+		if syscall_name.text == "is.workflow.actions.setvolume" {
+			setVolume(syscall_arg_0.float)
+		}
+		if syscall_name.text == "is.workflow.actions.darkmode" {
+			darkMode()
+		}
+		if syscall_name.text == "is.workflow.actions.lightmode" {
+			lightMode()
+		}
+		if syscall_name.text == "is.workflow.actions.toggleappearance" {
+			toggleAppearance()
+		}
+		if syscall_name.text == "is.workflow.actions.setnightshift" {
+			@syscall_arg_0_bool = syscall_arg_0.text == "true"
+			setNightShift(syscall_arg_0_bool)
+		}
+		if syscall_name.text == "is.workflow.actions.settruetone" {
+			@syscall_arg_0_bool = syscall_arg_0.text == "true"
+			setTrueTone(syscall_arg_0_bool)
+		}
+		if syscall_name.text == "is.workflow.actions.togglenightshift" {
+			toggleNightShift()
+		}
+		if syscall_name.text == "is.workflow.actions.toggletruetone" {
+			toggleTrueTone()
+		}
+		if syscall_name.text == "is.workflow.actions.setbluetooth" {
+			@syscall_arg_0_bool = syscall_arg_0.text == "true"
+			setBluetooth(syscall_arg_0_bool)
+		}
+		if syscall_name.text == "is.workflow.actions.setcellulardata" {
+			@syscall_arg_0_bool = syscall_arg_0.text == "true"
+			setCellularData(syscall_arg_0_bool)
+		}
+		if syscall_name.text == "is.workflow.actions.setwifi" {
+			@syscall_arg_0_bool = syscall_arg_0.text == "true"
+			setWifi(syscall_arg_0_bool)
+		}
+		if syscall_name.text == "is.workflow.actions.togglebluetooth" {
+			toggleBluetooth()
+		}
+		if syscall_name.text == "is.workflow.actions.togglecellulardata" {
+			toggleCellularData()
+		}
+		if syscall_name.text == "is.workflow.actions.togglewifi" {
+			toggleWifi()
+		}
+		if syscall_name.text == "is.workflow.actions.getfocusmode" {
+			@syscall_out = getFocusMode()
+		}
+		if syscall_name.text == "is.workflow.actions.togglednd" {
+			toggleDND()
+		}
+		if syscall_name.text == "is.workflow.actions.dndoff" {
+			DNDOff()
+		}
+		if syscall_name.text == "is.workflow.actions.dndon" {
+			DNDOn()
+		}
+		if syscall_name.text == "is.workflow.actions.setwallpaper" {
+			setWallpaper(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.setstagemanager" {
+			@syscall_arg_0_bool = syscall_arg_0.text == "true"
+			@syscall_arg_1_bool = syscall_arg_1.text == "true"
+			setStageManager(syscall_arg_0_bool, syscall_arg_1_bool)
+		}
+		if syscall_name.text == "is.workflow.actions.togglestagemanager" {
+			@syscall_arg_0_bool = syscall_arg_0.text == "true"
+			@syscall_arg_1_bool = syscall_arg_1.text == "true"
+			toggleStageManager(syscall_arg_0_bool, syscall_arg_1_bool)
+		}
+		if syscall_name.text == "is.workflow.actions.getwallpaper" {
+			@syscall_out = getWallpaper()
+		}
+		if syscall_name.text == "is.workflow.actions.getallwallpapers" {
+			@syscall_out = getAllWallpapers()
+		}
+
+		/* --- Device Hardware --- */
+
+		if syscall_name.text == "is.workflow.actions.vibrate" {
+			vibrate()
+		}
+		if syscall_name.text == "is.workflow.actions.lock" {
+			lockScreen()
+		}
+		if syscall_name.text == "is.workflow.actions.reboot" {
+			reboot()
+		}
+		if syscall_name.text == "is.workflow.actions.shutdown" {
+			shutdown()
+		}
+		if syscall_name.text == "is.workflow.actions.setairplanemode" {
+			@syscall_arg_0_bool = syscall_arg_0.text == "true"
+			setAirplaneMode(syscall_arg_0_bool)
+		}
+		if syscall_name.text == "is.workflow.actions.toggleairplanemode" {
+			toggleAirplaneMode()
+		}
+		if syscall_name.text == "is.workflow.actions.connectedtocharger" {
+			@syscall_out = connectedToCharger()
+		}
+		if syscall_name.text == "is.workflow.actions.ischarging" {
+			@syscall_out = isCharging()
+		}
+		if syscall_name.text == "is.workflow.actions.getonscreencontent" {
+			@syscall_out = getOnScreenContent()
+		}
+		if syscall_name.text == "is.workflow.actions.getorientation" {
+			@syscall_out = getOrientation()
+		}
+		if syscall_name.text == "is.workflow.actions.getbatterylevel" {
+			@syscall_out = getBatteryLevel()
+		}
+		if syscall_name.text == "is.workflow.actions.getdevicedetail" {
+			@syscall_out = getDeviceDetail(syscall_arg_0)
+		}
+
+		/* --- Web / Network --- */
+
+		if syscall_name.text == "is.workflow.actions.downloadurl" {
+			@syscall_out = downloadURL(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.openurl" {
+			openURL(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.getwebpagecontents" {
+			@syscall_out = getWebpageContents(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.getarticle" {
+			@syscall_out = getArticle(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.searchgiphy" {
+			@syscall_out = searchGiphy(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.expandurl" {
+			@syscall_out = expandURL(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.getcurrenturl" {
+			@syscall_out = getCurrentURL()
+		}
+		if syscall_name.text == "is.workflow.actions.showwebpage" {
+			showWebpage(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.isonline" {
+			@syscall_out = isOnline()
+		}
+		if syscall_name.text == "is.workflow.actions.connecttoserver" {
+			connectToServer(syscall_arg_0.text)
+		}
+		if syscall_name.text == "is.workflow.actions.getrss" {
+			@syscall_out = getRSS(syscall_arg_0.number, syscall_arg_1)
+		}
+		if syscall_name.text == "is.workflow.actions.getrssfeeds" {
+			@syscall_out = getRSSFeeds(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.addtoreadinglist" {
+			addToReadingList(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.runjavascriptonwebpage" {
+			@syscall_out = runJavaScriptOnWebpage(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.searchweb" {
+			searchWeb(syscall_arg_0, syscall_arg_1)
+		}
+		if syscall_name.text == "is.workflow.actions.geturldetail" {
+			@syscall_out = getURLDetail(syscall_arg_0, syscall_arg_1)
+		}
+		if syscall_name.text == "is.workflow.actions.geturlheaders" {
+			@syscall_out = getURLHeaders(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.geturls" {
+			@syscall_out = getURLs(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.openxcallbackurl" {
+			openXCallbackURL(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.getwebpagedetail" {
+			@syscall_out = getWebPageDetail(syscall_arg_0, syscall_arg_1)
+		}
+		if syscall_name.text == "is.workflow.actions.searchappstore" {
+			@syscall_out = searchAppStore(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.showinitunes" {
+			showIniTunes(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.takescreenshot" {
+			@syscall_out = takeScreenshot()
+		}
+		if syscall_name.text == "is.workflow.actions.playsound" {
+			playSound(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.recordaudio" {
+			@syscall_out = recordAudio()
+		}
+		if syscall_name.text == "is.workflow.actions.getpodcasts" {
+			@syscall_out = getPodcasts()
+		}
+		if syscall_name.text == "is.workflow.actions.searchpodcasts" {
+			@syscall_out = searchPodcasts(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.playpodcast" {
+			playPodcast(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.startshazam" {
+			@syscall_out = startShazam()
+		}
+		if syscall_name.text == "is.workflow.actions.takephoto" {
+			@syscall_out = takePhoto()
+		}
+		if syscall_name.text == "is.workflow.actions.takevideo" {
+			@syscall_out = takeVideo()
+		}
+		if syscall_name.text == "is.workflow.actions.trimvideo" {
+			@syscall_out = trimVideo(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.searchvoicememos" {
+			@syscall_out = searchVoiceMemos(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.stripmediametadata" {
+			@syscall_out = stripMediaMetadata(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.encodeaudio" {
+			@syscall_out = encodeAudio(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.encodevideo" {
+			@syscall_out = encodeVideo(syscall_arg_0)
+		}
+
+		/* --- Contacts --- */
+
+		if syscall_name.text == "is.workflow.actions.getcontacts" {
+			@syscall_out = getContacts(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.selectcontact" {
+			@syscall_arg_0_bool = syscall_arg_0.text == "true"
+			@syscall_out = selectContact(syscall_arg_0_bool)
+		}
+		if syscall_name.text == "is.workflow.actions.selectemailaddress" {
+			@syscall_out = selectEmailAddress()
+		}
+		if syscall_name.text == "is.workflow.actions.call" {
+			call(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.getemails" {
+			@syscall_out = getEmails(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.getphonenumbers" {
+			@syscall_out = getPhoneNumbers(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.selectphonenumber" {
+			@syscall_out = selectPhoneNumber()
+		}
+		if syscall_name.text == "is.workflow.actions.emailaddress" {
+			@syscall_out = emailAddress(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.phonenumber" {
+			@syscall_out = phoneNumber(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.getcontactdetail" {
+			@syscall_out = getContactDetail(syscall_arg_0, syscall_arg_1.text)
+		}
+
+		/* --- Text --- */
+
+		if syscall_name.text == "is.workflow.actions.define" {
+			@syscall_out = define(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.getemojiname" {
+			@syscall_out = getEmojiName(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.gettextfromimage" {
+			@syscall_out = getTextFromImage(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.transcribetext" {
+			@syscall_out = transcribeText(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.getrichtextfrommarkdown" {
+			@syscall_out = getRichTextFromMarkdown(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.makehtml" {
+			@syscall_out = makeHTML(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.makemarkdown" {
+			@syscall_out = makeMarkdown(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.getrichtextfromhtml" {
+			@syscall_out = getRichTextFromHTML(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.lowercase" {
+			@syscall_out = lowercase(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.uppercase" {
+			@syscall_out = uppercase(syscall_arg_0)
+		}
+
+		/* --- Files --- */
+
+		if syscall_name.text == "is.workflow.actions.documentpicker.save" {
+			saveFile(syscall_arg_0, syscall_arg_1)
+		}
+		if syscall_name.text == "is.workflow.actions.documentpicker.open" {
+			@syscall_out = getFile(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.appendtofile" {
+			appendToFile(syscall_arg_0, syscall_arg_1)
+		}
+
+		/* --- Control --- */
+
+		if syscall_name.text == "is.workflow.actions.delay" {
+			wait(syscall_arg_0.number)
+		}
+
+		/* --- Shortcuts --- */
+
+		if syscall_name.text == "is.workflow.actions.runworkflow" {
+			@syscall_out = run(syscall_arg_0, syscall_arg_1)
+		}
+
+		/* --- Crypto --- */
+
+		if syscall_name.text == "is.workflow.actions.hash" {
+			@syscall_out = hash(syscall_arg_0, syscall_arg_1)
+		}
+		if syscall_name.text == "is.workflow.actions.base64encode" {
+			@syscall_out = base64Encode(syscall_arg_0)
+		}
+		if syscall_name.text == "is.workflow.actions.base64decode" {
+			@syscall_out = base64Decode(syscall_arg_0)
+		}
+
+		/* --- Location / Weather --- */
+
+		if syscall_name.text == "is.workflow.actions.getcurrentlocation" {
+			@syscall_out = getCurrentLocation()
+		}
+		if syscall_name.text == "is.workflow.actions.weather.currentconditions" {
+			@syscall_out = getCurrentWeather(syscall_arg_0.location)
+		}
+	}
+	@syscall_out = base64Encode(syscall_out)
+	@url = url("data:text/html;resume={image};value={syscall_out};base64,{MELON_SOURCE_CODE}")
+}

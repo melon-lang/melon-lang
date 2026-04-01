@@ -7,4 +7,5 @@
 * [Control Flow](control-flow.md)
 * [Native Functions](natives.md)
 * [Functions](functions.md)
+* [Shortcut Runtime Guide](shortcut-runtime.md)
 * [Contribution](contribute.md)

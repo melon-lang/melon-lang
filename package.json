@@ -5,6 +5,8 @@
     "test": "jest --verbose",
     "dev": "tsc --watch",
     "build:webport": "webpack --config webport/webpack.config.js",
+    "build:shortcut": "node scripts/inject-version.mjs && cd shortcut && cherri melon.cherri",
+    "build:shortcut:dev": "cd shortcut && cherri melon.cherri",
     "start": "ts-node dist/src/index.js"
   },
   "description": "A language designed for creating automations for Apple devices that run blazingly fast ⚡",

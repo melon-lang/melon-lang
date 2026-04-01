@@ -1,0 +1,80 @@
+name: Build Shortcut Artifact
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "shortcut/**"
+      - "src/syscall.ts"
+      - ".github/workflows/cherri-shortcut.yml"
+  pull_request:
+    paths:
+      - "shortcut/**"
+      - "src/syscall.ts"
+      - ".github/workflows/cherri-shortcut.yml"
+
+jobs:
+  build-shortcut:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: 'npm'
+
+      - name: Tap Cherri repository
+        run: |
+          brew update
+          brew tap electrikmilk/cherri
+
+      - name: Install Cherri CLI
+        run: |
+          set -euo pipefail
+          if brew install electrikmilk/cherri/cherri; then
+            echo "Installed stable Cherri formula"
+          else
+            echo "Stable install failed (likely checksum drift). Retrying with --HEAD..."
+            brew uninstall electrikmilk/cherri/cherri || true
+            brew install --HEAD electrikmilk/cherri/cherri
+          fi
+
+      - name: Verify Cherri
+        run: cherri --version
+
+      - name: Inject version
+        run: node scripts/inject-version.mjs
+
+      - name: Compile shortcut
+        working-directory: shortcut
+        run: cherri melon.cherri
+
+      - name: Upload shortcut artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: melon-shortcut
+          path: shortcut/melon.shortcut
+          if-no-files-found: error
+
+      - name: Read package version
+        id: package_version
+        run: |
+          VERSION=$(node -e "console.log(require('./package.json').version)")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          tag_name: "v${{ steps.package_version.outputs.version }}"
+          name: "Melon Shortcut v${{ steps.package_version.outputs.version }}"
+          files: shortcut/melon.shortcut
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
