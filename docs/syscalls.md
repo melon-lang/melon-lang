@@ -1,6 +1,6 @@
-# Syscall Reference
+# Native Functions
 
-Syscalls are the bridge between melon programs and Siri Shortcuts actions.
+The bridge between melon programs and Siri Shortcuts actions.
 
 This page is aligned with the current implementation in:
 
